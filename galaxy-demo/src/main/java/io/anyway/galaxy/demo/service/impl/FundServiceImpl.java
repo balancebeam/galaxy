@@ -8,7 +8,6 @@ import io.anyway.galaxy.demo.service.OrderService;
 import io.anyway.galaxy.demo.service.RepositoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -28,7 +27,6 @@ public class FundServiceImpl implements FundService{
     private OrderService orderService;
 
     @Override
-    @Transactional
     @TXManager
     public String puyFund(int repositoryId,long number){
 
