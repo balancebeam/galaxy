@@ -16,19 +16,19 @@ public class RepositoryDO implements Serializable{
 
     private String name;
 
-    private long number;
+    private long stock;
 
     private long unit_price;
 
-    public RepositoryDO(long id, long number) {
+    public RepositoryDO(long id, long stock) {
         this.id = id;
-        this.number = number;
+        this.stock = stock;
     }
 
-    public RepositoryDO(long id, String name, long number, long unit_price) {
+    public RepositoryDO(long id, String name, long stock, long unit_price) {
         this.id = id;
         this.name = name;
-        this.number = number;
+        this.stock = stock;
         this.unit_price = unit_price;
     }
 

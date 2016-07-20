@@ -29,11 +29,12 @@ public class PurchaseServiceImpl implements PurchaseService {
     @TXManager
     public String purchase(long userId, long repositoryId, long number){
 
-        repositoryService.decreaseRepository(repositoryId,number);
-
-        OrderDO orderDO = new OrderDO(oId.getAndIncrement(), repositoryId, userId,"待支付", number * 100);
-        orderService.addOrder(orderDO);
-
-        return "下单成功，请在30分钟内付款!";
+        if (repositoryService.decreaseRepository(repositoryId,number)) {
+            OrderDO orderDO = new OrderDO(oId.getAndIncrement(), repositoryId, userId,"待支付", number * 100);
+            orderService.addOrder(orderDO);
+            return "下单成功，请在30分钟内付款!";
+        } else {
+            return "扣减库存失败!";
+        }
     }
 }

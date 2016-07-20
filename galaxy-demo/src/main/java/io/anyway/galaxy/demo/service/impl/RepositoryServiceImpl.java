@@ -24,11 +24,11 @@ public class RepositoryServiceImpl implements RepositoryService{
 
     @Override
     @TXCompensable(cancel = "increaseRepository")
-    public boolean decreaseRepository(long id,long number){
-        return 0 < dao.decrease(new RepositoryDO(id, number));
+    public boolean decreaseRepository(long id,long stock){
+        return 0 < dao.decrease(new RepositoryDO(id, stock));
     }
 
-     boolean increaseRepository(int id,long number){
-        return 0 < dao.increase(new RepositoryDO(id, number));
+     boolean increaseRepository(int id,long stock){
+        return 0 < dao.increase(new RepositoryDO(id, stock));
     }
 }

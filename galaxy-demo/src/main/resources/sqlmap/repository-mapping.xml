@@ -4,19 +4,19 @@
 
 
   <insert id="add" parameterType="io.anyway.galaxy.demo.domain.RepositoryDO" >
-    insert into t_repository (id, name, number, unit_price)
-    values (#{id}, #{name}, #{number}, #{unit_price})
+    insert into t_repository (id, name, stock, unit_price)
+    values (#{id}, #{name}, #{stock}, #{unit_price})
   </insert>
 
   <update id="decrease" parameterType="io.anyway.galaxy.demo.domain.RepositoryDO" >
     update t_repository
-    set number = number - #{number}
+    set stock = stock - #{stock}
     where id = #{id}
   </update>
 
   <update id="increase" parameterType="io.anyway.galaxy.demo.domain.RepositoryDO" >
     update t_repository
-    set number = number + #{number}
+    set stock = stock + #{stock}
     where id = #{id}
   </update>
 
