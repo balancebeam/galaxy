@@ -1,46 +1,35 @@
 package io.anyway.galaxy.demo.domain;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.io.Serializable;
 
 /**
  * Created by yangzz on 16/7/19.
  */
+@Setter
+@Getter
 public class RepositoryDO implements Serializable{
 
-    private int id;
+    private long id;
 
     private String name;
 
     private long number;
 
-    public RepositoryDO(int id, String name, long number) {
+    private long unit_price;
+
+    public RepositoryDO(long id, long number) {
         this.id = id;
-        this.name = name;
         this.number = number;
     }
 
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
+    public RepositoryDO(long id, String name, long number, long unit_price) {
         this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
         this.name = name;
-    }
-
-    public long getNumber() {
-        return number;
-    }
-
-    public void setNumber(long number) {
         this.number = number;
+        this.unit_price = unit_price;
     }
 
 }

@@ -4,20 +4,20 @@
 
 
   <insert id="add" parameterType="io.anyway.galaxy.demo.domain.RepositoryDO" >
-    insert into t_repository (repository_id, repository_name, repository_number)
-    values (#{id}, #{name}, #{number})
+    insert into t_repository (id, name, number, unit_price)
+    values (#{id}, #{name}, #{number}, #{unit_price})
   </insert>
 
   <update id="decrease" parameterType="io.anyway.galaxy.demo.domain.RepositoryDO" >
     update t_repository
-    set repository_number = repository_number- #{number}
-    where repository_id = #{id}
+    set number = number - #{number}
+    where id = #{id}
   </update>
 
   <update id="increase" parameterType="io.anyway.galaxy.demo.domain.RepositoryDO" >
     update t_repository
-    set repository_number = repository_number- #{number}
-    where repository_id = #{id}
+    set number = number + #{number}
+    where id = #{id}
   </update>
 
 </mapper>

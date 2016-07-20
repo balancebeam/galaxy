@@ -7,5 +7,5 @@ import io.anyway.galaxy.demo.domain.RepositoryDO;
  */
 public interface RepositoryService {
 
-    boolean decreaseRepository(int id,long number);
+    boolean decreaseRepository(long id,long number);
 }

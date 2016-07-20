@@ -2,8 +2,7 @@ package io.anyway.galaxy.demo.service.impl;
 
 import io.anyway.galaxy.annotation.TXManager;
 import io.anyway.galaxy.demo.domain.OrderDO;
-import io.anyway.galaxy.demo.domain.RepositoryDO;
-import io.anyway.galaxy.demo.service.FundService;
+import io.anyway.galaxy.demo.service.PurchaseService;
 import io.anyway.galaxy.demo.service.OrderService;
 import io.anyway.galaxy.demo.service.RepositoryService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,9 +15,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 
 @Service
-public class FundServiceImpl implements FundService{
+public class PurchaseServiceImpl implements PurchaseService {
 
-    private AtomicInteger oId= new AtomicInteger(1);
+    private AtomicInteger oId = new AtomicInteger(1);
 
     @Autowired
     private RepositoryService repositoryService;
@@ -28,13 +27,13 @@ public class FundServiceImpl implements FundService{
 
     @Override
     @TXManager
-    public String puyFund(int repositoryId,long number){
+    public String purchase(long userId, long repositoryId, long number){
 
         repositoryService.decreaseRepository(repositoryId,number);
 
-        OrderDO orderDO = new OrderDO(oId.getAndIncrement(),number+"份基金订单","支付成功");
+        OrderDO orderDO = new OrderDO(oId.getAndIncrement(), repositoryId, userId,"待支付", number * 100);
         orderService.addOrder(orderDO);
 
-        return "OK";
+        return "下单成功，请在30分钟内付款!";
     }
 }
