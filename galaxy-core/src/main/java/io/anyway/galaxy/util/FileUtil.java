@@ -5,20 +5,15 @@ import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-/**
- * 文件操作工具类
- *
- * @author huangyong
- * @since 1.0
- */
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class FileUtil {
 
-    private static final Logger logger = LoggerFactory.getLogger(FileUtil.class);
 
     /**
      * 创建目录
@@ -31,7 +26,7 @@ public class FileUtil {
                 FileUtils.forceMkdir(dir);
             }
         } catch (Exception e) {
-            logger.error("创建目录出错！", e);
+            log.error("创建目录出错！", e);
             throw new RuntimeException(e);
         }
         return dir;
@@ -49,7 +44,7 @@ public class FileUtil {
                 FileUtils.forceMkdir(parentDir);
             }
         } catch (Exception e) {
-            logger.error("创建文件出错！", e);
+            log.error("创建文件出错！", e);
             throw new RuntimeException(e);
         }
         return file;
@@ -66,7 +61,7 @@ public class FileUtil {
                 FileUtils.copyDirectoryToDirectory(srcDir, destDir);
             }
         } catch (Exception e) {
-            logger.error("复制目录出错！", e);
+            log.error("复制目录出错！", e);
             throw new RuntimeException(e);
         }
     }
@@ -82,7 +77,7 @@ public class FileUtil {
                 FileUtils.copyFileToDirectory(srcFile, destDir);
             }
         } catch (Exception e) {
-            logger.error("复制文件出错！", e);
+            log.error("复制文件出错！", e);
             throw new RuntimeException(e);
         }
     }
@@ -97,7 +92,7 @@ public class FileUtil {
                 FileUtils.deleteDirectory(dir);
             }
         } catch (Exception e) {
-            logger.error("删除目录出错！", e);
+            log.error("删除目录出错！", e);
             throw new RuntimeException(e);
         }
     }
@@ -112,7 +107,7 @@ public class FileUtil {
                 FileUtils.forceDelete(file);
             }
         } catch (Exception e) {
-            logger.error("删除文件出错！", e);
+            log.error("删除文件出错！", e);
             throw new RuntimeException(e);
         }
     }
@@ -144,7 +139,7 @@ public class FileUtil {
             w.write(fileContent);
             w.flush();
         } catch (Exception e) {
-            logger.error("写入文件出错！", e);
+            log.error("写入文件出错！", e);
             throw new RuntimeException(e);
         } finally {
             try {
@@ -155,7 +150,7 @@ public class FileUtil {
                     w.close();
                 }
             } catch (Exception e) {
-                logger.error("释放资源出错！", e);
+                log.error("释放资源出错！", e);
             }
         }
     }
