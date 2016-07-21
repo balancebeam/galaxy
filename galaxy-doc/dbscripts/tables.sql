@@ -1,5 +1,5 @@
 -- Postgres
-CREATE TABLE transaction_status
+CREATE TABLE transaction_info
 (
   tx_id bigint,
   parent_id  bigint,
@@ -12,9 +12,9 @@ CREATE TABLE transaction_status
   retried_count smallint,
   gmt_create timestamp,
   gmt_modified timestamp,
-  CONSTRAINT transaction_status_pkey PRIMARY KEY (tx_id)
+  CONSTRAINT tran_info_pkey PRIMARY KEY (tx_id)
 );
 
-create index idx_tran_s_pid on transaction_status(parent_id);
+create index idx_tran_info_pid on transaction_info(parent_id);
 
 commit;
