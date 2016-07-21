@@ -6,8 +6,13 @@ import io.anyway.galaxy.demo.service.PurchaseService;
 import io.anyway.galaxy.demo.service.OrderService;
 import io.anyway.galaxy.demo.service.RepositoryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -27,8 +32,8 @@ public class PurchaseServiceImpl implements PurchaseService {
 
     @Override
     @TXManager
+    @Transactional
     public String purchase(long userId, long repositoryId, long number){
-
         if (repositoryService.decreaseRepository(repositoryId,number)) {
             OrderDO orderDO = new OrderDO(oId.getAndIncrement(), repositoryId, userId,"待支付", number * 100);
             orderService.addOrder(orderDO);
