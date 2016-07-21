@@ -1,9 +1,6 @@
 package io.anyway.galaxy.annotation;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
  * Created by yangzz on 16/7/19.
@@ -20,6 +17,8 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.METHOD })
+@Documented
+@Inherited
 public @interface TXManager {
     /**
      * 定义分布式事务执行的超时时间,默认60秒
