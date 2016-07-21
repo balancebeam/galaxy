@@ -1,18 +1,14 @@
 package io.anyway.galaxy.demo.service.impl;
 
-import io.anyway.galaxy.annotation.TXManager;
+import io.anyway.galaxy.annotation.TXAction;
 import io.anyway.galaxy.demo.domain.OrderDO;
 import io.anyway.galaxy.demo.service.PurchaseService;
 import io.anyway.galaxy.demo.service.OrderService;
 import io.anyway.galaxy.demo.service.RepositoryService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -31,8 +27,8 @@ public class PurchaseServiceImpl implements PurchaseService {
     private OrderService orderService;
 
     @Override
-    @TXManager
     @Transactional
+    @TXAction(TXAction.TXType.TC)
     public String purchase(long userId, long repositoryId, long number){
         if (repositoryService.decreaseRepository(repositoryId,number)) {
             OrderDO orderDO = new OrderDO(oId.getAndIncrement(), repositoryId, userId,"待支付", number * 100);

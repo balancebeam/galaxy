@@ -8,15 +8,15 @@ import io.anyway.galaxy.context.TXContext;
  */
 public class TXContextSupport implements TXContext{
 
-    final private String txid;
+    final private long txId;
 
-    public TXContextSupport(String txid){
-        this.txid= txid;
+    public TXContextSupport(long txId){
+        this.txId= txId;
     }
 
     @Override
-    public String getTXid() {
-        return txid;
+    public long getTxId() {
+        return txId;
     }
 
 }

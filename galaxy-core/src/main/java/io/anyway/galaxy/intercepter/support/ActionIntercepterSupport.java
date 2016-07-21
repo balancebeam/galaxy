@@ -14,17 +14,22 @@ import java.sql.SQLException;
 @Component
 public class ActionIntercepterSupport implements ActionIntercepter{
     @Override
-    public String addAction(Connection conn, ActionExecutePayload payload, TXAction.TXType type, int timeout) throws SQLException {
-        return null;
+    public long addAction(ActionExecutePayload payload, TXAction.TXType type, int timeout) throws SQLException {
+        return 0;
     }
 
     @Override
-    public void confirmAction(Connection conn, String txid) {
+    public void tryAction(Connection conn,long txId) {
 
     }
 
     @Override
-    public void cancelAction(Connection conn, String txid) {
+    public void confirmAction(long txId) {
+
+    }
+
+    @Override
+    public void cancelAction(long txId) {
 
     }
 }

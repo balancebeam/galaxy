@@ -5,6 +5,6 @@ package io.anyway.galaxy.context;
  */
 public interface TXContext {
 
-    String getTXid();
+    long getTxId();
 }
 

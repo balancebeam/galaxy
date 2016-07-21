@@ -5,6 +5,7 @@ import io.anyway.galaxy.annotation.TXTry;
 import io.anyway.galaxy.context.TXContextHolder;
 import io.anyway.galaxy.context.support.ActionExecutePayload;
 import io.anyway.galaxy.context.support.ServiceExcecutePayload;
+import io.anyway.galaxy.context.support.TXContextSupport;
 import io.anyway.galaxy.exception.TXException;
 import io.anyway.galaxy.intercepter.ActionIntercepter;
 import io.anyway.galaxy.intercepter.ServiceIntercepter;
@@ -22,9 +23,12 @@ import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.Assert;
+import org.springframework.util.ReflectionUtils;
 
 import javax.sql.DataSource;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.sql.Connection;
 
 /**
@@ -32,7 +36,7 @@ import java.sql.Connection;
  */
 @Component
 @Aspect
-public class TXAnnotationAspect implements Ordered {
+public class TXAnnotationAspect implements Ordered{
 
     private Log logger= LogFactory.getLog(TXAnnotationAspect.class);
 
@@ -55,7 +59,7 @@ public class TXAnnotationAspect implements Ordered {
     public void pointcutTXAction(){}
 
     @Around("pointcutTXAction()")
-    public void processTXAction(ProceedingJoinPoint pjp) throws Throwable {
+    public Object processTXAction(ProceedingJoinPoint pjp) throws Throwable {
         //需要判断最外层是否开启了写事务
         assertTransactional();
 
@@ -66,49 +70,56 @@ public class TXAnnotationAspect implements Ordered {
         Object target= pjp.getTarget();
         Class<?>[] types= method.getParameterTypes();
         Object[] args= pjp.getArgs();
-        TXAction.TXType type= action.value();
+        final TXAction.TXType type= action.value();
         int timeout= action.timeout();
-        ActionExecutePayload payload= new ActionExecutePayload(target,method.getName(),types,args);
-
-        //获取新的连接开启新事务新增一条TransactionAction记录
-        DataSource dataSource= dataSourceAdaptor.getDataSource();
-        Connection newConnection= dataSource.getConnection();
-        String txid;
-        try{
-            txid= actionIntercepter.addAction(newConnection,payload,type,timeout);
-            if(logger.isInfoEnabled()){
-                logger.info("will send \"cancel\" message, xid="+ txid);
-            }
-        }
-        catch (Throwable e){
-            logger.error("record transaction action error",e);
-            throw e;
-        }
-        finally {
-            DataSourceUtils.doCloseConnection(newConnection,dataSource);
-        }
-        //获取外出业务开启事务的对应的数据库连接
-        Connection tranConnection = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
+        final ActionExecutePayload payload= new ActionExecutePayload(target,method.getName(),types,args);
         try {
+            //获取新的连接开启新事务新增一条TransactionAction记录
+            final long txId = actionIntercepter.addAction(payload, type, timeout);
+            TXContextHolder.setTXContext(new TXContextSupport(txId));
+
+            //获取外出业务开启事务的对应的数据库连接
+            final Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
+            ConnectionHolder conHolder = (ConnectionHolder) TransactionSynchronizationManager.getResource(dataSourceAdaptor.getDataSource());
+            Method setConnection= ReflectionUtils.findMethod(ConnectionHolder.class,"setConnection",Connection.class);
+            ReflectionUtils.makeAccessible(setConnection);
+            ReflectionUtils.invokeMethod(setConnection,conHolder,
+                Proxy.newProxyInstance(getClass().getClassLoader(),
+                        //重载Connection复写commit和rollback方法
+                        new Class<?>[]{Connection.class}, new InvocationHandler() {
+                    @Override
+                    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                        try {
+                            return method.invoke(conn,args);
+                        }finally {
+                            //确保在commit执行之后执行通知方法
+                            if ("commit".equals(method.getName())) {
+                                //如果是TCC类型事务才发送confirm消息
+                                if(type== TXAction.TXType.TCC){
+                                    if (logger.isInfoEnabled()) {
+                                        logger.info("will send \"confirm\" message, txId=" + txId+", payload="+payload);
+                                    }
+                                    actionIntercepter.confirmAction(txId);
+                                }
+                                //确保在cancel之后执行通知方法
+                            } else if ("rollback".equals(method.getName())) {
+                                if (logger.isInfoEnabled()) {
+                                    logger.info("will send \"cancel\" message, txId=" + txId+", payload="+payload);
+                                }
+                                actionIntercepter.cancelAction(txId);
+                            }
+                        }
+                    }
+                }));
+
             //先执行业务操作
-            pjp.proceed();
+            Object result= pjp.proceed();
             //更新TX表状态为成功态,在根据TX类型确定是否要发送Confirm消息
-            actionIntercepter.confirmAction(tranConnection,txid);
-        }
-        catch (Throwable e){
-            logger.error("invoke distributed transaction error,txid="+txid+" payload="+payload,e);
-            //如果失败则需要发送Cancel信息并更改TX表的状态为Cancelled
-            newConnection= dataSource.getConnection();
-            try{
-                if(logger.isInfoEnabled()){
-                    logger.info("will send \"cancel\" message,txid="+txid+" payload="+payload);
-                }
-                actionIntercepter.cancelAction(newConnection,txid);
-            }
-            finally {
-                DataSourceUtils.doCloseConnection(newConnection,dataSource);
-            }
-            throw e;
+            actionIntercepter.tryAction(conn, txId);
+            return result;
+
+        }finally{
+            TXContextHolder.setTXContext(null);
         }
     }
 
@@ -117,12 +128,12 @@ public class TXAnnotationAspect implements Ordered {
     public void pointcutTXTry(){}
 
     @Around("pointcutTXTry()")
-    public void processTXTry(ProceedingJoinPoint pjp) throws Throwable {
+    public Object processTXTry(ProceedingJoinPoint pjp) throws Throwable {
         //先验证事务
         assertTransactional();
         //交易txid
         Assert.notNull(TXContextHolder.getTXContext());
-        String txid= TXContextHolder.getTXContext().getTXid();
+        long txId= TXContextHolder.getTXContext().getTxId();
 
         //获取方法上的注解内容
         MethodSignature signature = (MethodSignature) pjp.getSignature();
@@ -139,10 +150,11 @@ public class TXAnnotationAspect implements Ordered {
             payload.setCancelMethod(txTry.cancel());
         }
         //先调用业务方法
-        pjp.proceed();
+        Object result= pjp.proceed();
         //获取外出业务开启事务的对应的数据库连接
-        Connection tranConnection = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
-        serviceIntercepter.tryService(tranConnection,payload,txid);
+        Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
+        serviceIntercepter.tryService(conn,payload,txId);
+        return result;
     }
 
     //切面注解TXConfirm
@@ -150,18 +162,19 @@ public class TXAnnotationAspect implements Ordered {
     public void pointcutTXConfirm(){}
 
     @Around("pointcutTXConfirm()")
-    public void processTXConfirm(ProceedingJoinPoint pjp) throws Throwable {
+    public Object processTXConfirm(ProceedingJoinPoint pjp) throws Throwable {
         //先验证事务
         assertTransactional();
         //交易txid
         Assert.notNull(TXContextHolder.getTXContext());
-        String txid= TXContextHolder.getTXContext().getTXid();
+        long txId= TXContextHolder.getTXContext().getTxId();
 
-        pjp.proceed();
+        Object result= pjp.proceed();
         //获取外出业务开启事务的对应的数据库连接
-        Connection tranConnection = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
+        Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
         //提交TX表的confirm状态
-        serviceIntercepter.confirmService(tranConnection,txid);
+        serviceIntercepter.confirmService(conn,txId);
+        return result;
     }
 
     //切面注解TXCancel
@@ -169,18 +182,19 @@ public class TXAnnotationAspect implements Ordered {
     public void pointcutTXCancel(){}
 
     @Around("pointcutTXCancel()")
-    public void processTXCancel(ProceedingJoinPoint pjp) throws Throwable {
+    public Object processTXCancel(ProceedingJoinPoint pjp) throws Throwable {
         //先验证事务
         assertTransactional();
         //交易txid
         Assert.notNull(TXContextHolder.getTXContext());
-        String txid= TXContextHolder.getTXContext().getTXid();
+        long txId= TXContextHolder.getTXContext().getTxId();
 
-        pjp.proceed();
+        Object result= pjp.proceed();
         //获取外出业务开启事务的对应的数据库连接
-        Connection tranConnection = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
+        Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
         //提交TX表的confirm状态
-        serviceIntercepter.cancelService(tranConnection,txid);
+        serviceIntercepter.cancelService(conn,txId);
+        return result;
     }
 
     private void assertTransactional()throws Throwable{

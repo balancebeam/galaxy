@@ -11,18 +11,19 @@ import java.sql.Connection;
  */
 @Component
 public class ServiceIntercepterSupport implements ServiceIntercepter {
+
     @Override
-    public void tryService(Connection conn, ServiceExcecutePayload payload, String txid) {
+    public void tryService(Connection conn, ServiceExcecutePayload payload, long txId) {
 
     }
 
     @Override
-    public void confirmService(Connection conn, String txid) {
+    public void confirmService(Connection conn, long txId) {
 
     }
 
     @Override
-    public void cancelService(Connection conn, String txid) {
+    public void cancelService(Connection conn, long txId) {
 
     }
 }
