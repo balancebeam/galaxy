@@ -1,6 +1,7 @@
 package io.anyway.galaxy.repository.impl;
 
 
+import com.google.common.base.Strings;
 import io.anyway.galaxy.domain.TransactionInfo;
 import io.anyway.galaxy.exception.DistributedTransactionException;
 import org.apache.commons.collections4.CollectionUtils;
@@ -76,17 +77,45 @@ public class JdbcTransactionRepository extends CachableTransactionRepository {
             connection = this.getConnection();
 
             StringBuilder builder = new StringBuilder();
-            builder.append("UPDATE TRANSACTION_INFO SET " +
-                    "TX_TYPE = ?, TX_STATUS = ?, CONTEXT = ?, PAYLOAD = ?, RETRIED_COUNT = ?" +
-                    ", GMT_MODIFIED = " + PG_DATE_SQL);
+            builder.append("UPDATE TRANSACTION_INFO SET ");
+            if (transactionInfo.getTxType() != -1) {
+                builder.append("TX_TYPE = ?, ");
+            }
+            if (transactionInfo.getTxStatus() != -1) {
+                builder.append("TX_STATUS = ?, ");
+            }
+            if (!Strings.isNullOrEmpty(transactionInfo.getContext())) {
+                builder.append("CONTEXT = ?, ");
+            }
+            if (!Strings.isNullOrEmpty(transactionInfo.getPayload())) {
+                builder.append("PAYLOAD = ?, ");
+            }
+            if (transactionInfo.getRetried_count() != -1) {
+                builder.append("RETRIED_COUNT = ?, ");
+            }
+            builder.append("GMT_MODIFIED = " + PG_DATE_SQL + " WHERE TX_ID = ?");
 
             stmt = connection.prepareStatement(builder.toString());
 
-            stmt.setInt(1, transactionInfo.getTxType());
-            stmt.setInt(2, transactionInfo.getTxStatus());
-            stmt.setString(3, transactionInfo.getContext());
-            stmt.setString(4, transactionInfo.getPayload());
-            stmt.setInt(5, transactionInfo.getRetried_count());
+            int condition = 1;
+
+            if (transactionInfo.getTxType() != -1) {
+                stmt.setInt(++condition, transactionInfo.getTxType());
+            }
+            if (transactionInfo.getTxStatus() != -1) {
+                stmt.setInt(++condition, transactionInfo.getTxStatus());
+            }
+            if (!Strings.isNullOrEmpty(transactionInfo.getContext())) {
+                stmt.setString(++condition, transactionInfo.getContext());
+            }
+            if (!Strings.isNullOrEmpty(transactionInfo.getPayload())) {
+                stmt.setString(++condition, transactionInfo.getPayload());
+            }
+            if (transactionInfo.getRetried_count() != -1) {
+                stmt.setInt(++condition, transactionInfo.getRetried_count());
+            }
+
+            stmt.setLong(++condition, transactionInfo.getTxId());
 
             int result = stmt.executeUpdate();
 

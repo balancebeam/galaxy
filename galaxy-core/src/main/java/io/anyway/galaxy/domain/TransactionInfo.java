@@ -20,15 +20,15 @@ public class TransactionInfo {
 
     private String businessType;
 
-    private int txStatus;
+    private int txStatus = -1;
 
-    private int txType;
+    private int txType = -1;
 
     private String context;
 
     private String payload;
 
-    private int retried_count;
+    private int retried_count = -1;
 
     private Date gmtCreated;
 
