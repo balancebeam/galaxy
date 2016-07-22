@@ -1,13 +1,17 @@
 package io.anyway.galaxy.intercepter.support;
 
-import io.anyway.galaxy.common.TransactionTypeEnum;
-import io.anyway.galaxy.context.support.ActionExecutePayload;
-import io.anyway.galaxy.intercepter.ActionIntercepter;
-import io.anyway.galaxy.spring.DataSourceAdaptor;
+import java.sql.Connection;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.sql.Connection;
+import io.anyway.galaxy.common.TransactionStatusEnum;
+import io.anyway.galaxy.common.TransactionTypeEnum;
+import io.anyway.galaxy.context.support.ActionExecutePayload;
+import io.anyway.galaxy.domain.TransactionInfo;
+import io.anyway.galaxy.intercepter.ActionIntercepter;
+import io.anyway.galaxy.repository.impl.JdbcTransactionRepository;
+import io.anyway.galaxy.spring.DataSourceAdaptor;
 
 /**
  * Created by yangzz on 16/7/21.
@@ -17,10 +21,13 @@ public class ActionIntercepterSupport implements ActionIntercepter{
 
     @Autowired
     private DataSourceAdaptor dataSourceAdaptor;
+        
+
 
     @Override
     public long addAction(ActionExecutePayload payload, TransactionTypeEnum type, int timeout){
         //TODO throw new TXException("no implement body");
+
         return -1;
     }
 
@@ -31,7 +38,7 @@ public class ActionIntercepterSupport implements ActionIntercepter{
 
     @Override
     public void confirmAction(long gittxId) {
-
+    
     }
 
     @Override
