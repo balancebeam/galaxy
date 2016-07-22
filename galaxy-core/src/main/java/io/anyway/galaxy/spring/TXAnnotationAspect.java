@@ -8,7 +8,6 @@ import io.anyway.galaxy.context.support.ActionExecutePayload;
 import io.anyway.galaxy.context.support.ServiceExcecutePayload;
 import io.anyway.galaxy.context.support.TXContextSupport;
 import io.anyway.galaxy.exception.DistributedTransactionException;
-import io.anyway.galaxy.exception.TXException;
 import io.anyway.galaxy.intercepter.ActionIntercepter;
 import io.anyway.galaxy.intercepter.ServiceIntercepter;
 import org.apache.commons.logging.Log;
@@ -25,7 +24,6 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.jdbc.datasource.ConnectionHolder;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
@@ -85,7 +83,7 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
             //获取外出业务开启事务的对应的数据库连接
             final Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
             //获取新的连接开启新事务新增一条TransactionAction记录
-            final long txId = actionIntercepter.addAction(conn, payload, type, timeout);
+            final long txId = actionIntercepter.addAction(payload, type, timeout);
             TXContextSupport ctx= new TXContextSupport(txId);
             ctx.setAction(true);
             TXContextHolder.setTXContext(ctx);

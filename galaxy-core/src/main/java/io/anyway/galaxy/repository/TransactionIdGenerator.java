@@ -2,10 +2,6 @@ package io.anyway.galaxy.repository;
 
 import com.sohu.idcenter.IdWorker;
 
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.util.Enumeration;
-
 /**
  * Created by xiong.j on 2016/7/22.
  */

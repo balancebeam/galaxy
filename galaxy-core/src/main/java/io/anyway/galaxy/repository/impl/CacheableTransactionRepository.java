@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by xiong.j on 2016/7/21.
  */
-public abstract class CachableTransactionRepository implements TransactionRepository {
+public abstract class CacheableTransactionRepository implements TransactionRepository {
 
     private int expireDuration = 300;
 
@@ -76,7 +76,7 @@ public abstract class CachableTransactionRepository implements TransactionReposi
         return transactionInfos;
     }
 
-    public CachableTransactionRepository() {
+    public CacheableTransactionRepository() {
         transactionInfoCache = CacheBuilder.newBuilder().expireAfterAccess(expireDuration, TimeUnit.SECONDS).maximumSize(1000).build();
     }
 
