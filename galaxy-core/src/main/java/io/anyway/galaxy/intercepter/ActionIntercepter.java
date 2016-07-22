@@ -16,18 +16,16 @@ public interface ActionIntercepter {
      * 在开启业务事务时先记录一条TX记录,状态为trying
      * 这个过程开启新的事务,成功返回唯一的事务编号,失败抛异常
      * @param payload Action执行体定义
-     * @param type 操作类型TC|TCC|2PC
-     * @param timeout Action执行的超时时间
      * @return 事务编号
      */
-    long addAction(ActionExecutePayload payload, TransactionTypeEnum type, int timeout);
+    long addAction(ActionExecutePayload payload);
 
     /**
      * 尝试成功更新,更新事务状态为tried
      * @param conn 业务操作的数据库连接
      * @param txId 事务编号
      */
-    void tryAction(Connection conn,long txId);
+    void tryAction(Connection conn, long txId);
     /**
      * 更新事务状态为confirmed
      * @param txId 事务编号

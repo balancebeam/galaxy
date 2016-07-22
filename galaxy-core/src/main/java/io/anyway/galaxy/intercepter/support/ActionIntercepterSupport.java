@@ -1,11 +1,19 @@
 package io.anyway.galaxy.intercepter.support;
 
+import com.alibaba.fastjson.JSON;
+import com.sohu.idcenter.IdWorker;
+import io.anyway.galaxy.common.TransactionStatusEnum;
 import io.anyway.galaxy.common.TransactionTypeEnum;
 import io.anyway.galaxy.context.support.ActionExecutePayload;
+import io.anyway.galaxy.domain.TransactionInfo;
 import io.anyway.galaxy.intercepter.ActionIntercepter;
+import io.anyway.galaxy.repository.TransactionRepository;
 import io.anyway.galaxy.spring.DataSourceAdaptor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Connection;
 
@@ -18,9 +26,29 @@ public class ActionIntercepterSupport implements ActionIntercepter{
     @Autowired
     private DataSourceAdaptor dataSourceAdaptor;
 
+    @Autowired
+    private TransactionRepository transactionRepository;
+
     @Override
-    public long addAction(ActionExecutePayload payload, TransactionTypeEnum type, int timeout){
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public long addAction(ActionExecutePayload bean){
         //TODO throw new TXException("no implement body");
+        TransactionInfo transactionInfo = new TransactionInfo();
+        // TODO
+
+        final long idepo = System.currentTimeMillis() - 3600 * 1000L;
+        IdWorker idWorker = new IdWorker(idepo);
+        long txId = idWorker.getId();
+
+        transactionInfo.setTxId(txId);
+        transactionInfo.setContext(JSON.toJSONString(bean));
+        transactionInfo.setTxType(bean.getTxType().getCode());
+        transactionInfo.setTxStatus(TransactionStatusEnum.BEGIN.getCode());
+
+        Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
+
+        transactionRepository.create(conn, transactionInfo);
+
         return -1;
     }
 
@@ -30,7 +58,7 @@ public class ActionIntercepterSupport implements ActionIntercepter{
     }
 
     @Override
-    public void confirmAction(long gittxId) {
+    public void confirmAction(long txid) {
 
     }
 

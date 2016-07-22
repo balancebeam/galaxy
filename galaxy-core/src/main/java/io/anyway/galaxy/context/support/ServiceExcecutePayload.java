@@ -50,7 +50,7 @@ public class ServiceExcecutePayload extends AbstractExecutePayload {
     public String toString(){
         StringBuilder builder= new StringBuilder();
         builder.append("{class=")
-                .append(getTarget().getClass().getName())
+                .append(getTarget().getName())
                 .append(",tryMethod=")
                 .append(tryMethod);
         if(!StringUtils.isEmpty(confirmMethod)){

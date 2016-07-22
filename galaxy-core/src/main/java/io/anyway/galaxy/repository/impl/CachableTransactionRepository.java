@@ -6,6 +6,7 @@ import com.google.common.cache.CacheBuilder;
 import io.anyway.galaxy.domain.TransactionInfo;
 import io.anyway.galaxy.repository.TransactionRepository;
 
+import java.sql.Connection;
 import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -20,8 +21,8 @@ public abstract class CachableTransactionRepository implements TransactionReposi
     private Cache<Long, TransactionInfo> transactionInfoCache;
 
     @Override
-    public int create(TransactionInfo transactionInfo) {
-        int result = doCreate(transactionInfo);
+    public int create(Connection conn, TransactionInfo transactionInfo) {
+        int result = doCreate(conn, transactionInfo);
         if (result > 0) {
             putToCache(transactionInfo);
         }
@@ -29,8 +30,8 @@ public abstract class CachableTransactionRepository implements TransactionReposi
     }
 
     @Override
-    public int update(TransactionInfo transactionInfo) {
-        int result = doUpdate(transactionInfo);
+    public int update(Connection conn, TransactionInfo transactionInfo) {
+        int result = doUpdate(conn, transactionInfo);
         if (result > 0) {
             putToCache(transactionInfo);
         } else {
@@ -40,8 +41,8 @@ public abstract class CachableTransactionRepository implements TransactionReposi
     }
 
     @Override
-    public int delete(TransactionInfo transactionInfo) {
-        int result = doDelete(transactionInfo);
+    public int delete(Connection conn, TransactionInfo transactionInfo) {
+        int result = doDelete(conn, transactionInfo);
         if (result > 0) {
             removeFromCache(transactionInfo);
         }
@@ -49,11 +50,11 @@ public abstract class CachableTransactionRepository implements TransactionReposi
     }
 
     @Override
-    public TransactionInfo findById(long txId) {
+    public TransactionInfo findById(Connection conn, long txId) {
         TransactionInfo transactionInfo = findFromCache(txId);
 
         if (transactionInfo == null) {
-            transactionInfo = doFindById(txId);
+            transactionInfo = doFindById(conn, txId);
 
             if (transactionInfo != null) {
                 putToCache(transactionInfo);
@@ -64,9 +65,9 @@ public abstract class CachableTransactionRepository implements TransactionReposi
     }
 
     @Override
-    public List<TransactionInfo> findSince(java.sql.Date date, int txStatus) {
+    public List<TransactionInfo> findSince(Connection conn, java.sql.Date date, int txStatus) {
 
-        List<TransactionInfo> transactionInfos = doFindSince(date, txStatus);
+        List<TransactionInfo> transactionInfos = doFindSince(conn, date, txStatus);
 
         for (TransactionInfo transactionInfo : transactionInfos) {
             putToCache(transactionInfo);
@@ -95,13 +96,13 @@ public abstract class CachableTransactionRepository implements TransactionReposi
         this.expireDuration = durationInSeconds;
     }
 
-    protected abstract int doCreate(TransactionInfo transactionInfo);
+    protected abstract int doCreate(Connection conn, TransactionInfo transactionInfo);
 
-    protected abstract int doUpdate(TransactionInfo transactionInfo);
+    protected abstract int doUpdate(Connection conn, TransactionInfo transactionInfo);
 
-    protected abstract int doDelete(TransactionInfo transactionInfo);
+    protected abstract int doDelete(Connection conn, TransactionInfo transactionInfo);
 
-    protected abstract TransactionInfo doFindById(long txId);
+    protected abstract TransactionInfo doFindById(Connection conn, long txId);
 
-    protected abstract List<TransactionInfo> doFindSince(java.sql.Date date, int txStatus);
+    protected abstract List<TransactionInfo> doFindSince(Connection conn, java.sql.Date date, int txStatus);
 }

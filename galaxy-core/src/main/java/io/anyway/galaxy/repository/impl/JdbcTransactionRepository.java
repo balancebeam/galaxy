@@ -4,8 +4,8 @@ package io.anyway.galaxy.repository.impl;
 import com.google.common.base.Strings;
 import io.anyway.galaxy.domain.TransactionInfo;
 import io.anyway.galaxy.exception.DistributedTransactionException;
+import org.springframework.stereotype.Component;
 
-import javax.sql.DataSource;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,27 +13,16 @@ import java.util.List;
 /**
  * Created by xiong.j on 2016/7/21.
  */
+@Component
 public class JdbcTransactionRepository extends CachableTransactionRepository {
 
     private static final String PG_DATE_SQL = "current_timestamp(0)::timestamp without time zone";
 
-    private DataSource dataSource;
+    protected int doCreate(Connection conn, TransactionInfo transactionInfo) {
 
-    public void setDataSource(DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
-
-    public DataSource getDataSource() {
-        return dataSource;
-    }
-
-    protected int doCreate(TransactionInfo transactionInfo) {
-
-        Connection connection = null;
         PreparedStatement stmt = null;
 
         try {
-            connection = this.getConnection();
 
             StringBuilder builder = new StringBuilder();
             builder.append("INSERT INTO TRANSACTION_INFO " +
@@ -44,7 +33,7 @@ public class JdbcTransactionRepository extends CachableTransactionRepository {
                     ",?,?,?,?," + PG_DATE_SQL +
                     ", " + PG_DATE_SQL + ")");
 
-            stmt = connection.prepareStatement(builder.toString());
+            stmt = conn.prepareStatement(builder.toString());
 
             stmt.setLong(1, transactionInfo.getTxId());
             stmt.setLong(2, transactionInfo.getParentId());
@@ -62,16 +51,14 @@ public class JdbcTransactionRepository extends CachableTransactionRepository {
             throw new DistributedTransactionException(e);
         } finally {
             closeStatement(stmt);
-            this.releaseConnection(connection);
+            //this.releaseConnection(connection);
         }
     }
 
-    protected int doUpdate(TransactionInfo transactionInfo) {
-        Connection connection = null;
+    protected int doUpdate(Connection conn, TransactionInfo transactionInfo) {
         PreparedStatement stmt = null;
 
         try {
-            connection = this.getConnection();
 
             StringBuilder builder = new StringBuilder();
             builder.append("UPDATE TRANSACTION_INFO SET ");
@@ -92,7 +79,7 @@ public class JdbcTransactionRepository extends CachableTransactionRepository {
             }
             builder.append("GMT_MODIFIED = " + PG_DATE_SQL + " WHERE TX_ID = ?");
 
-            stmt = connection.prepareStatement(builder.toString());
+            stmt = conn.prepareStatement(builder.toString());
 
             int condition = 1;
 
@@ -122,22 +109,20 @@ public class JdbcTransactionRepository extends CachableTransactionRepository {
             throw new DistributedTransactionException(e);
         } finally {
             closeStatement(stmt);
-            this.releaseConnection(connection);
+            //this.releaseConnection(connection);
         }
     }
 
-    protected int doDelete(TransactionInfo transactionInfo) {
-        Connection connection = null;
+    protected int doDelete(Connection conn, TransactionInfo transactionInfo) {
         PreparedStatement stmt = null;
 
         try {
-            connection = this.getConnection();
 
             StringBuilder builder = new StringBuilder();
             builder.append("DELETE FROM TRANSACTION_INFO " +
                     " WHERE TX_ID = ?");
 
-            stmt = connection.prepareStatement(builder.toString());
+            stmt = conn.prepareStatement(builder.toString());
 
             stmt.setLong(1, transactionInfo.getTxId());
 
@@ -147,26 +132,24 @@ public class JdbcTransactionRepository extends CachableTransactionRepository {
             throw new DistributedTransactionException(e);
         } finally {
             closeStatement(stmt);
-            this.releaseConnection(connection);
+            //this.releaseConnection(connection);
         }
     }
 
     @Override
-    protected List<TransactionInfo> doFindSince(Date date, int txStatus) {
+    protected List<TransactionInfo> doFindSince(Connection conn, Date date, int txStatus) {
 
         List<TransactionInfo> transactionInfos = new ArrayList<TransactionInfo>();
 
-        Connection connection = null;
         PreparedStatement stmt = null;
 
         try {
-            connection = this.getConnection();
 
             StringBuilder builder = new StringBuilder();
             builder.append("SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, GMT_CREATE, GMT_MODIFIED" +
                     "  FROM TCC_TRANSACTION WHERE GMT_MODIFIED < ? AND TX_STATUS = ?");
 
-            stmt = connection.prepareStatement(builder.toString());
+            stmt = conn.prepareStatement(builder.toString());
 
             stmt.setDate(1, date);
 
@@ -179,21 +162,19 @@ public class JdbcTransactionRepository extends CachableTransactionRepository {
             throw new DistributedTransactionException(e);
         } finally {
             closeStatement(stmt);
-            this.releaseConnection(connection);
+            //this.releaseConnection(conn);
         }
 
         return transactionInfos;
     }
 
-    protected TransactionInfo doFindById(long txId) {
+    protected TransactionInfo doFindById(Connection conn, long txId) {
 
         TransactionInfo transactionInfo = null;
 
-        Connection connection = null;
         PreparedStatement stmt = null;
 
         try {
-            connection = this.getConnection();
 
             StringBuilder builder = new StringBuilder();
             builder.append("SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, GMT_CREATE, GMT_MODIFIED" +
@@ -202,7 +183,7 @@ public class JdbcTransactionRepository extends CachableTransactionRepository {
             stmt.setLong(1, txId);
             stmt.setLong(2, txId);
 
-            stmt = connection.prepareStatement(builder.toString());
+            stmt = conn.prepareStatement(builder.toString());
 
             ResultSet resultSet = stmt.executeQuery();
 
@@ -213,7 +194,7 @@ public class JdbcTransactionRepository extends CachableTransactionRepository {
             throw new DistributedTransactionException(e);
         } finally {
             closeStatement(stmt);
-            this.releaseConnection(connection);
+            //this.releaseConnection(conn);
         }
 
         return transactionInfo;
@@ -237,23 +218,23 @@ public class JdbcTransactionRepository extends CachableTransactionRepository {
         return transactionInfo;
     }
 
-    protected Connection getConnection() {
-        try {
-            return this.dataSource.getConnection();
-        } catch (SQLException e) {
-            throw new DistributedTransactionException(e);
-        }
-    }
-
-    protected void releaseConnection(Connection con) {
-        try {
-            if (con != null && !con.isClosed()) {
-                con.close();
-            }
-        } catch (SQLException e) {
-            throw new DistributedTransactionException(e);
-        }
-    }
+//    protected Connection getConnection() {
+//        try {
+//            return this.dataSource.getConnection();
+//        } catch (SQLException e) {
+//            throw new DistributedTransactionException(e);
+//        }
+//    }
+//
+//    protected void releaseConnection(Connection conn) {
+//        try {
+//            if (conn != null && !conn.isClosed()) {
+//                conn.close();
+//            }
+//        } catch (SQLException e) {
+//            throw new DistributedTransactionException(e);
+//        }
+//    }
 
     private void closeStatement(Statement stmt) {
         try {
