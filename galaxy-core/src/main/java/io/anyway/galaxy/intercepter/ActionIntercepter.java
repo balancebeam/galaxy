@@ -1,11 +1,10 @@
 package io.anyway.galaxy.intercepter;
 
-import io.anyway.galaxy.annotation.TXAction;
-import io.anyway.galaxy.context.TXContext;
-import io.anyway.galaxy.context.support.ActionExecutePayload;
-
 import java.sql.Connection;
 import java.sql.SQLException;
+
+import io.anyway.galaxy.annotation.TXAction;
+import io.anyway.galaxy.context.support.ActionExecutePayload;
 
 /**
  * Created by yangzz on 16/7/20.

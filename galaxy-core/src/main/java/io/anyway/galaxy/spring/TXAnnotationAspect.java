@@ -125,7 +125,10 @@ public class TXAnnotationAspect implements Ordered{
 
     //切面注解TXTry
     @Pointcut("@annotation(io.anyway.galaxy.annotation.TXTry)")
-    public void pointcutTXTry(){}
+    public void pointcutTXTry(){
+    	
+    	
+    }
 
     @Around("pointcutTXTry()")
     public Object processTXTry(ProceedingJoinPoint pjp) throws Throwable {

@@ -6,3 +6,4 @@ target/
 .idea/
 bin/
 .DS_Store
+*.pptx
