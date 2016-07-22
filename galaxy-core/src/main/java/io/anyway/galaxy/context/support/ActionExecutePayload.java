@@ -1,5 +1,6 @@
 package io.anyway.galaxy.context.support;
 
+import io.anyway.galaxy.common.TransactionTypeEnum;
 import io.anyway.galaxy.context.AbstractExecutePayload;
 
 /**
@@ -7,10 +8,16 @@ import io.anyway.galaxy.context.AbstractExecutePayload;
  */
 public class ActionExecutePayload extends AbstractExecutePayload {
 
-    final private String actionMethod;
+    private String actionMethod;
 
-    public ActionExecutePayload(Class<?> target, String actionMethod, Class[] types, Object[] args) {
-        super(target, types, args);
+    private int timeout;
+
+    private TransactionTypeEnum txType;
+
+    public ActionExecutePayload(){}
+
+    public ActionExecutePayload(String bizType,Class<?> target, String actionMethod, Class[] types) {
+        super(bizType,target,types);
         this.actionMethod= actionMethod;
     }
 
@@ -18,10 +25,36 @@ public class ActionExecutePayload extends AbstractExecutePayload {
         return actionMethod;
     }
 
+    public void setActionMethod(String actionMethod){
+        this.actionMethod= actionMethod;
+    }
+
+    public int getTimeout() {
+        return timeout;
+    }
+
+    public void setTimeout(int timeout) {
+        this.timeout = timeout;
+    }
+
+    public TransactionTypeEnum getTxType() {
+        return txType;
+    }
+
+    public void setTxType(TransactionTypeEnum txType) {
+        this.txType = txType;
+    }
+
     @Override
     public String toString(){
         StringBuilder builder= new StringBuilder();
-        builder.append("{class=")
+        builder.append("{bizType=")
+                .append(getBizType())
+                .append(",timeout=")
+                .append(timeout)
+                .append(",TxType=")
+                .append(getTxType())
+                .append(",class=")
                 .append(getTarget().getName())
                 .append(",actionMethod=")
                 .append(actionMethod)
@@ -31,5 +64,15 @@ public class ActionExecutePayload extends AbstractExecutePayload {
                 .append(getArgs())
                 .append("}");
         return builder.toString();
+    }
+
+    @Override
+    public ActionExecutePayload clone(){
+        ActionExecutePayload newPayload= new ActionExecutePayload();
+        newPayload.bizType= bizType;
+        newPayload.target= target;
+        newPayload.types= types;
+        newPayload.actionMethod= actionMethod;
+        return newPayload;
     }
 }
