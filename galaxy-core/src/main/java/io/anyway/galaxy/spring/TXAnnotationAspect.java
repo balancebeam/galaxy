@@ -10,7 +10,6 @@ import io.anyway.galaxy.context.TXContextHolder;
 import io.anyway.galaxy.context.support.ActionExecutePayload;
 import io.anyway.galaxy.context.support.ServiceExcecutePayload;
 import io.anyway.galaxy.context.support.TXContextSupport;
-import io.anyway.galaxy.domain.TransactionInfo;
 import io.anyway.galaxy.exception.DistributedTransactionException;
 import io.anyway.galaxy.intercepter.ActionIntercepter;
 import io.anyway.galaxy.intercepter.ServiceIntercepter;
@@ -84,6 +83,7 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
         ActionExecutePayload cachedPayload = (ActionExecutePayload)cache.getIfPresent(method);
         if(cachedPayload==null){
             synchronized (method) {
+                cachedPayload = (ActionExecutePayload)cache.getIfPresent(method);
                 if(cachedPayload==null){
                     TXAction action = method.getAnnotation(TXAction.class);
                     Class<?> target = pjp.getTarget().getClass();
@@ -97,7 +97,6 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
                     cache.put(method, cachedPayload);
                 }
             }
-            cachedPayload= (ActionExecutePayload)cache.getIfPresent(method);
         }
         final ActionExecutePayload payload= cachedPayload.clone();
         //设置运行时的入参
@@ -108,6 +107,9 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
             final Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
             //获取新的连接开启新事务新增一条TransactionAction记录
             final long txId = actionIntercepter.addAction(payload);
+            if (logger.isInfoEnabled()) {
+                logger.info("generated new txId=" + txId+", payload="+payload);
+            }
 
             TXContextSupport ctx= new TXContextSupport(txId);
             ctx.setAction(true);
@@ -182,6 +184,7 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
         ServiceExcecutePayload cachedPayload = (ServiceExcecutePayload)cache.getIfPresent(method);
         if(cachedPayload==null){
             synchronized (method) {
+                cachedPayload = (ServiceExcecutePayload)cache.getIfPresent(method);
                 if(cachedPayload==null){
                     TXTry txTry= method.getAnnotation(TXTry.class);
                     Class<?> target = pjp.getTarget().getClass();
@@ -195,11 +198,14 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
                     cache.put(method, cachedPayload);
                 }
             }
-            cachedPayload= (ServiceExcecutePayload)cache.getIfPresent(method);
         }
         ServiceExcecutePayload payload= cachedPayload.clone();
         //设置运行时的入参
         payload.setArgs(pjp.getArgs());
+
+        if (logger.isInfoEnabled()) {
+            logger.info("transfer txId=" + txId+", payload="+payload);
+        }
 
         //先调用业务方法
         Object result= pjp.proceed();
@@ -225,6 +231,10 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
         }
         long txId= TXContextHolder.getTXContext().getTxId();
 
+        if (logger.isInfoEnabled()) {
+            logger.info("transfer txId=" + txId);
+        }
+
         Object result= pjp.proceed();
         //获取外出业务开启事务的对应的数据库连接
         Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
@@ -248,6 +258,10 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
             return pjp.proceed();
         }
         long txId= TXContextHolder.getTXContext().getTxId();
+
+        if (logger.isInfoEnabled()) {
+            logger.info("transfer txId=" + txId);
+        }
 
         Object result= pjp.proceed();
         //获取外出业务开启事务的对应的数据库连接
