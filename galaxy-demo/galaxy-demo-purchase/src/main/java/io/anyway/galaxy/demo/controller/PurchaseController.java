@@ -20,7 +20,7 @@ public class PurchaseController {
 
     @RequestMapping(value="/purchase")
     @ResponseBody
-    public String purchase(Model model) {
+    public String purchase(Model model)throws Exception {
         long id = 1;
         long item_id = 1;
         long number = 2;
