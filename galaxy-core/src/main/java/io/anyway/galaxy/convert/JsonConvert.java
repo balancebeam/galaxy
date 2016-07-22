@@ -1,17 +1,49 @@
 package io.anyway.galaxy.convert;
 
-public class JsonConvert<T> implements Convert<T>{
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+
+import com.google.gson.Gson;
+
+import io.anyway.galaxy.domain.TransactionInfo;
+
+public class JsonConvert<T> implements Convert<T> {
 
 	@Override
 	public String toString(T t) {
-		// TODO Auto-generated method stub
-		return null;
+		return new Gson().toJson(t);
+		
+		
 	}
 
 	@Override
 	public T toTarget(String str) {
-		// TODO Auto-generated method stub
-		return null;
+		
+		//return (T) JSON.parseObject(str, getClass());
+		
+		Type t = getGenericParamType(this.getClass());
+		return (T) new Gson().fromJson(str, t);
 	}
 
+	static Type getGenericParamType(Class<?> clazz) {
+		Type mySuperClass = clazz.getGenericInterfaces()[0];
+		return ((ParameterizedType) mySuperClass).getActualTypeArguments()[0];
+	}
+	
+	
+	public static void main(String args[]){
+		
+		JsonConvert<TransactionInfo> c = new JsonConvert<TransactionInfo>();
+		
+		TransactionInfo t = new TransactionInfo();
+		t.setBusinessId(1);
+		t.setBusinessType("ddd");
+		
+		System.out.println(c.toString(t));
+		TransactionInfo t1 =  (TransactionInfo) c.toTarget(c.toString(t));
+				
+		System.out.println(t1);
+		
+		
+	}
 }
