@@ -23,42 +23,25 @@
 			</list>
 		</property>
 	</bean>
-	
-	<bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource"
-		destroy-method="close">
-		<property name="driverClassName">
-			<value>${dataSource.driver}</value>
-		</property>
-		<property name="url">
-			<value>${dataSource.url}</value>
-		</property>
-		<property name="username">
-			<value>${dataSource.user}</value>
-		</property>
-		<property name="password">
-			<value>${dataSource.password}</value>
-		</property>
-		<property name="maxTotal">
-			<value>${dataSource.maxTotal:50}</value>
-		</property>
-		<property name="initialSize">
-			<value>${dataSource.initialSize:5}</value>
-		</property>
-		<property name="maxIdle">
-			<value>240</value>
-		</property>
-		<property name="maxWaitMillis">
-			<value>10000</value>
-		</property>
-		<property name="defaultAutoCommit">
-			<value>true</value>
-		</property>
-		<property name="testOnBorrow">
-			<value>true</value>
-		</property>
-		<property name="validationQuery">
-			<value>select 1</value>
-		</property>
+
+	<bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">
+		<property name="driverClassName" value="${jdbc.driver}"/>
+		<property name="url" value="${jdbc.url}" />
+		<property name="username" value="${jdbc.username}" />
+		<property name="password" value="${jdbc.password}" />
+		<property name="filters" value="config" />
+		<property name="maxActive" value="5" />
+		<property name="initialSize" value="2" />
+		<property name="maxWait" value="4" />
+		<property name="minIdle" value="3" />
+		<property name="timeBetweenEvictionRunsMillis" value="3000" />
+		<property name="minEvictableIdleTimeMillis" value="300000" />
+		<property name="validationQuery" value="SELECT 'x'" />
+		<property name="testWhileIdle" value="true" />
+		<property name="testOnBorrow" value="false" />
+		<property name="testOnReturn" value="false" />
+		<property name="poolPreparedStatements" value="true" />
+		<property name="maxPoolPreparedStatementPerConnectionSize" value="20" />
 	</bean>
 
 

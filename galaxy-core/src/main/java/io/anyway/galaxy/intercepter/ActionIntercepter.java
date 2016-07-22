@@ -19,9 +19,8 @@ public interface ActionIntercepter {
      * @param type 操作类型TC|TCC
      * @param timeout Action执行的超时时间
      * @return 事务编号
-     * @throws SQLException
      */
-    long addAction(ActionExecutePayload payload, TXAction.TXType type, int timeout)throws SQLException;
+    long addAction(ActionExecutePayload payload, TXAction.TXType type, int timeout);
 
     /**
      * 尝试成功更新,更新事务状态为tried

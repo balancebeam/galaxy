@@ -16,8 +16,10 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ResourceLoaderAware;
 import org.springframework.core.Ordered;
 import org.aspectj.lang.annotation.Aspect;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.jdbc.datasource.ConnectionHolder;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Component;
@@ -36,9 +38,11 @@ import java.sql.Connection;
  */
 @Component
 @Aspect
-public class TXAnnotationAspect implements Ordered{
+public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
 
     private Log logger= LogFactory.getLog(TXAnnotationAspect.class);
+
+    private ResourceLoader resourceLoader;
 
     @Autowired
     private DataSourceAdaptor dataSourceAdaptor;
@@ -81,10 +85,10 @@ public class TXAnnotationAspect implements Ordered{
             //获取外出业务开启事务的对应的数据库连接
             final Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
             ConnectionHolder conHolder = (ConnectionHolder) TransactionSynchronizationManager.getResource(dataSourceAdaptor.getDataSource());
-            Method setConnection= ReflectionUtils.findMethod(ConnectionHolder.class,"setConnection",Connection.class);
-            ReflectionUtils.makeAccessible(setConnection);
-            ReflectionUtils.invokeMethod(setConnection,conHolder,
-                Proxy.newProxyInstance(getClass().getClassLoader(),
+            method= ReflectionUtils.findMethod(ConnectionHolder.class,"setConnection",Connection.class);
+            ReflectionUtils.makeAccessible(method);
+            ReflectionUtils.invokeMethod(method,conHolder,
+                Proxy.newProxyInstance(resourceLoader.getClassLoader(),
                         //重载Connection复写commit和rollback方法
                         new Class<?>[]{Connection.class}, new InvocationHandler() {
                     @Override
@@ -206,5 +210,9 @@ public class TXAnnotationAspect implements Ordered{
         }
     }
 
+    @Override
+    public void setResourceLoader(ResourceLoader resourceLoader) {
+        this.resourceLoader= resourceLoader;
+    }
 }
 
