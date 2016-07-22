@@ -5,15 +5,19 @@ package io.anyway.galaxy.common;
  */
 
 public enum TransactionStatusEnum {
-    SUCCESS(0, "正常完成"),
+    //SUCCESS(0, "正常完成"),
 
-    START(1, "事务开始"),
+    BEGIN(1, "事务开始"),
 
-    NEED_ROLLBACK(2, "需要回滚"),
+    TRIED(2, "尝试完成"),
 
-    ROLLBACK_SEND(3, "己发送回滚消息"),
+    CANCELLING(3, "回滚中"),
 
-    ROLLBACK(4, "已回滚");
+    CANCELLED(4, "回滚完成"),
+
+    CONFIRMING(5, "确认中"),
+
+    CONFIRMED(6, "确认完成");
 
     private int    code;
 

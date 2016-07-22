@@ -25,6 +25,7 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.jdbc.datasource.ConnectionHolder;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
@@ -40,6 +41,7 @@ import java.sql.Connection;
  */
 @Component
 @Aspect
+//TODO 合併 "@Transactional"
 public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
 
     private Log logger= LogFactory.getLog(TXAnnotationAspect.class);
