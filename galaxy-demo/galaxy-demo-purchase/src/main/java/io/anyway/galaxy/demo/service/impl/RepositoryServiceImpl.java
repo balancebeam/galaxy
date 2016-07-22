@@ -1,6 +1,7 @@
 package io.anyway.galaxy.demo.service.impl;
 
-import io.anyway.galaxy.annotation.TXCompensable;
+import io.anyway.galaxy.annotation.TXCancel;
+import io.anyway.galaxy.annotation.TXTry;
 import io.anyway.galaxy.demo.dao.RepositoryDao;
 import io.anyway.galaxy.demo.domain.RepositoryDO;
 import io.anyway.galaxy.demo.service.RepositoryService;
@@ -23,12 +24,15 @@ public class RepositoryServiceImpl implements RepositoryService{
     }
 
     @Override
-    @TXCompensable(cancel = "increaseRepository")
+    @Transactional
+    @TXTry(cancel = "increaseRepository")
     public boolean decreaseRepository(long id,long stock){
         return 0 < dao.decrease(new RepositoryDO(id, stock));
     }
 
-     boolean increaseRepository(int id,long stock){
+    @Transactional
+    @TXCancel
+    boolean increaseRepository(int id,long stock){
         return 0 < dao.increase(new RepositoryDO(id, stock));
     }
 }
