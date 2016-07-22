@@ -1,6 +1,10 @@
 package io.anyway.galaxy.testcase;
 
 import io.anyway.galaxy.annotation.TXAction;
+import io.anyway.galaxy.common.TransactionTypeEnum;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,11 +14,13 @@ import org.springframework.transaction.annotation.Transactional;
  */
 
 @Component
+@Slf4j
 public class Test {
 
     @Transactional
-    @TXAction
+    @TXAction(TransactionTypeEnum.TC)
     public String fn(String hello,int num) {
+        //httpclient client= new HttpClient("/rest/api?tid=")
         System.out.println("123" + hello + num);
         return "ok";
     }
@@ -23,6 +29,7 @@ public class Test {
         ClassPathXmlApplicationContext ctx= new ClassPathXmlApplicationContext("classpath:applicationContext.xml");
         ctx.refresh();
 
+        log.error("eeeee");
         System.out.println("!!!Start!!!");
         long startTime = System.currentTimeMillis();
         Test test= ctx.getBean(Test.class);

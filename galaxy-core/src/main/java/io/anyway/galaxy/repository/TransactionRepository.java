@@ -2,6 +2,7 @@ package io.anyway.galaxy.repository;
 
 import io.anyway.galaxy.domain.TransactionInfo;
 
+import java.sql.Connection;
 import java.util.List;
 
 /**
@@ -9,13 +10,13 @@ import java.util.List;
  */
 public interface TransactionRepository {
 
-    int create(TransactionInfo transactionInfo);
+    int create(Connection conn, TransactionInfo transactionInfo);
 
-    int update(TransactionInfo transactionInfo);
+    int update(Connection conn, TransactionInfo transactionInfo);
 
-    int delete(TransactionInfo transactionInfo);
+    int delete(Connection conn, TransactionInfo transactionInfo);
 
-    TransactionInfo findById(long txId);
+    TransactionInfo findById(Connection conn, long txId);
 
-    List<TransactionInfo> findSince(java.sql.Date date, int txStatus);
+    List<TransactionInfo> findSince(Connection conn, java.sql.Date date, int txStatus);
 }

@@ -7,5 +7,5 @@ public interface PurchaseService {
     /**
      *购买操作
      */
-    String purchase(long userId, long repositoryId, long number);
+    String purchase(long userId, long repositoryId, long number)throws Exception;
 }
