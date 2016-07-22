@@ -7,6 +7,7 @@ import io.anyway.galaxy.demo.domain.RepositoryDO;
 import io.anyway.galaxy.demo.service.RepositoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**add
@@ -24,7 +25,7 @@ public class RepositoryServiceImpl implements RepositoryService{
     }
 
     @Override
-    @Transactional
+    @Transactional(propagation=Propagation.REQUIRES_NEW)
     @TXTry(cancel = "increaseRepository")
     public boolean decreaseRepository(long id,long stock){
         return 0 < dao.decrease(new RepositoryDO(id, stock));

@@ -19,7 +19,7 @@ public class ServiceIntercepterSupport implements ServiceIntercepter {
 
     @Override
     public void confirmService(Connection conn, long txId) {
-
+    	
     }
 
     @Override
