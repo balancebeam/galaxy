@@ -24,6 +24,11 @@ import java.lang.annotation.*;
 @Inherited
 public @interface TXAction {
     /**
+     * 业务操作类型
+     * @return
+     */
+    String bizType() default "";
+    /**
      * 定义分布式事务执行的超时时间,默认不启用
      * @return
      */

@@ -8,19 +8,26 @@ import org.springframework.util.StringUtils;
  */
 public class ServiceExcecutePayload extends AbstractExecutePayload {
 
-    final private String tryMethod;
+    private String tryMethod;
 
     private String confirmMethod;
 
     private String cancelMethod;
 
-    public ServiceExcecutePayload(Object target, String tryMethod, Class[] types, Object[] args) {
-        super(target, types, args);
+    public ServiceExcecutePayload(){
+    }
+
+    public ServiceExcecutePayload(String bizType,Class<?> target, String tryMethod, Class[] types) {
+        super(bizType,target, types);
         this.tryMethod= tryMethod;
     }
 
     public String getTryMethod(){
         return tryMethod;
+    }
+
+    public void setTryMethod(String tryMethod){
+        this.tryMethod= tryMethod;
     }
 
     public String getConfirmMethod() {
@@ -62,4 +69,15 @@ public class ServiceExcecutePayload extends AbstractExecutePayload {
         return builder.toString();
     }
 
+    @Override
+    public ServiceExcecutePayload clone(){
+        ServiceExcecutePayload newPayload= new ServiceExcecutePayload();
+        newPayload.bizType= bizType;
+        newPayload.target= target;
+        newPayload.types= types;
+        newPayload.tryMethod= tryMethod;
+        newPayload.confirmMethod= confirmMethod;
+        newPayload.cancelMethod= cancelMethod;
+        return newPayload;
+    }
 }

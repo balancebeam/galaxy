@@ -3,21 +3,29 @@ package io.anyway.galaxy.context;
 /**
  * Created by yangzz on 16/7/21.
  */
-public abstract class AbstractExecutePayload {
+public abstract class AbstractExecutePayload implements Cloneable{
 
-    final private Object target;
+    protected String bizType;
 
-    final private Class<?>[] types;
+    protected Class<?> target;
 
-    final private Object[] args;
+    protected Class<?>[] types;
 
-    public AbstractExecutePayload(Object target, Class<?>[] types, Object[] args){
+    protected Object[] args;
+
+    public AbstractExecutePayload(){}
+
+    public AbstractExecutePayload(String bizType, Class<?> target, Class<?>[] types){
+        this.bizType= bizType;
         this.target= target;
         this.types= types;
-        this.args= args;
     }
 
-    public Object getTarget() {
+    public String getBizType(){
+        return bizType;
+    }
+
+    public Class<?> getTarget() {
         return target;
     }
 
@@ -29,4 +37,19 @@ public abstract class AbstractExecutePayload {
         return args;
     }
 
+    public void setBizType(String bizType) {
+        this.bizType = bizType;
+    }
+
+    public void setTarget(Class<?> target) {
+        this.target = target;
+    }
+
+    public void setTypes(Class<?>[] types) {
+        this.types = types;
+    }
+
+    public void setArgs(Object[] args) {
+        this.args = args;
+    }
 }
