@@ -6,7 +6,6 @@ import io.anyway.galaxy.context.TXContext;
 import io.anyway.galaxy.context.support.ActionExecutePayload;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 
 /**
  * Created by yangzz on 16/7/20.
@@ -20,9 +19,8 @@ public interface ActionIntercepter {
      * @param type 操作类型TC|TCC|2PC
      * @param timeout Action执行的超时时间
      * @return 事务编号
-     * @throws SQLException
      */
-    long addAction(ActionExecutePayload payload, TransactionTypeEnum type, int timeout)throws SQLException;
+    long addAction(ActionExecutePayload payload, TransactionTypeEnum type, int timeout);
 
     /**
      * 尝试成功更新,更新事务状态为tried

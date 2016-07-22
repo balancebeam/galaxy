@@ -12,8 +12,7 @@
 	<modules>
         <module>galaxy-core</module>
         <module>galaxy-demo</module>
-		<module>galaxy-pluging</module>
-	</modules>
+    </modules>
     
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -38,8 +37,6 @@
 		<slf4j.version>1.7.7</slf4j.version>
 		<logback.version>1.1.2</logback.version>
 		<fastjson.version>1.2.14</fastjson.version>
-		<idcenter.version>2.2.2</idcenter.version>
-		<kafka.version>0.9.0.1</kafka.version>
 	</properties>
 
 	<dependencyManagement>
@@ -221,17 +218,6 @@
 				<groupId>org.apache.kafka</groupId>
 				<artifactId>kafka-clients</artifactId>
 				<version>${kafka.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>ch.qos.logback</groupId>
-				<artifactId>logback-classic</artifactId>
-				<version>${logback.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>org.slf4j</groupId>
-						<artifactId>slf4j-api</artifactId>
-					</exclusion>
-				</exclusions>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
