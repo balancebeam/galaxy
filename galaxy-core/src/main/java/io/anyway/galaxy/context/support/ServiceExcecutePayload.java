@@ -14,7 +14,7 @@ public class ServiceExcecutePayload extends AbstractExecutePayload {
 
     private String cancelMethod;
 
-    public ServiceExcecutePayload(Object target, String tryMethod, Class[] types, Object[] args) {
+    public ServiceExcecutePayload(Class<?> target, String tryMethod, Class[] types, Object[] args) {
         super(target, types, args);
         this.tryMethod= tryMethod;
     }
@@ -43,7 +43,7 @@ public class ServiceExcecutePayload extends AbstractExecutePayload {
     public String toString(){
         StringBuilder builder= new StringBuilder();
         builder.append("{class=")
-                .append(getTarget().getClass().getName())
+                .append(getTarget().getName())
                 .append(",tryMethod=")
                 .append(tryMethod);
         if(!StringUtils.isEmpty(confirmMethod)){

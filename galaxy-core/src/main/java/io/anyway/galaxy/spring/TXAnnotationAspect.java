@@ -75,21 +75,21 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
         MethodSignature signature = (MethodSignature) pjp.getSignature();
         Method method= signature.getMethod();
         TXAction action= method.getAnnotation(TXAction.class);
-        Object target= pjp.getTarget();
+        Class<?> target= pjp.getTarget().getClass();
         Class<?>[] types= method.getParameterTypes();
         Object[] args= pjp.getArgs();
         final TransactionTypeEnum type= action.value();
         int timeout= action.timeout();
         final ActionExecutePayload payload= new ActionExecutePayload(target,method.getName(),types,args);
         try {
+            //获取外出业务开启事务的对应的数据库连接
+            final Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
             //获取新的连接开启新事务新增一条TransactionAction记录
-            final long txId = actionIntercepter.addAction(payload, type, timeout);
+            final long txId = actionIntercepter.addAction(conn, payload, type, timeout);
             TXContextSupport ctx= new TXContextSupport(txId);
             ctx.setAction(true);
             TXContextHolder.setTXContext(ctx);
 
-            //获取外出业务开启事务的对应的数据库连接
-            final Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
             ConnectionHolder conHolder = (ConnectionHolder) TransactionSynchronizationManager.getResource(dataSourceAdaptor.getDataSource());
             method= ReflectionUtils.findMethod(ConnectionHolder.class,"setConnection",Connection.class);
             ReflectionUtils.makeAccessible(method);
@@ -155,7 +155,7 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
         //获取方法上的注解内容
         MethodSignature signature = (MethodSignature) pjp.getSignature();
         Method method= signature.getMethod();
-        Object target= pjp.getTarget();
+        Class<?> target= pjp.getTarget().getClass();
         Class<?>[] types= method.getParameterTypes();
         Object[] args= pjp.getArgs();
         ServiceExcecutePayload payload= new ServiceExcecutePayload(target,method.getName(),types,args);

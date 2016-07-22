@@ -5,19 +5,19 @@ package io.anyway.galaxy.context;
  */
 public abstract class AbstractExecutePayload {
 
-    final private Object target;
+    final private Class<?> target;
 
     final private Class<?>[] types;
 
     final private Object[] args;
 
-    public AbstractExecutePayload(Object target, Class<?>[] types, Object[] args){
+    public AbstractExecutePayload(Class target, Class<?>[] types, Object[] args){
         this.target= target;
         this.types= types;
         this.args= args;
     }
 
-    public Object getTarget() {
+    public Class getTarget() {
         return target;
     }
 

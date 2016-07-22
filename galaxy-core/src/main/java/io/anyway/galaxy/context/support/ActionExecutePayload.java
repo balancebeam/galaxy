@@ -9,7 +9,7 @@ public class ActionExecutePayload extends AbstractExecutePayload {
 
     final private String actionMethod;
 
-    public ActionExecutePayload(Object target, String actionMethod, Class[] types, Object[] args) {
+    public ActionExecutePayload(Class<?> target, String actionMethod, Class[] types, Object[] args) {
         super(target, types, args);
         this.actionMethod= actionMethod;
     }
@@ -22,7 +22,7 @@ public class ActionExecutePayload extends AbstractExecutePayload {
     public String toString(){
         StringBuilder builder= new StringBuilder();
         builder.append("{class=")
-                .append(getTarget().getClass().getName())
+                .append(getTarget().getName())
                 .append(",actionMethod=")
                 .append(actionMethod)
                 .append(",inTypes=")

@@ -3,12 +3,11 @@ package io.anyway.galaxy.testcase;
 import io.anyway.galaxy.annotation.TXAction;
 import io.anyway.galaxy.common.TransactionTypeEnum;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import sun.net.www.http.HttpClient;
-
-import static jdk.nashorn.internal.runtime.regexp.joni.Config.log;
 
 /**
  * Created by yangzz on 16/7/20.
@@ -30,7 +29,7 @@ public class Test {
         ClassPathXmlApplicationContext ctx= new ClassPathXmlApplicationContext("classpath:applicationContext.xml");
         ctx.refresh();
 
-        //log.warn("eeeee");
+        log.error("eeeee");
         System.out.println("!!!Start!!!");
         long startTime = System.currentTimeMillis();
         Test test= ctx.getBean(Test.class);

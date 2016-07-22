@@ -9,7 +9,7 @@ CREATE TABLE transaction_info
   tx_status smallint,
   context text,
   payload text,
-  retried_count smallint,
+  retried_count smallint default 0,
   gmt_create timestamp,
   gmt_modified timestamp,
   CONSTRAINT tran_info_pkey PRIMARY KEY (tx_id)

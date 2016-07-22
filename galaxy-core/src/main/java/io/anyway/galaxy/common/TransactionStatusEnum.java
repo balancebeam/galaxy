@@ -32,5 +32,11 @@ public enum TransactionStatusEnum {
         this.memo = memo;
     }
 
+    public int getCode() {
+        return code;
+    }
 
+    public String getMemo() {
+        return memo;
+    }
 }
