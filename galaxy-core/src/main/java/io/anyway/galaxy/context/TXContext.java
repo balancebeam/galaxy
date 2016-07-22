@@ -8,5 +8,7 @@ import java.io.Serializable;
 public interface TXContext extends Serializable{
 
     long getTxId();
+
+    boolean isAction();
 }
 
