@@ -4,13 +4,10 @@ package io.anyway.galaxy.repository.impl;
 import com.google.common.base.Strings;
 import io.anyway.galaxy.domain.TransactionInfo;
 import io.anyway.galaxy.exception.DistributedTransactionException;
-import org.apache.commons.collections4.CollectionUtils;
 
 import javax.sql.DataSource;
-import javax.transaction.xa.Xid;
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**

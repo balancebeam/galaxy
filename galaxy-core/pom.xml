@@ -54,6 +54,10 @@
             <artifactId>slf4j-log4j12</artifactId>
             <version>${slf4j.version}</version>
         </dependency>
+		<dependency>
+			<groupId>com.sohu</groupId>
+			<artifactId>idcenter</artifactId>
+		</dependency>
 
 		<dependency>
 			<groupId>junit</groupId>

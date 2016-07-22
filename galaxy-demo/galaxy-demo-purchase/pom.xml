@@ -19,6 +19,11 @@
             <version>${project.parent.version}</version>
         </dependency>
 		<dependency>
+			<groupId>io.anyway</groupId>
+			<artifactId>galaxy-pluging</artifactId>
+			<version>${project.parent.version}</version>
+		</dependency>
+		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-web</artifactId>
 		</dependency>
