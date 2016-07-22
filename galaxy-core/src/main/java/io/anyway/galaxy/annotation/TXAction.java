@@ -1,5 +1,7 @@
 package io.anyway.galaxy.annotation;
 
+import io.anyway.galaxy.common.TransactionTypeEnum;
+
 import java.lang.annotation.*;
 
 /**
@@ -22,35 +24,15 @@ import java.lang.annotation.*;
 @Inherited
 public @interface TXAction {
     /**
-     * 定义分布式事务执行的超时时间,默认60秒
+     * 定义分布式事务执行的超时时间,默认不启用
      * @return
      */
-    int timeout() default 60;
+    int timeout() default -1;
 
     /**
      * 事务类型TC|TCC
      * @return
      */
-    TXType value() default TXType.TC;
-
-    public static enum TXType{
-
-        TC("try-cancel"),
-        TCC("try-confirm-cancel");
-
-        String name;
-
-        private TXType(String name){
-            this.name= name;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-    }
+    TransactionTypeEnum value() default TransactionTypeEnum.TC;
 
 }

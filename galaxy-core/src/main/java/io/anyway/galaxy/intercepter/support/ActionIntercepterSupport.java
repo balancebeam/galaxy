@@ -1,6 +1,7 @@
 package io.anyway.galaxy.intercepter.support;
 
 import io.anyway.galaxy.annotation.TXAction;
+import io.anyway.galaxy.common.TransactionTypeEnum;
 import io.anyway.galaxy.context.support.ActionExecutePayload;
 import io.anyway.galaxy.intercepter.ActionIntercepter;
 import org.springframework.stereotype.Component;
@@ -14,7 +15,7 @@ import java.sql.SQLException;
 @Component
 public class ActionIntercepterSupport implements ActionIntercepter{
     @Override
-    public long addAction(ActionExecutePayload payload, TXAction.TXType type, int timeout) throws SQLException {
+    public long addAction(ActionExecutePayload payload, TransactionTypeEnum type, int timeout) throws SQLException {
         return 0;
     }
 

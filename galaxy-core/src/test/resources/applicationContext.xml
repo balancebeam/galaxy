@@ -12,19 +12,19 @@
 				http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.0.xsd
 				">
 
-	<import resource="galaxy-transaction.xml"/>
+	<import resource="classpath:galaxy-transaction.xml"/>
 	<!-- 全局参数定义 -->
 	<bean id="GlobalPropertyConfigurer" 
 		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
 		<property name="ignoreUnresolvablePlaceholders" value="true" />
 		<property name="locations">
 			<list>
-				<value>classpath:config.properties</value>
+				<value>config.properties</value>
 			</list>
 		</property>
 	</bean>
 	
-	<bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource"
+	<!--<bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource"
 		destroy-method="close">
 		<property name="driverClassName">
 			<value>${dataSource.driver}</value>
@@ -59,8 +59,25 @@
 		<property name="validationQuery">
 			<value>select 1</value>
 		</property>
-	</bean>
+	</bean>-->
 
+	<bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">
+		<property name="url" value="${postgres.db.url}" />
+		<property name="username" value="${postgres.db.username}" />
+		<property name="password" value="${postgres.db.password}" />
+		<property name="maxActive" value="${postgres.db.maxActive}" />
+		<property name="initialSize" value="${postgres.db.initialSize}" />
+		<property name="maxWait" value="${postgres.db.maxWait}" />
+		<property name="minIdle" value="${postgres.db.minIdle}" />
+		<property name="timeBetweenEvictionRunsMillis" value="${postgres.db.timeBetweenEvictionRunsMillis}" />
+		<property name="minEvictableIdleTimeMillis" value="300000" />
+		<property name="validationQuery" value="${postgres.db.validationQuery}" />
+		<property name="testWhileIdle" value="${postgres.db.testWhileIdle}" />
+		<property name="testOnBorrow" value="${postgres.db.testOnBorrow}" />
+		<property name="testOnReturn" value="${postgres.db.testOnReturn}" />
+		<property name="poolPreparedStatements" value="true" />
+		<property name="maxPoolPreparedStatementPerConnectionSize" value="50" />
+	</bean>
 
 	<bean id="transactionManager"
 		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">

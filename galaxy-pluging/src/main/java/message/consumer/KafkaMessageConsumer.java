@@ -8,6 +8,6 @@ import io.anyway.galaxy.message.consumer.MessageConsumer;
 public class KafkaMessageConsumer implements MessageConsumer {
     @Override
     public void handleMessage(Object message) {
-        System.out.println("TTTTTTTTTTTEST KafkaMessageConsumer");
+        System.out.println("KafkaMessageConsumer.handleMessage | " + message.toString());
     }
 }

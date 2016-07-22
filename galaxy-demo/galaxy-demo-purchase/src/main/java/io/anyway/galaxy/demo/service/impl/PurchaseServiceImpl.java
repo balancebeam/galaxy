@@ -1,6 +1,7 @@
 package io.anyway.galaxy.demo.service.impl;
 
 import io.anyway.galaxy.annotation.TXAction;
+import io.anyway.galaxy.common.TransactionTypeEnum;
 import io.anyway.galaxy.demo.domain.OrderDO;
 import io.anyway.galaxy.demo.service.PurchaseService;
 import io.anyway.galaxy.demo.service.OrderService;
@@ -28,7 +29,7 @@ public class PurchaseServiceImpl implements PurchaseService {
 
     @Override
     @Transactional
-    @TXAction(TXAction.TXType.TC)
+    @TXAction(TransactionTypeEnum.TC)
     public String purchase(long userId, long repositoryId, long number){
         if (repositoryService.decreaseRepository(repositoryId,number)) {
             OrderDO orderDO = new OrderDO(oId.getAndIncrement(), repositoryId, userId,"待支付", number * 100);

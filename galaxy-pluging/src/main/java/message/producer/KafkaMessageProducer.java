@@ -8,6 +8,6 @@ import io.anyway.galaxy.message.producer.MessageProducer;
 public class KafkaMessageProducer implements MessageProducer {
     @Override
     public void sendMessage(Object message) {
-
+        System.out.println("KafkaMessageProducer.sendMessage | " + message.toString());
     }
 }

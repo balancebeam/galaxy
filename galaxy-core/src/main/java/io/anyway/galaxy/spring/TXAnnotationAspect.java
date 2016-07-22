@@ -2,10 +2,12 @@ package io.anyway.galaxy.spring;
 
 import io.anyway.galaxy.annotation.TXAction;
 import io.anyway.galaxy.annotation.TXTry;
+import io.anyway.galaxy.common.TransactionTypeEnum;
 import io.anyway.galaxy.context.TXContextHolder;
 import io.anyway.galaxy.context.support.ActionExecutePayload;
 import io.anyway.galaxy.context.support.ServiceExcecutePayload;
 import io.anyway.galaxy.context.support.TXContextSupport;
+import io.anyway.galaxy.exception.DistributedTransactionException;
 import io.anyway.galaxy.exception.TXException;
 import io.anyway.galaxy.intercepter.ActionIntercepter;
 import io.anyway.galaxy.intercepter.ServiceIntercepter;
@@ -70,7 +72,7 @@ public class TXAnnotationAspect implements Ordered{
         Object target= pjp.getTarget();
         Class<?>[] types= method.getParameterTypes();
         Object[] args= pjp.getArgs();
-        final TXAction.TXType type= action.value();
+        final TransactionTypeEnum type= action.value();
         int timeout= action.timeout();
         final ActionExecutePayload payload= new ActionExecutePayload(target,method.getName(),types,args);
         try {
@@ -95,7 +97,7 @@ public class TXAnnotationAspect implements Ordered{
                             //确保在commit执行之后执行通知方法
                             if ("commit".equals(method.getName())) {
                                 //如果是TCC类型事务才发送confirm消息
-                                if(type== TXAction.TXType.TCC){
+                                if(type== TransactionTypeEnum.TCC){
                                     if (logger.isInfoEnabled()) {
                                         logger.info("will send \"confirm\" message, txId=" + txId+", payload="+payload);
                                     }
@@ -202,7 +204,7 @@ public class TXAnnotationAspect implements Ordered{
         Assert.notNull(dataSource,"datasource can not empty");
         ConnectionHolder conHolder = (ConnectionHolder) TransactionSynchronizationManager.getResource(dataSource);
         if (conHolder == null || conHolder.getConnectionHandle()==null || !conHolder.isSynchronizedWithTransaction()) {
-            throw new TXException("transaction connection is null");
+            throw new DistributedTransactionException("transaction connection is null");
         }
     }
 

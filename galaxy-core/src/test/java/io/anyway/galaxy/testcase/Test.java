@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class Test {
 
     @Transactional
-    @TXAction
+    @TXAction(timeout = 60)
     public void fn(){
         System.out.println("123");
     }
@@ -21,8 +21,11 @@ public class Test {
     public static void main(String[] args){
         ClassPathXmlApplicationContext ctx= new ClassPathXmlApplicationContext("classpath:applicationContext.xml");
         ctx.refresh();
+
+        System.out.println("!!!Start!!!");
+        long startTime = System.currentTimeMillis();
         Test test= ctx.getBean(Test.class);
         test.fn();
-        System.out.println("abc");
+        System.out.println("!!!OK!!! Spent time = " + (System.currentTimeMillis() - startTime) + "MS");
     }
 }
