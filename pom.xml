@@ -200,20 +200,24 @@
 				<version>${slf4j.version}</version>
 			</dependency>
 			<dependency>
+				<groupId>org.slf4j</groupId>
+				<artifactId>slf4j-log4j12</artifactId>
+				<version>${slf4j.version}</version>
+			</dependency>
+			<dependency>
 				<groupId>com.alibaba</groupId>
 				<artifactId>fastjson</artifactId>
 				<version>${fastjson.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>ch.qos.logback</groupId>
-				<artifactId>logback-classic</artifactId>
-				<version>${logback.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>org.slf4j</groupId>
-						<artifactId>slf4j-api</artifactId>
-					</exclusion>
-				</exclusions>
+				<groupId>com.sohu</groupId>
+				<artifactId>idcenter</artifactId>
+				<version>${idcenter.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.kafka</groupId>
+				<artifactId>kafka-clients</artifactId>
+				<version>${kafka.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

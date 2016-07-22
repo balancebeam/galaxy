@@ -7,11 +7,11 @@ public abstract class AbstractExecutePayload {
 
     final private Object target;
 
-    final private Class[] types;
+    final private Class<?>[] types;
 
     final private Object[] args;
 
-    public AbstractExecutePayload(Object target, Class[] types, Object[] args){
+    public AbstractExecutePayload(Object target, Class<?>[] types, Object[] args){
         this.target= target;
         this.types= types;
         this.args= args;
@@ -21,7 +21,7 @@ public abstract class AbstractExecutePayload {
         return target;
     }
 
-    public Class[] getTypes(){
+    public Class<?>[] getTypes(){
         return types;
     }
 

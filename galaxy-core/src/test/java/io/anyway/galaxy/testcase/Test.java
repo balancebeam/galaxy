@@ -14,15 +14,20 @@ public class Test {
 
     @Transactional
     @TXAction
-    public void fn(){
-        System.out.println("123");
+    public String fn(String hello,int num) {
+        System.out.println("123" + hello + num);
+        return "ok";
     }
 
     public static void main(String[] args){
         ClassPathXmlApplicationContext ctx= new ClassPathXmlApplicationContext("classpath:applicationContext.xml");
         ctx.refresh();
+
+        System.out.println("!!!Start!!!");
+        long startTime = System.currentTimeMillis();
         Test test= ctx.getBean(Test.class);
-        test.fn();
-        System.out.println("abc");
+        String result= test.fn("helloworld",123);
+        System.out.println("result = " + result);
+        System.out.println("!!!OK!!! Spent time = " + (System.currentTimeMillis() - startTime) + "MS");
     }
 }

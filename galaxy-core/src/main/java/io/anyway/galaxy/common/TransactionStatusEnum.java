@@ -4,7 +4,7 @@ package io.anyway.galaxy.common;
  * Created by xiongjie on 2016/7/21.
  */
 
-public enum TransatcionStatusEnum {
+public enum TransactionStatusEnum {
     SUCCESS(0, "正常完成"),
 
     START(1, "事务开始"),
@@ -23,7 +23,7 @@ public enum TransatcionStatusEnum {
      * @param code
      * @param memo
      */
-    private TransatcionStatusEnum(int code, String memo) {
+    private TransactionStatusEnum(int code, String memo) {
         this.code = code;
         this.memo = memo;
     }

@@ -2,10 +2,12 @@ package io.anyway.galaxy.spring;
 
 import io.anyway.galaxy.annotation.TXAction;
 import io.anyway.galaxy.annotation.TXTry;
+import io.anyway.galaxy.common.TransactionTypeEnum;
 import io.anyway.galaxy.context.TXContextHolder;
 import io.anyway.galaxy.context.support.ActionExecutePayload;
 import io.anyway.galaxy.context.support.ServiceExcecutePayload;
 import io.anyway.galaxy.context.support.TXContextSupport;
+import io.anyway.galaxy.exception.DistributedTransactionException;
 import io.anyway.galaxy.exception.TXException;
 import io.anyway.galaxy.intercepter.ActionIntercepter;
 import io.anyway.galaxy.intercepter.ServiceIntercepter;
@@ -16,8 +18,10 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ResourceLoaderAware;
 import org.springframework.core.Ordered;
 import org.aspectj.lang.annotation.Aspect;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.jdbc.datasource.ConnectionHolder;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Component;
@@ -36,9 +40,11 @@ import java.sql.Connection;
  */
 @Component
 @Aspect
-public class TXAnnotationAspect implements Ordered{
+public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
 
     private Log logger= LogFactory.getLog(TXAnnotationAspect.class);
+
+    private ResourceLoader resourceLoader;
 
     @Autowired
     private DataSourceAdaptor dataSourceAdaptor;
@@ -70,21 +76,23 @@ public class TXAnnotationAspect implements Ordered{
         Object target= pjp.getTarget();
         Class<?>[] types= method.getParameterTypes();
         Object[] args= pjp.getArgs();
-        final TXAction.TXType type= action.value();
+        final TransactionTypeEnum type= action.value();
         int timeout= action.timeout();
         final ActionExecutePayload payload= new ActionExecutePayload(target,method.getName(),types,args);
         try {
             //获取新的连接开启新事务新增一条TransactionAction记录
             final long txId = actionIntercepter.addAction(payload, type, timeout);
-            TXContextHolder.setTXContext(new TXContextSupport(txId));
+            TXContextSupport ctx= new TXContextSupport(txId);
+            ctx.setAction(true);
+            TXContextHolder.setTXContext(ctx);
 
             //获取外出业务开启事务的对应的数据库连接
             final Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
             ConnectionHolder conHolder = (ConnectionHolder) TransactionSynchronizationManager.getResource(dataSourceAdaptor.getDataSource());
-            Method setConnection= ReflectionUtils.findMethod(ConnectionHolder.class,"setConnection",Connection.class);
-            ReflectionUtils.makeAccessible(setConnection);
-            ReflectionUtils.invokeMethod(setConnection,conHolder,
-                Proxy.newProxyInstance(getClass().getClassLoader(),
+            method= ReflectionUtils.findMethod(ConnectionHolder.class,"setConnection",Connection.class);
+            ReflectionUtils.makeAccessible(method);
+            ReflectionUtils.invokeMethod(method,conHolder,
+                Proxy.newProxyInstance(resourceLoader.getClassLoader(),
                         //重载Connection复写commit和rollback方法
                         new Class<?>[]{Connection.class}, new InvocationHandler() {
                     @Override
@@ -95,7 +103,7 @@ public class TXAnnotationAspect implements Ordered{
                             //确保在commit执行之后执行通知方法
                             if ("commit".equals(method.getName())) {
                                 //如果是TCC类型事务才发送confirm消息
-                                if(type== TXAction.TXType.TCC){
+                                if(type== TransactionTypeEnum.TCC){
                                     if (logger.isInfoEnabled()) {
                                         logger.info("will send \"confirm\" message, txId=" + txId+", payload="+payload);
                                     }
@@ -136,6 +144,10 @@ public class TXAnnotationAspect implements Ordered{
         assertTransactional();
         //交易txid
         Assert.notNull(TXContextHolder.getTXContext());
+        //如果调用关系在Action内不需要执行切面动作
+        if(TXContextHolder.getTXContext().isAction()){
+            return pjp.proceed();
+        }
         long txId= TXContextHolder.getTXContext().getTxId();
 
         //获取方法上的注解内容
@@ -170,6 +182,10 @@ public class TXAnnotationAspect implements Ordered{
         assertTransactional();
         //交易txid
         Assert.notNull(TXContextHolder.getTXContext());
+        //如果调用关系在Action内不需要执行切面动作
+        if(TXContextHolder.getTXContext().isAction()){
+            return pjp.proceed();
+        }
         long txId= TXContextHolder.getTXContext().getTxId();
 
         Object result= pjp.proceed();
@@ -190,6 +206,10 @@ public class TXAnnotationAspect implements Ordered{
         assertTransactional();
         //交易txid
         Assert.notNull(TXContextHolder.getTXContext());
+        //如果调用关系在Action内不需要执行切面动作
+        if(TXContextHolder.getTXContext().isAction()){
+            return pjp.proceed();
+        }
         long txId= TXContextHolder.getTXContext().getTxId();
 
         Object result= pjp.proceed();
@@ -205,9 +225,13 @@ public class TXAnnotationAspect implements Ordered{
         Assert.notNull(dataSource,"datasource can not empty");
         ConnectionHolder conHolder = (ConnectionHolder) TransactionSynchronizationManager.getResource(dataSource);
         if (conHolder == null || conHolder.getConnectionHandle()==null || !conHolder.isSynchronizedWithTransaction()) {
-            throw new TXException("transaction connection is null");
+            throw new DistributedTransactionException("transaction connection is null");
         }
     }
 
+    @Override
+    public void setResourceLoader(ResourceLoader resourceLoader) {
+        this.resourceLoader= resourceLoader;
+    }
 }
 
