@@ -10,6 +10,8 @@ public class TXContextSupport implements TXContext{
 
     final private long txId;
 
+    private boolean action= false;
+
     public TXContextSupport(long txId){
         this.txId= txId;
     }
@@ -17,6 +19,15 @@ public class TXContextSupport implements TXContext{
     @Override
     public long getTxId() {
         return txId;
+    }
+
+    @Override
+    public boolean isAction() {
+        return action;
+    }
+
+    public void setAction(boolean action){
+        this.action= action;
     }
 
 }

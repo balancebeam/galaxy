@@ -80,7 +80,9 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
         try {
             //获取新的连接开启新事务新增一条TransactionAction记录
             final long txId = actionIntercepter.addAction(payload, type, timeout);
-            TXContextHolder.setTXContext(new TXContextSupport(txId));
+            TXContextSupport ctx= new TXContextSupport(txId);
+            ctx.setAction(true);
+            TXContextHolder.setTXContext(ctx);
 
             //获取外出业务开启事务的对应的数据库连接
             final Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
@@ -137,6 +139,10 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
         assertTransactional();
         //交易txid
         Assert.notNull(TXContextHolder.getTXContext());
+        //如果调用关系在Action内不需要执行切面动作
+        if(TXContextHolder.getTXContext().isAction()){
+            return pjp.proceed();
+        }
         long txId= TXContextHolder.getTXContext().getTxId();
 
         //获取方法上的注解内容
@@ -171,6 +177,10 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
         assertTransactional();
         //交易txid
         Assert.notNull(TXContextHolder.getTXContext());
+        //如果调用关系在Action内不需要执行切面动作
+        if(TXContextHolder.getTXContext().isAction()){
+            return pjp.proceed();
+        }
         long txId= TXContextHolder.getTXContext().getTxId();
 
         Object result= pjp.proceed();
@@ -191,6 +201,10 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
         assertTransactional();
         //交易txid
         Assert.notNull(TXContextHolder.getTXContext());
+        //如果调用关系在Action内不需要执行切面动作
+        if(TXContextHolder.getTXContext().isAction()){
+            return pjp.proceed();
+        }
         long txId= TXContextHolder.getTXContext().getTxId();
 
         Object result= pjp.proceed();
