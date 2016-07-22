@@ -14,7 +14,7 @@ import java.util.List;
  * Created by xiong.j on 2016/7/21.
  */
 @Component
-public class JdbcTransactionRepository extends CachableTransactionRepository {
+public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
     private static final String PG_DATE_SQL = "current_timestamp(0)::timestamp without time zone";
 
@@ -51,7 +51,7 @@ public class JdbcTransactionRepository extends CachableTransactionRepository {
             throw new DistributedTransactionException(e);
         } finally {
             closeStatement(stmt);
-            //this.releaseConnection(connection);
+            this.releaseConnection(conn);
         }
     }
 
@@ -218,23 +218,15 @@ public class JdbcTransactionRepository extends CachableTransactionRepository {
         return transactionInfo;
     }
 
-//    protected Connection getConnection() {
-//        try {
-//            return this.dataSource.getConnection();
-//        } catch (SQLException e) {
-//            throw new DistributedTransactionException(e);
-//        }
-//    }
-//
-//    protected void releaseConnection(Connection conn) {
-//        try {
-//            if (conn != null && !conn.isClosed()) {
-//                conn.close();
-//            }
-//        } catch (SQLException e) {
-//            throw new DistributedTransactionException(e);
-//        }
-//    }
+    protected void releaseConnection(Connection conn) {
+        try {
+            if (conn != null && !conn.isClosed()) {
+                conn.close();
+            }
+        } catch (SQLException e) {
+            throw new DistributedTransactionException(e);
+        }
+    }
 
     private void closeStatement(Statement stmt) {
         try {
