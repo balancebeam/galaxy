@@ -41,14 +41,12 @@ public class TransactionServer {
 		try {
 			ServletContextHandler handler = new ServletContextHandler();
 			handler.setContextPath("/");
-
 			handler.setSessionHandler(new SessionHandler());
-
 			handler.addServlet(EnvServlet.class, "/api/env");
 			handler.addServlet(PropertiesServlet.class, "/api/props");
             handler.addServlet(TaskServlet.class, "/api/tasks");
             handler.addServlet(StaticContentServlet.class, "/*");
-
+            handler.addServlet(StartServlet.class, "/api/start");
 
             server.setHandler(handler);
 		} catch (Exception e) {

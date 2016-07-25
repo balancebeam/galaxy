@@ -1,6 +1,7 @@
 <!doctype html>
 <html>
     <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
         <style type="text/css">
             #top{
                 margin:0px 0px 20px;
@@ -26,27 +27,82 @@
                 color: #444;
                 margin:0 0 10px 200px;
             }
+            
+            #content div.btn{
+            	text-align :center
+            }
             .active{
                 background-color: #12a1cc;
                 color: #fff;
             }
+            
+			.btn5 {
+			    width: 145px;
+			    height: 34px;
+			    line-height: 22px;
+			    font-size: 22px;
+			    color: #959595;
+			    padding-bottom: 4px;
+			}
+			
+			table.gridtable {
+				font-family: verdana,arial,sans-serif;
+				font-size:11px;
+				color:#333333;
+				border-width: 1px;
+				border-color: #666666;
+				border-collapse: collapse;
+			}
+			table.gridtable th {
+				border-width: 1px;
+				padding: 8px;
+				border-style: solid;
+				border-color: #666666;
+				background-color: #dedede;
+			}
+			table.gridtable td {
+				border-width: 1px;
+				padding: 8px;
+				border-style: solid;
+				border-color: #666666;
+				background-color: #ffffff;
+			}
+						
         </style>
         <script src="/jquery-2.1.1.min.js"></script>
         <script>
+        	var interval = 0;
             function loadTask(){
-                $.get('/api/task',{dataType:'json'},function(res){
+                $.get('/api/tasks?interval='+interval,{dataType:'json'},function(res){
                     var c = $('#content');
-                    var prefix;
                     c.empty();
-                    for(prop in res){
-                        var n = prop.split(" ")[0];
-                        if(prefix  &&  prefix!=n){
-                            c.append($('<div class="key">'+'  &nbsp; '+'</div><div class="value">'+'  &nbsp;  '+'</div>'));
-                        }
-                        c.append($('<div class="key">'+prop+':</div><div class="value">'+res[prop]+'</div>'));
-                        prefix=n;
+                    c.append($('<div class="btn">'+'<input type="button" value="prev" class="btn5" onclick="prev()">&nbsp;'+'&nbsp;<input type="button" value="next" class="btn5" onclick="next()">'+'</div>'));
+                    c.append($('<div><table class="gridtable">'));
+                    c.append($('<tr><th>事务ID</th><th>状态</th><th>事务类型</th><th>重试次数</th><th>创建时间</th><th>修改时间</th><th>操作</th></tr>'));
+                    for(var i=0;i<res.length;i++){                         
+                    	c.append($('<tr><td>'+res[i].txId+'</td><td>'+res[i].strTXStatus+'</td><td>'+res[i].strTXType+'</td><td>'+res[i].retried_count+'</td><td>'+res[i].strGmtCreated+'</td><td>'+res[i].strGmtModified+'</td><td><a href=# onclick="restart('+res[i].txId+')">重启</a></td></tr>'))
                     }
+                    c.append($('</table></div>'));
                 });
+            }
+            
+            function prev(){
+            	interval++;
+            	loadTask();
+            }
+            
+            function next(){
+            	if(interval>0){
+            		interval--;
+            	}
+            	loadTask();
+            }
+            
+            function restart(txid){
+            	$.get('/api/start?txid='+txid,{dataType:'json'},function(res){
+            		console.log(res);
+            	});
+            	loadTask();
             }
 
             function loadEnv(){

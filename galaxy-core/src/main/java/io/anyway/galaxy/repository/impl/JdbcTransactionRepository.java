@@ -142,7 +142,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			StringBuilder builder = new StringBuilder();
 			builder.append(
 					"SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, GMT_CREATE, GMT_MODIFIED"
-							+ "  FROM TCC_TRANSACTION WHERE GMT_MODIFIED < ? AND TX_STATUS = ?");
+							+ "  FROM TRANSACTION_INFO WHERE GMT_MODIFIED < ? AND TX_STATUS = ?");
 
 			stmt = conn.prepareStatement(builder.toString());
 
@@ -175,13 +175,12 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			StringBuilder builder = new StringBuilder();
 			builder.append(
 					"SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, GMT_CREATE, GMT_MODIFIED"
-							+ "  FROM TCC_TRANSACTION WHERE TX_ID = ? OR PARENT_ID = ?");
+							+ "  FROM TRANSACTION_INFO WHERE TX_ID = ?");
 
-			stmt.setLong(1, txId);
-			stmt.setLong(2, txId);
-
+			
 			stmt = conn.prepareStatement(builder.toString());
-
+			stmt.setLong(1, txId);
+			
 			ResultSet resultSet = stmt.executeQuery();
 
 			while (resultSet.next()) {
@@ -236,7 +235,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 	}
 
 	@Override
-	public List<TransactionInfo> findReverseSince(Connection conn, Date date, int txStatus) {
+	public List<TransactionInfo> listSince(Connection conn, Date date) {
 		List<TransactionInfo> transactionInfos = new ArrayList<TransactionInfo>();
 
 		PreparedStatement stmt = null;
@@ -246,12 +245,11 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			StringBuilder builder = new StringBuilder();
 			builder.append(
 					"SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, GMT_CREATE, GMT_MODIFIED")
-					.append("  FROM TCC_TRANSACTION WHERE GMT_MODIFIED < ? AND TX_STATUS != ?");
+					.append("  FROM TRANSACTION_INFO WHERE GMT_MODIFIED > ?");
 
 			stmt = conn.prepareStatement(builder.toString());
 
 			stmt.setDate(1, date);
-			stmt.setInt(2, txStatus);
 
 			ResultSet resultSet = stmt.executeQuery();
 

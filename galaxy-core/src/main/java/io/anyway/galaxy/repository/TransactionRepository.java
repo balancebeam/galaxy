@@ -20,5 +20,5 @@ public interface TransactionRepository {
 
     List<TransactionInfo> findSince(Connection conn, java.sql.Date date, int txStatus);
     
-    List<TransactionInfo> findReverseSince(Connection conn, java.sql.Date date, int txStatus);
+    List<TransactionInfo> listSince(Connection conn, java.sql.Date date);
 }
