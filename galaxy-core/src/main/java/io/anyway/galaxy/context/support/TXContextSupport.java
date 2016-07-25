@@ -12,6 +12,8 @@ public class TXContextSupport implements TXContext{
 
     private boolean action= false;
 
+    private String bizSerial;
+
     public TXContextSupport(long txId){
         this.txId= txId;
     }
@@ -24,6 +26,16 @@ public class TXContextSupport implements TXContext{
     @Override
     public boolean isAction() {
         return action;
+    }
+
+    @Override
+    public void setBizSerial(String bizSerial) {
+        this.bizSerial= bizSerial;
+    }
+
+    @Override
+    public String getBizSerial() {
+        return bizSerial;
     }
 
     public void setAction(boolean action){

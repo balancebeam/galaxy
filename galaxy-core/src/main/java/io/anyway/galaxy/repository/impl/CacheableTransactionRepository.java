@@ -65,6 +65,17 @@ public abstract class CacheableTransactionRepository implements TransactionRepos
     }
 
     @Override
+    public TransactionInfo lockById(Connection conn, long txId) {
+        TransactionInfo transactionInfo = doLockById(conn, txId);
+
+        if (transactionInfo != null) {
+            putToCache(transactionInfo);
+        }
+
+        return transactionInfo;
+    }
+
+    @Override
     public TransactionInfo directFindById(Connection conn, long txId) {
         TransactionInfo transactionInfo = doFindById(conn, txId);
 
@@ -112,6 +123,8 @@ public abstract class CacheableTransactionRepository implements TransactionRepos
     protected abstract int doUpdate(Connection conn, TransactionInfo transactionInfo);
 
     protected abstract int doDelete(Connection conn, TransactionInfo transactionInfo);
+
+    protected abstract TransactionInfo doLockById(Connection conn, long txId);
 
     protected abstract TransactionInfo doFindById(Connection conn, long txId);
 

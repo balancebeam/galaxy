@@ -25,6 +25,12 @@ import java.lang.annotation.*;
 @Inherited
 public @interface TXTry {
     /**
+     * 业务操作类型
+     * @return
+     */
+    String bizType() default "";
+
+    /**
      * 提交方法
      * @return
      */

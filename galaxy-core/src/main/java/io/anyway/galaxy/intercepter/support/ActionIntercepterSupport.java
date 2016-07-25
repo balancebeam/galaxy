@@ -1,18 +1,23 @@
 package io.anyway.galaxy.intercepter.support;
 
+import java.sql.Connection;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.alibaba.fastjson.JSON;
+import com.sohu.idcenter.IdWorker;
+
 import io.anyway.galaxy.common.TransactionStatusEnum;
-import io.anyway.galaxy.common.TransactionTypeEnum;
 import io.anyway.galaxy.context.support.ActionExecutePayload;
 import io.anyway.galaxy.domain.TransactionInfo;
 import io.anyway.galaxy.intercepter.ActionIntercepter;
 import io.anyway.galaxy.repository.TransactionIdGenerator;
 import io.anyway.galaxy.repository.TransactionRepository;
 import io.anyway.galaxy.spring.DataSourceAdaptor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
-import java.sql.Connection;
 
 /**
  * Created by yangzz on 16/7/21.
@@ -27,18 +32,22 @@ public class ActionIntercepterSupport implements ActionIntercepter{
     private TransactionRepository transactionRepository;
 
     @Override
-    //@Transactional(propagation = Propagation.REQUIRES_NEW)
-    public long addAction(ActionExecutePayload bean, TransactionTypeEnum type, int timeout) throws Throwable {
-
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public long addAction(ActionExecutePayload bean){
+        //TODO throw new TXException("no implement body");
         TransactionInfo transactionInfo = new TransactionInfo();
+
+
         transactionInfo.setTxId(TransactionIdGenerator.next());
         transactionInfo.setContext(JSON.toJSONString(bean));
-        transactionInfo.setTxType(type.getCode());
+        transactionInfo.setTxType(bean.getTxType().getCode());
         transactionInfo.setTxStatus(TransactionStatusEnum.BEGIN.getCode());
 
-        transactionRepository.create(dataSourceAdaptor.getDataSource().getConnection(), transactionInfo);
+        Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
 
-        return 1;
+        transactionRepository.create(conn, transactionInfo);
+
+        return transactionInfo.getTxId();
     }
 
     @Override

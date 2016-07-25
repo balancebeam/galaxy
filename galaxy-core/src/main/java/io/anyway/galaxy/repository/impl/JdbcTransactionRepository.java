@@ -51,7 +51,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
             throw new DistributedTransactionException(e);
         } finally {
             closeStatement(stmt);
-            this.releaseConnection(conn);
+            //this.releaseConnection(conn);
         }
     }
 
@@ -200,8 +200,8 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
         return transactionInfo;
     }
 
-    @Override
-    public TransactionInfo lockById(Connection conn, long txId) {
+    protected TransactionInfo doLockById(Connection conn, long txId) {
+
         TransactionInfo transactionInfo = null;
 
         PreparedStatement stmt = null;
@@ -260,14 +260,44 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
         }
     }
 
-    private void closeStatement(Statement stmt) {
-        try {
-            if (stmt != null && !stmt.isClosed()) {
-                stmt.close();
-            }
-        } catch (Exception ex) {
-            throw new DistributedTransactionException(ex);
-        }
-    }
+	private void closeStatement(Statement stmt) {
+		try {
+			if (stmt != null && !stmt.isClosed()) {
+				stmt.close();
+			}
+		} catch (Exception ex) {
+			throw new DistributedTransactionException(ex);
+		}
+	}
 
+	public List<TransactionInfo> findReverseSince(Connection conn, Date date, int txStatus) {
+		List<TransactionInfo> transactionInfos = new ArrayList<TransactionInfo>();
+
+		PreparedStatement stmt = null;
+
+		try {
+
+			StringBuilder builder = new StringBuilder();
+			builder.append(
+					"SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, GMT_CREATE, GMT_MODIFIED")
+					.append("  FROM TCC_TRANSACTION WHERE GMT_MODIFIED < ? AND TX_STATUS != ?");
+
+			stmt = conn.prepareStatement(builder.toString());
+
+			stmt.setDate(1, date);
+			stmt.setInt(2, txStatus);
+
+			ResultSet resultSet = stmt.executeQuery();
+
+			while (resultSet.next()) {
+				transactionInfos.add(resultSet2Bean(resultSet));
+			}
+		} catch (Throwable e) {
+			throw new DistributedTransactionException(e);
+		} finally {
+			closeStatement(stmt);
+		}
+
+		return transactionInfos;
+	}
 }

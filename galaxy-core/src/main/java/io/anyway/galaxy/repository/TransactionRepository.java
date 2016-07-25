@@ -23,4 +23,6 @@ public interface TransactionRepository {
     TransactionInfo lockById(Connection conn, long txId);
 
     List<TransactionInfo> findSince(Connection conn, java.sql.Date date, int txStatus);
+    
+    List<TransactionInfo> findReverseSince(Connection conn, java.sql.Date date, int txStatus);
 }
