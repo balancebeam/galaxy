@@ -9,4 +9,6 @@
 
     <context:component-scan base-package="io.anyway.galaxy"/>
 
+    <bean id="springContextUtil" class="io.anyway.galaxy.spring.SpringContextUtil" scope="singleton" />
+
 </beans>

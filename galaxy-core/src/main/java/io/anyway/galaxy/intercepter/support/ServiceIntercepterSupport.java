@@ -2,7 +2,7 @@ package io.anyway.galaxy.intercepter.support;
 
 import com.alibaba.fastjson.JSON;
 import io.anyway.galaxy.common.TransactionStatusEnum;
-import io.anyway.galaxy.context.support.ServiceExcecutePayload;
+import io.anyway.galaxy.context.support.ServiceExecutePayload;
 import io.anyway.galaxy.domain.TransactionInfo;
 import io.anyway.galaxy.intercepter.ServiceIntercepter;
 import io.anyway.galaxy.repository.TransactionIdGenerator;
@@ -22,7 +22,7 @@ public class ServiceIntercepterSupport implements ServiceIntercepter {
     private TransactionRepository transactionRepository;
 
     @Override
-    public void tryService(Connection conn, ServiceExcecutePayload bean, long txId) {
+    public void tryService(Connection conn, ServiceExecutePayload bean, long txId) {
         TransactionInfo transactionInfo = new TransactionInfo();
         transactionInfo.setTxId(TransactionIdGenerator.next());
         transactionInfo.setContext(JSON.toJSONString(bean));

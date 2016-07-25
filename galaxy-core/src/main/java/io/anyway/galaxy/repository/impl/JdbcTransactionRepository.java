@@ -46,7 +46,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			throw new DistributedTransactionException(e);
 		} finally {
 			closeStatement(stmt);
-			//this.releaseConnection(conn);
+			// this.releaseConnection(conn);
 		}
 	}
 
@@ -76,7 +76,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
 			stmt = conn.prepareStatement(builder.toString());
 
-			int condition = 0;
+			int condition = 1;
 
 			if (transactionInfo.getTxType() != -1) {
 				stmt.setInt(++condition, transactionInfo.getTxType());
@@ -142,12 +142,11 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			StringBuilder builder = new StringBuilder();
 			builder.append(
 					"SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, GMT_CREATE, GMT_MODIFIED"
-							+ "  FROM TRANSACTION_INFO WHERE GMT_MODIFIED < ? AND TX_STATUS = ?");
+							+ "  FROM TCC_TRANSACTION WHERE GMT_MODIFIED < ? AND TX_STATUS = ?");
 
 			stmt = conn.prepareStatement(builder.toString());
 
 			stmt.setDate(1, date);
-			stmt.setInt(2, txStatus);
 
 			ResultSet resultSet = stmt.executeQuery();
 
@@ -175,12 +174,40 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			StringBuilder builder = new StringBuilder();
 			builder.append(
 					"SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, GMT_CREATE, GMT_MODIFIED"
-							+ "  FROM TRANSACTION_INFO WHERE TX_ID = ?");
+							+ "  FROM TRANSACTION_INFO WHERE GMT_MODIFIED < ?");
 
-			
 			stmt = conn.prepareStatement(builder.toString());
 			stmt.setLong(1, txId);
-			
+			ResultSet resultSet = stmt.executeQuery();
+
+			while (resultSet.next()) {
+				transactionInfo = resultSet2Bean(resultSet);
+			}
+		} catch (Throwable e) {
+			throw new DistributedTransactionException(e);
+		} finally {
+			closeStatement(stmt);
+			// this.releaseConnection(conn);
+		}
+
+		return transactionInfo;
+	}
+
+	protected TransactionInfo doLockById(Connection conn, long txId) {
+
+		TransactionInfo transactionInfo = null;
+
+		PreparedStatement stmt = null;
+
+		try {
+
+			StringBuilder builder = new StringBuilder();
+			builder.append(
+					"SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, GMT_CREATE, GMT_MODIFIED"
+							+ "  FROM TRANSACTION_INFO WHERE TX_ID = ? FOR UPDATE NO WAIT");
+			stmt = conn.prepareStatement(builder.toString());
+			stmt.setLong(1, txId);
+
 			ResultSet resultSet = stmt.executeQuery();
 
 			while (resultSet.next()) {
@@ -236,6 +263,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
 	@Override
 	public List<TransactionInfo> listSince(Connection conn, Date date) {
+
 		List<TransactionInfo> transactionInfos = new ArrayList<TransactionInfo>();
 
 		PreparedStatement stmt = null;

@@ -38,7 +38,7 @@ import io.anyway.galaxy.common.TransactionTypeEnum;
 import io.anyway.galaxy.context.AbstractExecutePayload;
 import io.anyway.galaxy.context.TXContextHolder;
 import io.anyway.galaxy.context.support.ActionExecutePayload;
-import io.anyway.galaxy.context.support.ServiceExcecutePayload;
+import io.anyway.galaxy.context.support.ServiceExecutePayload;
 import io.anyway.galaxy.context.support.TXContextSupport;
 import io.anyway.galaxy.exception.DistributedTransactionException;
 import io.anyway.galaxy.intercepter.ActionIntercepter;
@@ -201,10 +201,10 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
         MethodSignature signature = (MethodSignature) pjp.getSignature();
         Method method= signature.getMethod();
 
-        ServiceExcecutePayload cachedPayload = (ServiceExcecutePayload)cache.getIfPresent(method);
+        ServiceExecutePayload cachedPayload = (ServiceExecutePayload)cache.getIfPresent(method);
         if(cachedPayload==null){
             synchronized (method) {
-                cachedPayload = (ServiceExcecutePayload)cache.getIfPresent(method);
+                cachedPayload = (ServiceExecutePayload)cache.getIfPresent(method);
                 if(cachedPayload==null){
                     TXTry txTry= method.getAnnotation(TXTry.class);
                     Class<?> target = pjp.getTarget().getClass();
@@ -212,14 +212,14 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
                     if (StringUtils.isEmpty(bizType)) {
                         logger.warn("miss business type, class=" + target + ",method=" + method);
                     }
-                    cachedPayload = new ServiceExcecutePayload(bizType, target, method.getName(), method.getParameterTypes());
+                    cachedPayload = new ServiceExecutePayload(bizType, target, method.getName(), method.getParameterTypes());
                     cachedPayload.setConfirmMethod(txTry.confirm());
                     cachedPayload.setCancelMethod(txTry.cancel());
                     cache.put(method, cachedPayload);
                 }
             }
         }
-        ServiceExcecutePayload payload= cachedPayload.clone();
+        ServiceExecutePayload payload= cachedPayload.clone();
         //设置运行时的入参
         payload.setArgs(pjp.getArgs());
 
