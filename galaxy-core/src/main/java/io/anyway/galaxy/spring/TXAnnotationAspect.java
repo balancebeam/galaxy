@@ -1,37 +1,7 @@
 package io.anyway.galaxy.spring;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.sql.Connection;
-import java.util.concurrent.TimeUnit;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.sql.DataSource;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.aspectj.lang.ProceedingJoinPoint;
-import org.aspectj.lang.annotation.Around;
-import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.annotation.Pointcut;
-import org.aspectj.lang.reflect.MethodSignature;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ResourceLoaderAware;
-import org.springframework.core.Ordered;
-import org.springframework.core.io.ResourceLoader;
-import org.springframework.jdbc.datasource.ConnectionHolder;
-import org.springframework.jdbc.datasource.DataSourceUtils;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
-import org.springframework.util.Assert;
-import org.springframework.util.ReflectionUtils;
-import org.springframework.util.StringUtils;
-
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-
 import io.anyway.galaxy.annotation.TXAction;
 import io.anyway.galaxy.annotation.TXTry;
 import io.anyway.galaxy.common.TransactionTypeEnum;
@@ -43,7 +13,31 @@ import io.anyway.galaxy.context.support.TXContextSupport;
 import io.anyway.galaxy.exception.DistributedTransactionException;
 import io.anyway.galaxy.intercepter.ActionIntercepter;
 import io.anyway.galaxy.intercepter.ServiceIntercepter;
-import io.anyway.galaxy.jetty.TransactionServer;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Pointcut;
+import org.aspectj.lang.reflect.MethodSignature;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ResourceLoaderAware;
+import org.springframework.core.Ordered;
+import org.aspectj.lang.annotation.Aspect;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.jdbc.datasource.ConnectionHolder;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.util.Assert;
+import org.springframework.util.ReflectionUtils;
+import org.springframework.util.StringUtils;
+
+import javax.sql.DataSource;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.sql.Connection;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by yangzz on 16/7/20.
@@ -68,23 +62,9 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
 
     private Cache<Method, AbstractExecutePayload> cache= CacheBuilder.newBuilder().expireAfterAccess(300, TimeUnit.SECONDS).maximumSize(1000).build();
 
-    private TransactionServer transactionServer;
-    
     @Override
     public int getOrder() {
         return Ordered.LOWEST_PRECEDENCE;
-    }
-    
-    @PostConstruct
-    public void init(){
-    	this.transactionServer = TransactionServer.instance();
-    	this.transactionServer.setDataSource(dataSourceAdaptor);
-    	this.transactionServer.start();
-    }
-    
-    @PreDestroy
-    public void destroy(){
-    	this.transactionServer.shutdown();
     }
 
     //切面注解TXAction
@@ -103,6 +83,7 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
         ActionExecutePayload cachedPayload = (ActionExecutePayload)cache.getIfPresent(method);
         if(cachedPayload==null){
             synchronized (method) {
+                cachedPayload = (ActionExecutePayload)cache.getIfPresent(method);
                 if(cachedPayload==null){
                     TXAction action = method.getAnnotation(TXAction.class);
                     Class<?> target = pjp.getTarget().getClass();
@@ -116,7 +97,6 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
                     cache.put(method, cachedPayload);
                 }
             }
-            cachedPayload= (ActionExecutePayload)cache.getIfPresent(method);
         }
         final ActionExecutePayload payload= cachedPayload.clone();
         //设置运行时的入参
@@ -127,6 +107,9 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
             final Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
             //获取新的连接开启新事务新增一条TransactionAction记录
             final long txId = actionIntercepter.addAction(payload);
+            if (logger.isInfoEnabled()) {
+                logger.info("generated new txId=" + txId+", payload="+payload);
+            }
 
             TXContextSupport ctx= new TXContextSupport(txId);
             ctx.setAction(true);
@@ -201,6 +184,7 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
         ServiceExcecutePayload cachedPayload = (ServiceExcecutePayload)cache.getIfPresent(method);
         if(cachedPayload==null){
             synchronized (method) {
+                cachedPayload = (ServiceExcecutePayload)cache.getIfPresent(method);
                 if(cachedPayload==null){
                     TXTry txTry= method.getAnnotation(TXTry.class);
                     Class<?> target = pjp.getTarget().getClass();
@@ -214,11 +198,14 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
                     cache.put(method, cachedPayload);
                 }
             }
-            cachedPayload= (ServiceExcecutePayload)cache.getIfPresent(method);
         }
         ServiceExcecutePayload payload= cachedPayload.clone();
         //设置运行时的入参
         payload.setArgs(pjp.getArgs());
+
+        if (logger.isInfoEnabled()) {
+            logger.info("transfer txId=" + txId+", payload="+payload);
+        }
 
         //先调用业务方法
         Object result= pjp.proceed();
@@ -244,6 +231,10 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
         }
         long txId= TXContextHolder.getTXContext().getTxId();
 
+        if (logger.isInfoEnabled()) {
+            logger.info("transfer txId=" + txId);
+        }
+
         Object result= pjp.proceed();
         //获取外出业务开启事务的对应的数据库连接
         Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
@@ -267,6 +258,10 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
             return pjp.proceed();
         }
         long txId= TXContextHolder.getTXContext().getTxId();
+
+        if (logger.isInfoEnabled()) {
+            logger.info("transfer txId=" + txId);
+        }
 
         Object result= pjp.proceed();
         //获取外出业务开启事务的对应的数据库连接
