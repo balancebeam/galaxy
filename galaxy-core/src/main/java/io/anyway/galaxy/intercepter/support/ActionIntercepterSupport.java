@@ -7,9 +7,7 @@ import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-
 import com.alibaba.fastjson.JSON;
-import com.sohu.idcenter.IdWorker;
 
 import io.anyway.galaxy.common.TransactionStatusEnum;
 import io.anyway.galaxy.context.support.ActionExecutePayload;

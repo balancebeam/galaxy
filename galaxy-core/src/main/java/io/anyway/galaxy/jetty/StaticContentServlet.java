@@ -72,7 +72,7 @@ public class StaticContentServlet extends HttpServlet {
         if (contentBytes == null) {
             resp.sendError(Response.SC_NOT_FOUND);
         }else {
-
+        	resp.setCharacterEncoding("utf-8");
             resp.addHeader("Access-Control-Allow-Origin", "*");
             resp.addHeader("Access-Control-Allow-Headers","Content-Type, Accept");
             resp.setContentType(mediaType);

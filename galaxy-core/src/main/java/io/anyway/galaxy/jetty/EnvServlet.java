@@ -24,7 +24,7 @@ public class EnvServlet extends HttpServlet {
         Map<String,String> envVarsMap = new TreeMap<String,String>(System.getenv());
 
         String jsonStr = JSON.toJSONString(envVarsMap);
-
+        resp.setCharacterEncoding("utf-8");
         resp.addHeader("Access-Control-Allow-Origin", "*");
         resp.addHeader("Access-Control-Allow-Headers","Content-Type, Accept");
         resp.setContentType("application/json");

@@ -32,7 +32,7 @@ public class PropertiesServlet extends HttpServlet {
         }
 
         String jsonStr = JSON.toJSONString(allPropsAsString);
-
+        resp.setCharacterEncoding("utf-8");
         resp.addHeader("Access-Control-Allow-Origin", "*");
         resp.addHeader("Access-Control-Allow-Headers","Content-Type, Accept");
         resp.setContentType("application/json");
