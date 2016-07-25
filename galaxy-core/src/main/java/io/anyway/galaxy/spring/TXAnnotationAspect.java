@@ -1,29 +1,25 @@
 package io.anyway.galaxy.spring;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import io.anyway.galaxy.annotation.TXAction;
-import io.anyway.galaxy.annotation.TXTry;
-import io.anyway.galaxy.common.TransactionTypeEnum;
-import io.anyway.galaxy.context.AbstractExecutePayload;
-import io.anyway.galaxy.context.TXContextHolder;
-import io.anyway.galaxy.context.support.ActionExecutePayload;
-import io.anyway.galaxy.context.support.ServiceExcecutePayload;
-import io.anyway.galaxy.context.support.TXContextSupport;
-import io.anyway.galaxy.domain.TransactionInfo;
-import io.anyway.galaxy.exception.DistributedTransactionException;
-import io.anyway.galaxy.intercepter.ActionIntercepter;
-import io.anyway.galaxy.intercepter.ServiceIntercepter;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.sql.Connection;
+import java.util.concurrent.TimeUnit;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import javax.sql.DataSource;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ResourceLoaderAware;
 import org.springframework.core.Ordered;
-import org.aspectj.lang.annotation.Aspect;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.jdbc.datasource.ConnectionHolder;
 import org.springframework.jdbc.datasource.DataSourceUtils;
@@ -33,12 +29,21 @@ import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
-import javax.sql.DataSource;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.sql.Connection;
-import java.util.concurrent.TimeUnit;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+
+import io.anyway.galaxy.annotation.TXAction;
+import io.anyway.galaxy.annotation.TXTry;
+import io.anyway.galaxy.common.TransactionTypeEnum;
+import io.anyway.galaxy.context.AbstractExecutePayload;
+import io.anyway.galaxy.context.TXContextHolder;
+import io.anyway.galaxy.context.support.ActionExecutePayload;
+import io.anyway.galaxy.context.support.ServiceExcecutePayload;
+import io.anyway.galaxy.context.support.TXContextSupport;
+import io.anyway.galaxy.exception.DistributedTransactionException;
+import io.anyway.galaxy.intercepter.ActionIntercepter;
+import io.anyway.galaxy.intercepter.ServiceIntercepter;
+import io.anyway.galaxy.jetty.TransactionServer;
 
 /**
  * Created by yangzz on 16/7/20.
@@ -63,9 +68,23 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
 
     private Cache<Method, AbstractExecutePayload> cache= CacheBuilder.newBuilder().expireAfterAccess(300, TimeUnit.SECONDS).maximumSize(1000).build();
 
+    private TransactionServer transactionServer;
+    
     @Override
     public int getOrder() {
         return Ordered.LOWEST_PRECEDENCE;
+    }
+    
+    @PostConstruct
+    public void init(){
+    	this.transactionServer = TransactionServer.instance();
+    	this.transactionServer.setDataSource(dataSourceAdaptor);
+    	this.transactionServer.start();
+    }
+    
+    @PreDestroy
+    public void destroy(){
+    	this.transactionServer.shutdown();
     }
 
     //切面注解TXAction

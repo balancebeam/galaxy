@@ -41,6 +41,7 @@
 		<idcenter.version>2.2.2</idcenter.version>
 		<kafka.version>0.9.0.1</kafka.version>
 		<gson.version>2.3.1</gson.version>
+		<jetty.version>8.1.0.RC5</jetty.version>
 	</properties>
 
 	<dependencyManagement>
@@ -227,6 +228,16 @@
 				<groupId>org.apache.kafka</groupId>
 				<artifactId>kafka-clients</artifactId>
 				<version>${kafka.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.eclipse.jetty</groupId>
+				<artifactId>jetty-server</artifactId>
+				<version>${jetty.version}</version>		
+			</dependency>
+			<dependency>
+				<groupId>org.eclipse.jetty</groupId>
+				<artifactId>jetty-servlet</artifactId>
+				<version>${jetty.version}</version>		
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
