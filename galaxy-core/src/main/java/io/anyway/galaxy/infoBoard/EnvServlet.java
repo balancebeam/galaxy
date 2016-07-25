@@ -1,4 +1,4 @@
-package io.anyway.galaxy.jetty;
+package io.anyway.galaxy.infoBoard;
 
 import java.io.IOException;
 import java.io.PrintWriter;

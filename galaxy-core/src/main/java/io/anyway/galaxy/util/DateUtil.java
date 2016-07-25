@@ -28,8 +28,7 @@ public class DateUtil {
 	}
 	
 	public static void main(String args[]){
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-		
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");		
 		System.out.println(sdf.format(new Date(System.currentTimeMillis())));
 		System.out.println(sdf.format(DateUtil.getPrevDate(5)));
 		
