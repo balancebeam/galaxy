@@ -36,11 +36,7 @@ public class ActionIntercepterSupport implements ActionIntercepter{
     public long addAction(ActionExecutePayload bean){
         //TODO throw new TXException("no implement body");
         TransactionInfo transactionInfo = new TransactionInfo();
-        // TODO
 
-        final long idepo = System.currentTimeMillis() - 3600 * 1000L;
-        IdWorker idWorker = new IdWorker(idepo);
-        long txId = idWorker.getId();
 
         transactionInfo.setTxId(TransactionIdGenerator.next());
         transactionInfo.setContext(JSON.toJSONString(bean));
