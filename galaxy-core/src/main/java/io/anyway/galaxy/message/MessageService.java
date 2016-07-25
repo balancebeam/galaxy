@@ -9,4 +9,8 @@ import io.anyway.galaxy.message.producer.MessageProducer;
  */
 public interface MessageService<T> extends MessageConsumer<T>, MessageProducer<T>{
     boolean isProcessed(TransactionMessage message) throws Throwable;
+
+    TransactionInfo msg2TransInfo(TransactionMessage txMsg);
+
+    TransactionMessage transInfo2Msg(TransactionInfo txInfo);
 }
