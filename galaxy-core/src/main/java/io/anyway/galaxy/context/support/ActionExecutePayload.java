@@ -72,6 +72,7 @@ public class ActionExecutePayload extends AbstractExecutePayload {
         newPayload.bizType= bizType;
         newPayload.target= target;
         newPayload.types= types;
+        newPayload.txType = txType;
         newPayload.actionMethod= actionMethod;
         return newPayload;
     }
