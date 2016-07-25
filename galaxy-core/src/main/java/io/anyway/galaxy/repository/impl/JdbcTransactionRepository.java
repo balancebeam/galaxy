@@ -46,7 +46,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			throw new DistributedTransactionException(e);
 		} finally {
 			closeStatement(stmt);
-			this.releaseConnection(conn);
+			//this.releaseConnection(conn);
 		}
 	}
 
@@ -76,7 +76,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
 			stmt = conn.prepareStatement(builder.toString());
 
-			int condition = 1;
+			int condition = 0;
 
 			if (transactionInfo.getTxType() != -1) {
 				stmt.setInt(++condition, transactionInfo.getTxType());

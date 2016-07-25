@@ -47,8 +47,7 @@ public class ActionIntercepterSupport implements ActionIntercepter{
 
         transactionRepository.create(conn, transactionInfo);
 
-
-        return 1;
+        return transactionInfo.getTxId();
     }
 
     @Override
