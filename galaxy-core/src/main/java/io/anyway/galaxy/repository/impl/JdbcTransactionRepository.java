@@ -200,6 +200,38 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
         return transactionInfo;
     }
 
+    @Override
+    public TransactionInfo lockById(Connection conn, long txId) {
+        TransactionInfo transactionInfo = null;
+
+        PreparedStatement stmt = null;
+
+        try {
+
+            StringBuilder builder = new StringBuilder();
+            builder.append("SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, GMT_CREATE, GMT_MODIFIED" +
+                    "  FROM TCC_TRANSACTION WHERE TX_ID = ? OR PARENT_ID = ? FOR UPDATE NO WAIT");
+
+            stmt.setLong(1, txId);
+            stmt.setLong(2, txId);
+
+            stmt = conn.prepareStatement(builder.toString());
+
+            ResultSet resultSet = stmt.executeQuery();
+
+            while (resultSet.next()) {
+                transactionInfo = resultSet2Bean(resultSet);
+            }
+        } catch (Throwable e) {
+            throw new DistributedTransactionException(e);
+        } finally {
+            closeStatement(stmt);
+            //this.releaseConnection(conn);
+        }
+
+        return transactionInfo;
+    }
+
     private TransactionInfo resultSet2Bean(ResultSet resultSet) throws Throwable{
         TransactionInfo transactionInfo = new TransactionInfo();
 
@@ -237,4 +269,5 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
             throw new DistributedTransactionException(ex);
         }
     }
+
 }

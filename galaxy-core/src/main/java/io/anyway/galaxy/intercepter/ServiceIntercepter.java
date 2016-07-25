@@ -2,7 +2,7 @@ package io.anyway.galaxy.intercepter;
 
 import java.sql.Connection;
 
-import io.anyway.galaxy.context.support.ServiceExcecutePayload;
+import io.anyway.galaxy.context.support.ServiceExecutePayload;
 
 /**
  * Created by yangzz on 16/7/21.
@@ -15,7 +15,7 @@ public interface ServiceIntercepter {
      * @param payload 存储的Service执行体内容,包含了try/confirm/cancel等方法定义
      * @param txId 事务编号
      */
-    void tryService(Connection conn, ServiceExcecutePayload payload,long txId);
+    void tryService(Connection conn, ServiceExecutePayload payload, long txId);
 
     /**
      * 提交事务,努力送达型通过调度任务实现持久化成功

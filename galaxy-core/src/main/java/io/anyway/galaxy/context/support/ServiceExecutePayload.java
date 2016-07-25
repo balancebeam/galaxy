@@ -6,7 +6,7 @@ import org.springframework.util.StringUtils;
 /**
  * Created by yangzz on 16/7/21.
  */
-public class ServiceExcecutePayload extends AbstractExecutePayload {
+public class ServiceExecutePayload extends AbstractExecutePayload {
 
     final private String tryMethod;
 
@@ -14,7 +14,7 @@ public class ServiceExcecutePayload extends AbstractExecutePayload {
 
     private String cancelMethod;
 
-    public ServiceExcecutePayload(Class<?> target, String tryMethod, Class[] types, Object[] args) {
+    public ServiceExecutePayload(Class<?> target, String tryMethod, Class[] types, Object[] args) {
         super(target, types, args);
         this.tryMethod= tryMethod;
     }

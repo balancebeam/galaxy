@@ -18,5 +18,9 @@ public interface TransactionRepository {
 
     TransactionInfo findById(Connection conn, long txId);
 
+    TransactionInfo directFindById(Connection conn, long txId);
+
+    TransactionInfo lockById(Connection conn, long txId);
+
     List<TransactionInfo> findSince(Connection conn, java.sql.Date date, int txStatus);
 }

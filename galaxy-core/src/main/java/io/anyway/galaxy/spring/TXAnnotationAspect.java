@@ -5,7 +5,7 @@ import io.anyway.galaxy.annotation.TXTry;
 import io.anyway.galaxy.common.TransactionTypeEnum;
 import io.anyway.galaxy.context.TXContextHolder;
 import io.anyway.galaxy.context.support.ActionExecutePayload;
-import io.anyway.galaxy.context.support.ServiceExcecutePayload;
+import io.anyway.galaxy.context.support.ServiceExecutePayload;
 import io.anyway.galaxy.context.support.TXContextSupport;
 import io.anyway.galaxy.exception.DistributedTransactionException;
 import io.anyway.galaxy.intercepter.ActionIntercepter;
@@ -153,7 +153,7 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
         Class<?> target= pjp.getTarget().getClass();
         Class<?>[] types= method.getParameterTypes();
         Object[] args= pjp.getArgs();
-        ServiceExcecutePayload payload= new ServiceExcecutePayload(target,method.getName(),types,args);
+        ServiceExecutePayload payload= new ServiceExecutePayload(target,method.getName(),types,args);
         TXTry txTry= method.getAnnotation(TXTry.class);
         if(!"".equals(txTry.confirm())){
             payload.setConfirmMethod(txTry.confirm());

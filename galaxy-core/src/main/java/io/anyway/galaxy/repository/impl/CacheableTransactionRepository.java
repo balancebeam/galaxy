@@ -65,6 +65,17 @@ public abstract class CacheableTransactionRepository implements TransactionRepos
     }
 
     @Override
+    public TransactionInfo directFindById(Connection conn, long txId) {
+        TransactionInfo transactionInfo = doFindById(conn, txId);
+
+        if (transactionInfo != null) {
+            putToCache(transactionInfo);
+        }
+
+        return transactionInfo;
+    }
+
+    @Override
     public List<TransactionInfo> findSince(Connection conn, java.sql.Date date, int txStatus) {
 
         List<TransactionInfo> transactionInfos = doFindSince(conn, date, txStatus);

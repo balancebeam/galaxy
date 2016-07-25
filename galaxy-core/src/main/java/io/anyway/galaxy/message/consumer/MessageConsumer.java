@@ -6,5 +6,5 @@ package io.anyway.galaxy.message.consumer;
  * Created by xiong.j on 2016/7/21.
  */
 public interface MessageConsumer<T> {
-    void handleMessage(T message);
+    void handleMessage(T message) throws Throwable ;
 }
