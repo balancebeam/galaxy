@@ -42,11 +42,11 @@ public class TransactionInfo {
 
     
     public String getStrGmtCreated(){
-    	return sdf.format(gmtCreated).toString();
+    	return new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(gmtCreated);
     }
     
     public String getStrGmtModified(){
-    	return sdf.format(gmtModified).toString();
+    	return new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(gmtModified);
     }
     
     public String getStrTXType(){

@@ -76,7 +76,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
 			stmt = conn.prepareStatement(builder.toString());
 
-			int condition = 1;
+			int condition = 0;
 
 			if (transactionInfo.getTxType() != -1) {
 				stmt.setInt(++condition, transactionInfo.getTxType());
@@ -235,8 +235,8 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 		transactionInfo.setContext(resultSet.getString(7));
 		transactionInfo.setPayload(resultSet.getString(8));
 		transactionInfo.setRetried_count(resultSet.getInt(9));
-		transactionInfo.setGmtCreated(resultSet.getDate(10));
-		transactionInfo.setGmtModified(resultSet.getDate(11));
+		transactionInfo.setGmtCreated(new Date(resultSet.getTimestamp(10).getTime()));
+		transactionInfo.setGmtModified(new Date(resultSet.getTimestamp(11).getTime()));
 
 		return transactionInfo;
 	}
