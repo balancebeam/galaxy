@@ -10,12 +10,13 @@ import io.anyway.galaxy.message.producer.MessageProducer;
 import io.anyway.galaxy.repository.TransactionRepository;
 import io.anyway.galaxy.spring.DataSourceAdaptor;
 import io.anyway.galaxy.spring.SpringContextUtil;
+import io.anyway.galaxy.util.ProxyUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ServiceLoader;
@@ -25,6 +26,7 @@ import java.util.ServiceLoader;
  * Created by xiong.j on 2016/7/25.
  */
 @Slf4j
+@Component
 public class TransactionMessageServiceImpl implements MessageService<TransactionMessage> {
 
     @Autowired
@@ -44,8 +46,8 @@ public class TransactionMessageServiceImpl implements MessageService<Transaction
             log.info("Lock failed, txId = " + txMsg.getTxId());
             throw e;
         }
+
         if (validation(txMsg, transactionInfo)) {
-            // 执行消息对应的操作
             ServiceExecutePayload bean = JSON.parseObject(transactionInfo.getContext(), ServiceExecutePayload.class);
             Object objectClass = SpringContextUtil.getBean(bean.getTarget().getName());
 
@@ -58,8 +60,8 @@ public class TransactionMessageServiceImpl implements MessageService<Transaction
                 methodName = bean.getConfirmMethod();
             }
 
-            Method method = bean.getTarget().getMethod(methodName, bean.getTypes());
-            method.invoke(objectClass, bean.getArgs());
+            // 执行消息对应的操作
+            ProxyUtil.proxyMethod(objectClass, methodName, bean.getTypes(), bean.getArgs());
 
             // 处理成功后更新事务状态，在拦截器中以处理?
             /*transactionInfo = new TransactionInfo();
@@ -101,6 +103,14 @@ public class TransactionMessageServiceImpl implements MessageService<Transaction
         return true;
     }
 
+    public TransactionInfo msg2TransInfo(TransactionMessage txMsg) {
+        return null;
+    }
+
+    public TransactionMessage transInfo2Msg(TransactionInfo txInfo) {
+        return null;
+    }
+
     private boolean validation(TransactionMessage txMsg, TransactionInfo txInfo){
         if (txInfo.getTxType() != txMsg.getTxType()) {
             return false;
@@ -123,12 +133,4 @@ public class TransactionMessageServiceImpl implements MessageService<Transaction
         return true;
     }
 
-    private TransactionInfo msg2TransInfo(TransactionMessage txMsg) {
-        return null;
-    }
-
-
-    private TransactionMessage transInfo2Msg(TransactionInfo txInfo) {
-        return null;
-    }
 }
