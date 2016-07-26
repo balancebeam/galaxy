@@ -45,28 +45,65 @@
 			    padding-bottom: 4px;
 			}
 			
-			table.gridtable {
-				font-family: verdana,arial,sans-serif;
-				font-size:11px;
-				color:#333333;
-				border-width: 1px;
-				border-color: #666666;
-				border-collapse: collapse;
-			}
-			table.gridtable th {
-				border-width: 1px;
-				padding: 8px;
-				border-style: solid;
-				border-color: #666666;
-				background-color: #dedede;
-			}
-			table.gridtable td {
-				border-width: 1px;
-				padding: 8px;
-				border-style: solid;
-				border-color: #666666;
-				background-color: #ffffff;
-			}
+			a {   
+			color: #c75f3e;   
+			}   
+			  
+			#mytable {   
+			width: 100%;   
+			padding: 0;   
+			margin: 0;   
+			}   
+			  
+			th {   
+			font: bold 11px "Trebuchet MS", Verdana, Arial, Helvetica, sans-serif;   
+			color: #4f6b72;   
+			border-right: 1px solid #C1DAD7;   
+			border-bottom: 1px solid #C1DAD7;   
+			border-top: 1px solid #C1DAD7;   
+			letter-spacing: 2px;   
+			text-transform: uppercase;   
+			text-align: left;   
+			padding: 6px 6px 6px 12px;   
+			background: #CAE8EA  no-repeat;   
+			}   
+			  
+			th.nobg {   
+			border-top: 0;   
+			border-left: 0;   
+			border-right: 1px solid #C1DAD7;   
+			background: none;   
+			}   
+			  
+			td {   
+			border-right: 1px solid #C1DAD7;   
+			border-bottom: 1px solid #C1DAD7;   
+			background: #fff;   
+			font-size:11px;   
+			padding: 6px 6px 6px 12px;   
+			color: #4f6b72;   
+			}   
+			  
+			  
+			td.alt {   
+			background: #F5FAFA;   
+			color: #797268;   
+			}   
+			  
+			th.spec {   
+			border-left: 1px solid #C1DAD7;   
+			border-top: 0;   
+			background: #fff no-repeat;   
+			font: bold 10px "Trebuchet MS", Verdana, Arial, Helvetica, sans-serif;   
+			}   
+			  
+			th.specalt {   
+			border-left: 1px solid #C1DAD7;   
+			border-top: 0;   
+			background: #f5fafa no-repeat;   
+			font: bold 10px "Trebuchet MS", Verdana, Arial, Helvetica, sans-serif;   
+			color: #797268;   
+			}   
 						
         </style>
         <script src="/jquery-2.1.1.min.js"></script>
@@ -77,12 +114,13 @@
                     var c = $('#content');
                     c.empty();
                     c.append($('<div class="btn">'+'<input type="button" value="prev" class="btn5" onclick="prev()">&nbsp;'+'&nbsp;<input type="button" value="next" class="btn5" onclick="next()">'+'</div>'));
-                    c.append($('<div><table class="gridtable">'));
-                    c.append($('<tr><th>事务ID</th><th>状态</th><th>事务类型</th><th>重试次数</th><th>创建时间</th><th>修改时间</th><th>操作</th></tr>'));
+            		var table = $('<table id="mytable" cellspacing="0">');
+            		table.append($('<tr><th>事务ID</th><th>状态</th><th>事务类型</th><th>重试次数</th><th>创建时间</th><th>修改时间</th><th>操作</th></tr>'));
                     for(var i=0;i<res.length;i++){                         
-                    	c.append($('<tr><td>'+res[i].txId+'</td><td>'+res[i].strTXStatus+'</td><td>'+res[i].strTXType+'</td><td>'+res[i].retried_count+'</td><td>'+res[i].strGmtCreated+'</td><td>'+res[i].strGmtModified+'</td><td><a href=# onclick="restart('+res[i].txId+')">重启</a></td></tr>'))
+                    	table.append($('<tr><td>'+res[i].txId+'</td><td>'+res[i].strTXStatus+'</td><td>'+res[i].strTXType+'</td><td>'+res[i].retried_count+'</td><td>'+res[i].strGmtCreated+'</td><td>'+res[i].strGmtModified+'</td><td><a href=# onclick="restart('+res[i].txId+')">重启</a></td></tr>'))
                     }
-                    c.append($('</table></div>'));
+                    c.append(table)
+                    
                 });
             }
             

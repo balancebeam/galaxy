@@ -1,6 +1,6 @@
 package io.anyway.galaxy.testcase;
 
-import io.anyway.galaxy.jetty.TransactionServer;
+import io.anyway.galaxy.infoBoard.TransactionServer;
 
 public class Jetty {
 

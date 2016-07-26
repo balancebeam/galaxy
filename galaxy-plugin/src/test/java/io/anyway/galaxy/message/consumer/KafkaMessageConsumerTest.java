@@ -1,4 +1,4 @@
-package message.consumer;
+package io.anyway.galaxy.message.consumer;
 
 import io.anyway.galaxy.message.consumer.MessageConsumer;
 import org.junit.After;
@@ -12,7 +12,7 @@ import java.util.ServiceLoader;
  *
  * @author <Authors name>
  * @version 1.0
- * @since <pre>ÆßÔÂ 22, 2016</pre>
+ * @since <pre>ï¿½ï¿½ï¿½ï¿½ 22, 2016</pre>
  */
 public class KafkaMessageConsumerTest {
 

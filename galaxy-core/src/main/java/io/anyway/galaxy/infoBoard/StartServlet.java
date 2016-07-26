@@ -1,47 +1,47 @@
-package io.anyway.galaxy.jetty;
+package io.anyway.galaxy.infoBoard;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.SQLException;
-import java.util.List;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.lang.StringUtils;
 import org.eclipse.jetty.server.Response;
-
-import com.alibaba.fastjson.JSON;
 
 import io.anyway.galaxy.domain.TransactionInfo;
 import io.anyway.galaxy.repository.impl.JdbcTransactionRepository;
-import io.anyway.galaxy.util.DateUtil;
 import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
-public class TaskServlet extends HttpServlet {
 
+@Slf4j
+public class StartServlet extends HttpServlet {
+	
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-
+		
+		
 		JdbcTransactionRepository transactionRepository = new JdbcTransactionRepository();
 		try {
 			
-			String param = req.getParameter("interval");
-			int interval = 0;
+			String param = req.getParameter("txid");
 			
-			if(StringUtils.isNotEmpty(param)){
-				interval = Integer.parseInt(param);
-			}
+			long txId = Long.parseLong(param);
 			
 			Connection conn = TransactionServer.instance().getDataSource().getDataSource().getConnection();
 			
-			List<TransactionInfo> list = transactionRepository.listSince(conn, DateUtil.getPrevDate(interval));
+			TransactionInfo info = transactionRepository.findById(conn, txId);
+			
+			if(info != null){
+				info.setGmtModified(new Date(System.currentTimeMillis()));
+				info.setRetried_count(0);
+				transactionRepository.update(conn, info);
+			}
 
-	        String jsonStr = JSON.toJSONString(list);
 	        resp.setCharacterEncoding("utf-8");
 	        resp.addHeader("Access-Control-Allow-Origin", "*");
 	        resp.addHeader("Access-Control-Allow-Headers","Content-Type, Accept");
@@ -49,7 +49,6 @@ public class TaskServlet extends HttpServlet {
 
 	        PrintWriter writer = resp.getWriter();
 	        try{
-	            writer.write(jsonStr);
 	            resp.setStatus(Response.SC_OK);
 	        } finally {
 	            if (writer != null) {

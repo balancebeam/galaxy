@@ -41,9 +41,9 @@ import io.anyway.galaxy.context.support.ActionExecutePayload;
 import io.anyway.galaxy.context.support.ServiceExecutePayload;
 import io.anyway.galaxy.context.support.TXContextSupport;
 import io.anyway.galaxy.exception.DistributedTransactionException;
+import io.anyway.galaxy.infoBoard.TransactionServer;
 import io.anyway.galaxy.intercepter.ActionIntercepter;
 import io.anyway.galaxy.intercepter.ServiceIntercepter;
-import io.anyway.galaxy.jetty.TransactionServer;
 
 /**
  * Created by yangzz on 16/7/20.
@@ -53,7 +53,7 @@ import io.anyway.galaxy.jetty.TransactionServer;
 //TODO 合併 "@Transactional"
 public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
 
-    private Log logger= LogFactory.getLog(TXAnnotationAspect.class);
+    private static Log logger= LogFactory.getLog(TXAnnotationAspect.class);
 
     private ResourceLoader resourceLoader;
 

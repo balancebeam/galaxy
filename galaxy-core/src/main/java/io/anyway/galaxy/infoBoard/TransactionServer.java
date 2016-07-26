@@ -1,4 +1,4 @@
-package io.anyway.galaxy.jetty;
+package io.anyway.galaxy.infoBoard;
 
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.session.SessionHandler;
