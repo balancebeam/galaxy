@@ -1,8 +1,10 @@
 package io.anyway.galaxy.message.producer;
 
+import io.anyway.galaxy.common.Constants;
 import io.anyway.galaxy.common.TransactionStatusEnum;
 import io.anyway.galaxy.domain.TransactionInfo;
 import io.anyway.galaxy.exception.DistributedTransactionException;
+import io.anyway.galaxy.extension.Activate;
 import io.anyway.galaxy.message.TransactionMessage;
 import io.anyway.galaxy.repository.TransactionRepository;
 import io.anyway.galaxy.spring.DataSourceAdaptor;
@@ -23,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by xiong.j on 2016/7/21.
  */
+@Activate(value = Constants.KAFKA)
 public class KafkaMessageProducer implements MessageProducer<TransactionMessage>,InitializingBean,DisposableBean {
 
     private final static Log logger= LogFactory.getLog(KafkaMessageProducer.class);

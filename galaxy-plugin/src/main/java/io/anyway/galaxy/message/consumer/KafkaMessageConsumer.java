@@ -1,9 +1,11 @@
 package io.anyway.galaxy.message.consumer;
 
 import com.alibaba.fastjson.JSON;
+import io.anyway.galaxy.common.Constants;
 import io.anyway.galaxy.common.TransactionStatusEnum;
 import io.anyway.galaxy.context.support.ServiceExecutePayload;
 import io.anyway.galaxy.domain.TransactionInfo;
+import io.anyway.galaxy.extension.Activate;
 import io.anyway.galaxy.message.TransactionMessage;
 import io.anyway.galaxy.repository.TransactionRepository;
 import io.anyway.galaxy.spring.DataSourceAdaptor;
@@ -32,6 +34,7 @@ import java.util.concurrent.*;
 /**
  * Created by xiong.j on 2016/7/21.
  */
+@Activate(value = Constants.KAFKA)
 public class KafkaMessageConsumer implements MessageConsumer<TransactionMessage>,InitializingBean,DisposableBean,ApplicationContextAware{
 
     private final static Log logger= LogFactory.getLog(KafkaMessageConsumer.class);
