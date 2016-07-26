@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
 //TODO 合併 "@Transactional"
 public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
 
-    private Log logger= LogFactory.getLog(TXAnnotationAspect.class);
+    private static Log logger= LogFactory.getLog(TXAnnotationAspect.class);
 
     private ResourceLoader resourceLoader;
 
