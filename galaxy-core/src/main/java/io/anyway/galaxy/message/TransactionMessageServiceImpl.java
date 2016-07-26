@@ -13,6 +13,7 @@ import io.anyway.galaxy.spring.SpringContextUtil;
 import io.anyway.galaxy.util.ProxyUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +35,12 @@ public class TransactionMessageServiceImpl implements MessageService<Transaction
 
     @Autowired
     private TransactionRepository transactionRepository;
+
+    @Autowired
+    private ExtensionFactory extensionFactory;
+
+    @Value("${mq.type}")
+    private String mqType;
 
     @Transactional
     public void handleMessage(TransactionMessage txMsg) throws Throwable{
@@ -75,11 +82,8 @@ public class TransactionMessageServiceImpl implements MessageService<Transaction
 
     public void sendMessage(TransactionMessage txMsg) throws Throwable{
 
-        //TODO 先写死， 需优化
-        ServiceLoader<MessageProducer> serviceLoader = ExtensionFactory.getExtension(MessageProducer.class);
-        for (MessageProducer producer : serviceLoader) {
-            producer.sendMessage(txMsg);
-        }
+        MessageProducer messageProducer = extensionFactory.getExtension(MessageProducer.class, mqType);
+        messageProducer.sendMessage(txMsg);
 
         TransactionInfo transactionInfo = new TransactionInfo();
         transactionInfo.setTxStatus(TransactionStatusEnum.CANCELLED.getCode());

@@ -55,6 +55,7 @@ public class RecoveryServiceImpl implements RecoveryService{
             if(TransactionStatusEnum.BEGIN.getCode() == info.getTxStatus()){
                 // TODO BEGIN状态需要回查是否Try成功，后续优化
                 try {
+                    info.setTxStatus(TransactionStatusEnum.CANCELLING.getCode());
                     messageService.sendMessage(messageService.transInfo2Msg(info));
                 } catch (Throwable throwable) {
                     log.warn("Send cancel message error, TransactionInfo=", info);

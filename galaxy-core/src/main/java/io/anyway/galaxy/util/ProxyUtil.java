@@ -7,6 +7,7 @@ import java.lang.reflect.Method;
  */
 public class ProxyUtil {
 
+    // TODO 改成静态代理
     public static void proxyMethod(Object objectClass, String methodName, Class<?>[] types, Object[] args) throws Exception {
         Method method = objectClass.getClass().getMethod(methodName, types);
         method.invoke(objectClass, args);
