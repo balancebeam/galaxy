@@ -31,4 +31,14 @@ public enum TransactionTypeEnum {
     public String getMemo() {
         return memo;
     }
+    
+    public static String getMemo(int code){
+    	
+    	for(TransactionTypeEnum type:TransactionTypeEnum.values()){
+    		if(type.code == code){
+    			return type.memo;
+    		}
+    	}
+    	return "unknow";
+    }
 }

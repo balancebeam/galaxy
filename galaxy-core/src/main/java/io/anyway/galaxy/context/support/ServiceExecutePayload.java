@@ -6,7 +6,7 @@ import org.springframework.util.StringUtils;
 /**
  * Created by yangzz on 16/7/21.
  */
-public class ServiceExcecutePayload extends AbstractExecutePayload {
+public class ServiceExecutePayload extends AbstractExecutePayload {
 
     private String tryMethod;
 
@@ -14,10 +14,10 @@ public class ServiceExcecutePayload extends AbstractExecutePayload {
 
     private String cancelMethod;
 
-    public ServiceExcecutePayload(){
+    public ServiceExecutePayload(){
     }
 
-    public ServiceExcecutePayload(String bizType,Class<?> target, String tryMethod, Class[] types) {
+    public ServiceExecutePayload(String bizType,Class<?> target, String tryMethod, Class[] types) {
         super(bizType,target, types);
         this.tryMethod= tryMethod;
     }
@@ -70,8 +70,8 @@ public class ServiceExcecutePayload extends AbstractExecutePayload {
     }
 
     @Override
-    public ServiceExcecutePayload clone(){
-        ServiceExcecutePayload newPayload= new ServiceExcecutePayload();
+    public ServiceExecutePayload clone(){
+        ServiceExecutePayload newPayload= new ServiceExecutePayload();
         newPayload.bizType= bizType;
         newPayload.target= target;
         newPayload.types= types;

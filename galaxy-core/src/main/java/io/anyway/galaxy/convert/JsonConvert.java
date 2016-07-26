@@ -33,7 +33,7 @@ public class JsonConvert<T> implements Convert<T> {
 	
 	public static void main(String args[]){
 		
-		JsonConvert<TransactionInfo> c = new JsonConvert<TransactionInfo>();
+		Convert<TransactionInfo> c = new JsonConvert<TransactionInfo>();
 		
 		TransactionInfo t = new TransactionInfo();
 		t.setBusinessId(1);

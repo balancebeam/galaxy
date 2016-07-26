@@ -1,19 +1,21 @@
 package io.anyway.galaxy.intercepter.support;
 
+import java.sql.Connection;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import com.alibaba.fastjson.JSON;
+
 import io.anyway.galaxy.common.TransactionStatusEnum;
-import io.anyway.galaxy.common.TransactionTypeEnum;
 import io.anyway.galaxy.context.support.ActionExecutePayload;
 import io.anyway.galaxy.domain.TransactionInfo;
 import io.anyway.galaxy.intercepter.ActionIntercepter;
 import io.anyway.galaxy.repository.TransactionIdGenerator;
 import io.anyway.galaxy.repository.TransactionRepository;
 import io.anyway.galaxy.spring.DataSourceAdaptor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.datasource.DataSourceUtils;
-import org.springframework.stereotype.Component;
-
-import java.sql.Connection;
 
 /**
  * Created by yangzz on 16/7/21.
@@ -32,13 +34,8 @@ public class ActionIntercepterSupport implements ActionIntercepter{
     public long addAction(ActionExecutePayload bean){
         //TODO throw new TXException("no implement body");
         TransactionInfo transactionInfo = new TransactionInfo();
-        // TODO
 
-        final long idepo = System.currentTimeMillis() - 3600 * 1000L;
-        IdWorker idWorker = new IdWorker(idepo);
-        long txId = idWorker.getId();
 
-        TransactionInfo transactionInfo = new TransactionInfo();
         transactionInfo.setTxId(TransactionIdGenerator.next());
         transactionInfo.setContext(JSON.toJSONString(bean));
         transactionInfo.setTxType(bean.getTxType().getCode());
@@ -48,8 +45,7 @@ public class ActionIntercepterSupport implements ActionIntercepter{
 
         transactionRepository.create(conn, transactionInfo);
 
-
-        return 1;
+        return transactionInfo.getTxId();
     }
 
     @Override

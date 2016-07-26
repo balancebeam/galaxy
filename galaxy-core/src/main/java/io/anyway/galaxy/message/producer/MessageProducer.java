@@ -11,5 +11,5 @@ public interface MessageProducer<T> {
      *
      * @param message 消息Model
      */
-    public void sendMessage(T message);
+    public void sendMessage(T message) throws Throwable;
 }
