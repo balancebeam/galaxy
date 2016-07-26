@@ -1,1 +1,1 @@
-message.producer.KafkaMessageProducer
+io.anyway.galaxy.message.producer.KafkaMessageProducer

@@ -1,15 +1,14 @@
 package io.anyway.galaxy.message;
 
-import lombok.Getter;
-import lombok.Setter;
+import java.io.Serializable;
+import java.sql.Date;
 
 /**
  * Created by xiong.j on 2016/7/25.
  */
 
-@Getter
-@Setter
-public class TransactionMessage {
+public class TransactionMessage implements Serializable{
+
     private long txId;
 
     private long businessId;
@@ -20,9 +19,54 @@ public class TransactionMessage {
 
     private int txType = -1;
 
-    private String context;
+    private Date date= new Date(new java.util.Date().getTime());
 
-    private String payload;
+    public long getTxId() {
+        return txId;
+    }
 
-    private int retried_count = -1;
+    public void setTxId(long txId) {
+        this.txId = txId;
+    }
+
+    public long getBusinessId() {
+        return businessId;
+    }
+
+    public void setBusinessId(long businessId) {
+        this.businessId = businessId;
+    }
+
+    public String getBusinessType() {
+        return businessType;
+    }
+
+    public void setBusinessType(String businessType) {
+        this.businessType = businessType;
+    }
+
+    public int getTxStatus() {
+        return txStatus;
+    }
+
+    public void setTxStatus(int txStatus) {
+        this.txStatus = txStatus;
+    }
+
+    public int getTxType() {
+        return txType;
+    }
+
+    public void setTxType(int txType) {
+        this.txType = txType;
+    }
+
+    public Date getDate() {
+        return date;
+    }
+
+    public void setDate(Date date) {
+        this.date = date;
+    }
+
 }

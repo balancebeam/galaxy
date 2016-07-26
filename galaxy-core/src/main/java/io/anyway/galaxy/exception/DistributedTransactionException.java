@@ -12,4 +12,8 @@ public class DistributedTransactionException extends RuntimeException {
     public DistributedTransactionException(Throwable e) {
         super(e);
     }
+
+    public DistributedTransactionException(String message,Throwable e){
+        super(message,e);
+    }
 }
