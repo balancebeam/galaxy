@@ -11,8 +11,6 @@ public class TransactionMessage implements Serializable{
 
     private long txId;
 
-    private String bizSerial;
-
     private int txStatus = -1;
 
     private Date date= new Date(new java.util.Date().getTime());
@@ -23,14 +21,6 @@ public class TransactionMessage implements Serializable{
 
     public void setTxId(long txId) {
         this.txId = txId;
-    }
-
-    public String getBizSerial() {
-        return bizSerial;
-    }
-
-    public void setBizSerial(String bizSerial) {
-        this.bizSerial = bizSerial;
     }
 
     public int getTxStatus() {

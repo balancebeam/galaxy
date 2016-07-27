@@ -1,7 +1,7 @@
 package io.anyway.galaxy.message.consumer;
 
-import io.anyway.galaxy.common.TransactionStatusEnum;
 import io.anyway.galaxy.message.TransactionMessage;
+import io.anyway.galaxy.message.TransactionMessageService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -35,7 +35,7 @@ public class KafkaMessageConsumer implements InitializingBean,DisposableBean{
     private int timeout= 30;
 
     @Autowired
-    private MessageConsumer<TransactionMessage> messageConsumer;
+    private TransactionMessageService transactionMessageService;
 
     private volatile boolean running= true;
 
@@ -63,33 +63,28 @@ public class KafkaMessageConsumer implements InitializingBean,DisposableBean{
 
         Thread thread= new Thread(){
             @Override
-            public void run(){
-            for(;running;){
-                try{
-                    ConsumerRecords<String, TransactionMessage> records = consumer.poll(timeout);
-                    for (TopicPartition partition : records.partitions()) {
-                        List<ConsumerRecord<String, TransactionMessage>> partitionRecords = records.records(partition);
-                        for (ConsumerRecord<String, TransactionMessage> each : partitionRecords) {
-                            //CONFIRMING | CANCELLING 两种状态
-                            if (each.value().getTxStatus()==TransactionStatusEnum.CANCELLING.getCode()){
-                                messageConsumer.handleCancelMessage(each.value());
+            public void run() {
+                for (; running; ) {
+                    try {
+                        ConsumerRecords<String, TransactionMessage> records = consumer.poll(timeout);
+                        for (TopicPartition partition : records.partitions()) {
+                            List<ConsumerRecord<String, TransactionMessage>> partitionRecords = records.records(partition);
+                            for (ConsumerRecord<String, TransactionMessage> each : partitionRecords) {
+                                if (transactionMessageService.validMessage(each.value())) ;
+                                transactionMessageService.handleMessage(each.value());
                             }
-                            else{
-                                messageConsumer.handleConfirmMessage(each.value());
-                            }
-                            long lastOffset = partitionRecords.get(partitionRecords.size() - 1).offset();
-                            Map<TopicPartition, OffsetAndMetadata> offsets= Collections.singletonMap(partition, new OffsetAndMetadata(lastOffset + 1));
                             //同步设置offset
+                            long lastOffset = partitionRecords.get(partitionRecords.size() - 1).offset();
+                            Map<TopicPartition, OffsetAndMetadata> offsets = Collections.singletonMap(partition, new OffsetAndMetadata(lastOffset + 1));
                             consumer.commitSync(offsets);
-                            if(logger.isInfoEnabled()){
-                                logger.info("application group: "+group+" has committed offset: "+ offsets);
+                            if (logger.isInfoEnabled()) {
+                                logger.info("application group: " + group + " has committed offset: " + offsets);
                             }
                         }
+                    } catch (Throwable e) {
+                        logger.error(e);
                     }
-                }catch(Throwable e){
-                    logger.error(e);
                 }
-            }
             }
         };
         thread.setDaemon(true);

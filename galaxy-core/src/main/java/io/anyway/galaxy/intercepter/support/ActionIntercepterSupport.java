@@ -1,24 +1,22 @@
 package io.anyway.galaxy.intercepter.support;
 
-import java.sql.Connection;
-
+import com.alibaba.fastjson.JSON;
+import io.anyway.galaxy.common.TransactionStatusEnum;
 import io.anyway.galaxy.context.TXContextHolder;
-import io.anyway.galaxy.message.TransactionMessage;
-import io.anyway.galaxy.message.producer.MessageProducer;
+import io.anyway.galaxy.context.support.ActionExecutePayload;
+import io.anyway.galaxy.domain.TransactionInfo;
+import io.anyway.galaxy.intercepter.ActionIntercepter;
+import io.anyway.galaxy.message.TransactionMessageService;
+import io.anyway.galaxy.repository.TransactionIdGenerator;
+import io.anyway.galaxy.repository.TransactionRepository;
+import io.anyway.galaxy.spring.DataSourceAdaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import com.alibaba.fastjson.JSON;
 
-import io.anyway.galaxy.common.TransactionStatusEnum;
-import io.anyway.galaxy.context.support.ActionExecutePayload;
-import io.anyway.galaxy.domain.TransactionInfo;
-import io.anyway.galaxy.intercepter.ActionIntercepter;
-import io.anyway.galaxy.repository.TransactionIdGenerator;
-import io.anyway.galaxy.repository.TransactionRepository;
-import io.anyway.galaxy.spring.DataSourceAdaptor;
+import java.sql.Connection;
 
 /**
  * Created by yangzz on 16/7/21.
@@ -33,7 +31,7 @@ public class ActionIntercepterSupport implements ActionIntercepter{
     private TransactionRepository transactionRepository;
 
     @Autowired
-    private MessageProducer<TransactionMessage> messageProducer;
+    private TransactionMessageService transactionMessageService;
 
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -61,36 +59,16 @@ public class ActionIntercepterSupport implements ActionIntercepter{
     }
 
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void confirmAction(long txId) throws Throwable {
-        //先发送消息,如果发送失败会抛出Runtime异常
-        TransactionMessage message= new TransactionMessage();
-        message.setTxId(txId);
-        message.setBizSerial(TXContextHolder.getTXContext().getBizSerial());
-        message.setTxStatus(TransactionStatusEnum.CONFIRMING.getCode());
-        messageProducer.sendMessage(message);
-        //发消息成功后更改TX的状态
-        TransactionInfo transactionInfo = new TransactionInfo();
-        transactionInfo.setTxId(txId);
-        transactionInfo.setTxStatus(TransactionStatusEnum.CONFIRMED.getCode());
-        Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
-        transactionRepository.update(conn, transactionInfo);
+        transactionMessageService.sendMessage(txId,
+                TransactionStatusEnum.CONFIRMING.getCode(),
+                TransactionStatusEnum.CONFIRMED.getCode());
     }
 
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void cancelAction(long txId) throws Throwable {
-        //先发送消息,如果发送失败会抛出Runtime异常
-        TransactionMessage message= new TransactionMessage();
-        message.setTxId(txId);
-        message.setBizSerial(TXContextHolder.getTXContext().getBizSerial());
-        message.setTxStatus(TransactionStatusEnum.CANCELLING.getCode());
-        messageProducer.sendMessage(message);
-        //发消息成功后更改TX的状态
-        TransactionInfo transactionInfo = new TransactionInfo();
-        transactionInfo.setTxId(txId);
-        transactionInfo.setTxStatus(TransactionStatusEnum.CANCELLED.getCode());
-        Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
-        transactionRepository.update(conn, transactionInfo);
+        transactionMessageService.sendMessage(txId,
+                TransactionStatusEnum.CANCELLING.getCode(),
+                TransactionStatusEnum.CANCELLED.getCode());
     }
 }
