@@ -91,6 +91,7 @@ public class TransactionMessageServiceImpl implements MessageService<Transaction
         transactionRepository.update(dataSourceAdaptor.getDataSource().getConnection(), transactionInfo);
     }
 
+    // TODO
     public boolean isProcessed(TransactionMessage txMsg) throws Throwable {
         try {
             Connection conn = dataSourceAdaptor.getDataSource().getConnection();
@@ -98,8 +99,8 @@ public class TransactionMessageServiceImpl implements MessageService<Transaction
                 TransactionInfo transactionInfo = new TransactionInfo();
                 transactionInfo.setPayload(JSON.toJSONString(txMsg));
                 transactionInfo.setTxId(txMsg.getTxId());
+                return false;
             }
-            return false;
         } catch (SQLException e) {
             log.warn("Check record failed, txId=" + txMsg.getTxId());
         }

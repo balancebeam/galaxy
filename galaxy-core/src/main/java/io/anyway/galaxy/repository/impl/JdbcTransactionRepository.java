@@ -15,6 +15,7 @@ import java.util.List;
 @Component
 public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
+	// TODO 其它DB支持
 	private static final String PG_DATE_SQL = "current_timestamp(0)::timestamp without time zone";
 
 	protected int doCreate(Connection conn, TransactionInfo transactionInfo) {
