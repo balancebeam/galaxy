@@ -26,9 +26,10 @@ public class KafkaMessageConsumerTest {
 
     /**
      * Method: handleMessage(Object message)
+     * @throws Throwable 
      */
     @Test
-    public void testHandleMessage() throws Exception {
+    public void testHandleMessage() throws Throwable {
         ServiceLoader<MessageConsumer> serviceLoader = ServiceLoader.load(MessageConsumer.class);
         for (MessageConsumer consumer : serviceLoader) {
             consumer.handleMessage("test!!");
