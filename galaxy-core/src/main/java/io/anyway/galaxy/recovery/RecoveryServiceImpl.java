@@ -4,7 +4,6 @@ import com.alibaba.fastjson.JSON;
 import io.anyway.galaxy.common.TransactionStatusEnum;
 import io.anyway.galaxy.context.support.ServiceExecutePayload;
 import io.anyway.galaxy.domain.TransactionInfo;
-import io.anyway.galaxy.message.MessageService;
 import io.anyway.galaxy.repository.TransactionRepository;
 import io.anyway.galaxy.spring.DataSourceAdaptor;
 import io.anyway.galaxy.spring.SpringContextUtil;

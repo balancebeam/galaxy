@@ -32,7 +32,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
 			stmt.setLong(1, transactionInfo.getTxId());
 			stmt.setLong(2, transactionInfo.getParentId());
-			stmt.setLong(3, transactionInfo.getBusinessId());
+			stmt.setString(3, transactionInfo.getBizSerial());
 			stmt.setString(4, transactionInfo.getBusinessType());
 			stmt.setInt(5, transactionInfo.getTxType());
 			stmt.setInt(6, transactionInfo.getTxStatus());
@@ -228,7 +228,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
 		transactionInfo.setTxId(resultSet.getLong(1));
 		transactionInfo.setParentId(resultSet.getLong(2));
-		transactionInfo.setBusinessId(resultSet.getLong(3));
+		transactionInfo.setBizSerial(resultSet.getString(3));
 		transactionInfo.setBusinessType(resultSet.getString(4));
 		transactionInfo.setTxType(resultSet.getInt(5));
 		transactionInfo.setTxStatus(resultSet.getInt(6));

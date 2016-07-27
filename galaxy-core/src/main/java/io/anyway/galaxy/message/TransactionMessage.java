@@ -11,13 +11,9 @@ public class TransactionMessage implements Serializable{
 
     private long txId;
 
-    private long businessId;
-
-    private String businessType;
+    private String bizSerial;
 
     private int txStatus = -1;
-
-    private int txType = -1;
 
     private Date date= new Date(new java.util.Date().getTime());
 
@@ -29,20 +25,12 @@ public class TransactionMessage implements Serializable{
         this.txId = txId;
     }
 
-    public long getBusinessId() {
-        return businessId;
+    public String getBizSerial() {
+        return bizSerial;
     }
 
-    public void setBusinessId(long businessId) {
-        this.businessId = businessId;
-    }
-
-    public String getBusinessType() {
-        return businessType;
-    }
-
-    public void setBusinessType(String businessType) {
-        this.businessType = businessType;
+    public void setBizSerial(String bizSerial) {
+        this.bizSerial = bizSerial;
     }
 
     public int getTxStatus() {
@@ -51,14 +39,6 @@ public class TransactionMessage implements Serializable{
 
     public void setTxStatus(int txStatus) {
         this.txStatus = txStatus;
-    }
-
-    public int getTxType() {
-        return txType;
-    }
-
-    public void setTxType(int txType) {
-        this.txType = txType;
     }
 
     public Date getDate() {

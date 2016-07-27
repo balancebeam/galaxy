@@ -2,6 +2,9 @@ package io.anyway.galaxy.intercepter.support;
 
 import java.sql.Connection;
 
+import io.anyway.galaxy.context.TXContextHolder;
+import io.anyway.galaxy.message.TransactionMessage;
+import io.anyway.galaxy.message.producer.MessageProducer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Component;
@@ -29,27 +32,28 @@ public class ActionIntercepterSupport implements ActionIntercepter{
     @Autowired
     private TransactionRepository transactionRepository;
 
+    @Autowired
+    private MessageProducer<TransactionMessage> messageProducer;
+
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public long addAction(ActionExecutePayload bean){
-        //TODO throw new TXException("no implement body");
         TransactionInfo transactionInfo = new TransactionInfo();
-
 
         transactionInfo.setTxId(TransactionIdGenerator.next());
         transactionInfo.setContext(JSON.toJSONString(bean));
-        transactionInfo.setTxType(bean.getTxType().getCode());
-        transactionInfo.setTxStatus(TransactionStatusEnum.BEGIN.getCode());
+        transactionInfo.setBizSerial(TXContextHolder.getTXContext().getBizSerial()); //业务流水号
+        transactionInfo.setBusinessType(bean.getBizType()); //业务类型
+        transactionInfo.setTxType(bean.getTxType().getCode()); //TC | TCC
+        transactionInfo.setTxStatus(TransactionStatusEnum.BEGIN.getCode()); //begin状态
 
         Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
-
         transactionRepository.create(conn, transactionInfo);
-
         return transactionInfo.getTxId();
     }
 
     @Override
-    public void tryAction(Connection conn, long txId) throws Throwable {
+    public void tryAction(final Connection conn, long txId) throws Throwable {
         TransactionInfo transactionInfo = new TransactionInfo();
         transactionInfo.setTxId(txId);
         transactionInfo.setTxStatus(TransactionStatusEnum.TRIED.getCode());
@@ -57,18 +61,36 @@ public class ActionIntercepterSupport implements ActionIntercepter{
     }
 
     @Override
-    public void confirmAction(long txid) throws Throwable {
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void confirmAction(long txId) throws Throwable {
+        //先发送消息,如果发送失败会抛出Runtime异常
+        TransactionMessage message= new TransactionMessage();
+        message.setTxId(txId);
+        message.setBizSerial(TXContextHolder.getTXContext().getBizSerial());
+        message.setTxStatus(TransactionStatusEnum.CONFIRMING.getCode());
+        messageProducer.sendMessage(message);
+        //发消息成功后更改TX的状态
         TransactionInfo transactionInfo = new TransactionInfo();
-        transactionInfo.setTxId(txid);
-        transactionInfo.setTxStatus(TransactionStatusEnum.CONFIRMING.getCode());
-        transactionRepository.update(dataSourceAdaptor.getDataSource().getConnection(), transactionInfo);
+        transactionInfo.setTxId(txId);
+        transactionInfo.setTxStatus(TransactionStatusEnum.CONFIRMED.getCode());
+        Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
+        transactionRepository.update(conn, transactionInfo);
     }
 
     @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void cancelAction(long txId) throws Throwable {
+        //先发送消息,如果发送失败会抛出Runtime异常
+        TransactionMessage message= new TransactionMessage();
+        message.setTxId(txId);
+        message.setBizSerial(TXContextHolder.getTXContext().getBizSerial());
+        message.setTxStatus(TransactionStatusEnum.CANCELLING.getCode());
+        messageProducer.sendMessage(message);
+        //发消息成功后更改TX的状态
         TransactionInfo transactionInfo = new TransactionInfo();
         transactionInfo.setTxId(txId);
-        transactionInfo.setTxStatus(TransactionStatusEnum.CANCELLING.getCode());
-        transactionRepository.update(dataSourceAdaptor.getDataSource().getConnection(), transactionInfo);
+        transactionInfo.setTxStatus(TransactionStatusEnum.CANCELLED.getCode());
+        Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
+        transactionRepository.update(conn, transactionInfo);
     }
 }
