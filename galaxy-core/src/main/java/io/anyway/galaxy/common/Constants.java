@@ -7,4 +7,8 @@ public interface Constants {
 
     public static final String KAFKA = "kafka";
 
+    public static final String ORACLE = "oracle";
+
+    public static final String POSTGRESQL = "PostgreSQL";
+
 }

@@ -1,6 +1,7 @@
 package io.anyway.galaxy.message;
 
 import com.alibaba.fastjson.JSON;
+import io.anyway.galaxy.common.Constants;
 import io.anyway.galaxy.common.TransactionStatusEnum;
 import io.anyway.galaxy.common.TransactionTypeEnum;
 import io.anyway.galaxy.context.support.ServiceExecutePayload;
@@ -40,7 +41,7 @@ public class TransactionMessageServiceImpl implements MessageService<Transaction
     private ExtensionFactory extensionFactory;
 
     @Value("${mq.type}")
-    private String mqType;
+    private String mqType = Constants.KAFKA;
 
     @Transactional
     public void handleMessage(TransactionMessage txMsg) throws Throwable{

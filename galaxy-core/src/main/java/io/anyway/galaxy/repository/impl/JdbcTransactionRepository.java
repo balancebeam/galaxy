@@ -1,9 +1,10 @@
 package io.anyway.galaxy.repository.impl;
 
 import com.google.common.base.Strings;
+import io.anyway.galaxy.common.Constants;
 import io.anyway.galaxy.domain.TransactionInfo;
 import io.anyway.galaxy.exception.DistributedTransactionException;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -12,11 +13,12 @@ import java.util.List;
 /**
  * Created by xiong.j on 2016/7/21.
  */
-@Component
+@Repository
 public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
-	// TODO 其它DB支持
 	private static final String PG_DATE_SQL = "current_timestamp(0)::timestamp without time zone";
+
+	private static final String ORACLE_DATE_SQL = "sysdate";
 
 	protected int doCreate(Connection conn, TransactionInfo transactionInfo) {
 
@@ -27,7 +29,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			StringBuilder builder = new StringBuilder();
 			builder.append("INSERT INTO TRANSACTION_INFO " + "(TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE"
 					+ ", TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, GMT_CREATE" + ", GMT_MODIFIED)"
-					+ " VALUES(?,?,?,?,?" + ",?,?,?,?," + PG_DATE_SQL + ", " + PG_DATE_SQL + ")");
+					+ " VALUES(?,?,?,?,?" + ",?,?,?,?," + getDateSql(conn) + ", " + getDateSql(conn) + ")");
 
 			stmt = conn.prepareStatement(builder.toString());
 
@@ -43,7 +45,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
 			return stmt.executeUpdate();
 
-		} catch (SQLException e) {
+		} catch (Throwable e) {
 			throw new DistributedTransactionException(e);
 		} finally {
 			closeStatement(stmt);
@@ -73,7 +75,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			if (transactionInfo.getRetried_count() != -1) {
 				builder.append("RETRIED_COUNT = ?, ");
 			}
-			builder.append("GMT_MODIFIED = " + PG_DATE_SQL + " WHERE TX_ID = ?");
+			builder.append("GMT_MODIFIED = " + getDateSql(conn) + " WHERE TX_ID = ?");
 
 			stmt = conn.prepareStatement(builder.toString());
 
@@ -261,6 +263,21 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			throw new DistributedTransactionException(ex);
 		}
 	}
+
+	private String getDateSql(Connection conn) throws Throwable{
+		String databaseName = getDatabaseName(conn).toLowerCase();
+		if (databaseName.equals(Constants.ORACLE.toLowerCase())) {
+			return ORACLE_DATE_SQL;
+		} else if (databaseName.equals(Constants.POSTGRESQL.toLowerCase())){
+			return PG_DATE_SQL;
+		}
+		throw new Exception("Not support database : " + databaseName);
+	}
+
+	private String getDatabaseName(Connection conn) throws Throwable{
+		return conn.getMetaData().getDatabaseProductName();
+	}
+
 
 	@Override
 	public List<TransactionInfo> listSince(Connection conn, Date date) {
