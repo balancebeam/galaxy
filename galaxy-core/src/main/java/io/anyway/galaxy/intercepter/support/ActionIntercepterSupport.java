@@ -60,17 +60,11 @@ public class ActionIntercepterSupport implements ActionIntercepter{
 
     @Override
     public void confirmAction(TXContext ctx) throws Throwable {
-        transactionMessageService.sendMessage(ctx.getTxId(),
-                ctx.getSerialNumber(),
-                TransactionStatusEnum.CONFIRMING.getCode(),
-                TransactionStatusEnum.CONFIRMED.getCode());
+        transactionMessageService.sendMessage(ctx, TransactionStatusEnum.CONFIRMING);
     }
 
     @Override
     public void cancelAction(TXContext ctx) throws Throwable {
-        transactionMessageService.sendMessage(ctx.getTxId(),
-                ctx.getSerialNumber(),
-                TransactionStatusEnum.CANCELLING.getCode(),
-                TransactionStatusEnum.CANCELLED.getCode());
+        transactionMessageService.sendMessage(ctx, TransactionStatusEnum.CANCELLING);
     }
 }

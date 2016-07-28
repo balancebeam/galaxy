@@ -70,8 +70,8 @@ public class KafkaMessageConsumer implements InitializingBean,DisposableBean{
                         for (TopicPartition partition : records.partitions()) {
                             List<ConsumerRecord<String, TransactionMessage>> partitionRecords = records.records(partition);
                             for (ConsumerRecord<String, TransactionMessage> each : partitionRecords) {
-                                if (transactionMessageService.validMessage(each.value())) ;
-                                transactionMessageService.handleMessage(each.value());
+                                if (transactionMessageService.isValidMessage(each.value())) ;
+                                transactionMessageService.asyncHandleMessage(each.value());
                             }
                             //同步设置offset
                             long lastOffset = partitionRecords.get(partitionRecords.size() - 1).offset();

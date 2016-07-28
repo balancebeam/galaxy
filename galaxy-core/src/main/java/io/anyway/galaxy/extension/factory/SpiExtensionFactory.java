@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * SpiExtensionFactory
+ * TODO 改成Spring容器加载方式
  * 
  * Created by xiong.j on 2016/7/26.
  */
