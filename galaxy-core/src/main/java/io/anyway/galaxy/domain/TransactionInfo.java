@@ -17,7 +17,7 @@ public class TransactionInfo {
 
     private long parentId;
 
-    private String bizSerial;
+    private String serialNumber;
 
     private String businessType;
 
@@ -51,12 +51,12 @@ public class TransactionInfo {
         this.parentId = parentId;
     }
 
-    public String getBizSerial() {
-        return bizSerial;
+    public String getSerialNumber() {
+        return serialNumber;
     }
 
-    public void setBizSerial(String bizSerial) {
-        this.bizSerial = bizSerial;
+    public void setSerialNumber(String serialNumber) {
+        this.serialNumber = serialNumber;
     }
 
     public String getBusinessType() {

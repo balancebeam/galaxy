@@ -8,14 +8,15 @@ import io.anyway.galaxy.context.TXContext;
  */
 public class TXContextSupport implements TXContext{
 
-    final private long txId;
+    private long txId;
 
-    private boolean action= false;
+    private String serialNumber;
 
-    private String bizSerial;
+    public TXContextSupport(){}
 
-    public TXContextSupport(long txId){
+    public TXContextSupport(long txId,String serialNumber){
         this.txId= txId;
+        this.serialNumber = serialNumber;
     }
 
     @Override
@@ -23,23 +24,16 @@ public class TXContextSupport implements TXContext{
         return txId;
     }
 
-    @Override
-    public boolean isAction() {
-        return action;
+    public void setTxId(long txId){
+        this.txId= txId;
     }
 
     @Override
-    public void setBizSerial(String bizSerial) {
-        this.bizSerial= bizSerial;
+    public String getSerialNumber() {
+        return serialNumber;
     }
 
-    @Override
-    public String getBizSerial() {
-        return bizSerial;
+    public void setSerialNumber(String serialNumber){
+        this.serialNumber = serialNumber;
     }
-
-    public void setAction(boolean action){
-        this.action= action;
-    }
-
 }
