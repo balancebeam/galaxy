@@ -12,27 +12,24 @@ import io.anyway.galaxy.util.ProxyUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.DisposableBean;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.sql.Connection;
 import java.sql.Date;
-import java.util.concurrent.*;
 
 /**
  * Created by xiong.j on 2016/7/28.
  */
-public class TransactionMessageServiceImpl implements ApplicationContextAware {
+@Component
+public class TransactionMessageServiceImpl implements TransactionMessageService, ApplicationContextAware {
 
     private final static Log logger = LogFactory.getLog(io.anyway.galaxy.message.TransactionMessageService.class);
 
@@ -120,7 +117,7 @@ public class TransactionMessageServiceImpl implements ApplicationContextAware {
             public void run() {
                 io.anyway.galaxy.message.TransactionMessageService service = applicationContext.getBean(io.anyway.galaxy.message.TransactionMessageService.class);
                 try {
-                    service.asyncHandleMessage(message);
+                    service.handleMessage(message);
                 } catch (Throwable e) {
                     logger.error(e);
                 }

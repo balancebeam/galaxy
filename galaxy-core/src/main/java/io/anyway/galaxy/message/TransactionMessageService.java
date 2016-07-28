@@ -28,7 +28,7 @@ public interface TransactionMessageService{
      * 处理消息
      * @param message
      */
-    public void handleMessage(TransactionMessage message);
+    public void handleMessage(TransactionMessage message) throws Throwable;
 
     /**
      * 异步方式处理消息
