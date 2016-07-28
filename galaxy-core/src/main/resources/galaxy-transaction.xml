@@ -6,9 +6,25 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd   http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task.xsd">
 
     <aop:aspectj-autoproxy/>
-
     <context:component-scan base-package="io.anyway.galaxy"/>
 
+    <bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+            <list>
+                <value>galaxy-core.properties</value>
+            </list>
+        </property>
+    </bean>
+
     <bean id="springContextUtil" class="io.anyway.galaxy.spring.SpringContextUtil" scope="singleton" />
+
+    <bean id="txMsgTaskExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+        <property name="corePoolSize" value="${txMsgTaskExecutor.corePoolSize}" />
+        <property name="maxPoolSize" value="${txMsgTaskExecutor.maxPoolSize}" />
+        <property name="queueCapacity" value="${txMsgTaskExecutor.queueCapacity}" />
+        <property name="rejectedExecutionHandler">
+            <bean class="java.util.concurrent.ThreadPoolExecutor$CallerRunsPolicy" />
+        </property>
+    </bean>
 
 </beans>

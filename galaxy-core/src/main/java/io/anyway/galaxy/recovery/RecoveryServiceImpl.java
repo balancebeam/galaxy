@@ -4,6 +4,8 @@ import com.alibaba.fastjson.JSON;
 import io.anyway.galaxy.common.TransactionStatusEnum;
 import io.anyway.galaxy.context.support.ServiceExecutePayload;
 import io.anyway.galaxy.domain.TransactionInfo;
+import io.anyway.galaxy.message.TransactionMessage;
+import io.anyway.galaxy.message.TransactionMessageService;
 import io.anyway.galaxy.repository.TransactionRepository;
 import io.anyway.galaxy.spring.DataSourceAdaptor;
 import io.anyway.galaxy.spring.SpringContextUtil;
@@ -29,7 +31,7 @@ public class RecoveryServiceImpl implements RecoveryService{
     private TransactionRepository transactionRepository;
 
     @Autowired
-    private MessageService messageService;
+    private TransactionMessageService transactionMessageService;
 
     @Override
     public void execute(List<Integer> shardingItem) {
@@ -54,31 +56,34 @@ public class RecoveryServiceImpl implements RecoveryService{
             if(TransactionStatusEnum.BEGIN.getCode() == info.getTxStatus()){
                 // TODO BEGIN状态需要回查是否Try成功，后续优化
                 try {
-                    info.setTxStatus(TransactionStatusEnum.CANCELLING.getCode());
-                    messageService.sendMessage(messageService.transInfo2Msg(info));
+                    transactionMessageService.sendMessage(info.getTxId(), TransactionStatusEnum.CANCELLING);
                 } catch (Throwable throwable) {
                     log.warn("Send cancel message error, TransactionInfo=", info);
                 }
             } else {
-                ServiceExecutePayload bean = JSON.parseObject(info.getContext(), ServiceExecutePayload.class);
-                Object objectClass = SpringContextUtil.getBean(bean.getTarget().getName());
-
                 if (TransactionStatusEnum.CANCELLING.getCode() == info.getTxStatus()) {
                     try {
-                        ProxyUtil.proxyMethod(objectClass, bean.getCancelMethod(), bean.getTypes(), bean.getArgs());
-                    } catch (Exception e) {
+                        transactionMessageService.handleMessage(transInfo2Msg(info));
+                    } catch (Throwable e) {
                         log.warn("Process cancel error, TransactionInfo=", info);
                     }
                 }
 
                 if (TransactionStatusEnum.CONFIRMING.getCode() == info.getTxStatus()) {
                     try {
-                        ProxyUtil.proxyMethod(objectClass, bean.getConfirmMethod(), bean.getTypes(), bean.getArgs());
-                    } catch (Exception e) {
+                        transactionMessageService.handleMessage(transInfo2Msg(info));
+                    } catch (Throwable e) {
                         log.warn("Process confirm error, TransactionInfo=", info);
                     }
                 }
             }
         }
+    }
+
+    private TransactionMessage transInfo2Msg(TransactionInfo txInfo){
+        TransactionMessage txMsg = new TransactionMessage();
+        txMsg.setTxId(txInfo.getTxId());
+        txMsg.setTxStatus(txInfo.getTxStatus());
+        return txMsg;
     }
 }

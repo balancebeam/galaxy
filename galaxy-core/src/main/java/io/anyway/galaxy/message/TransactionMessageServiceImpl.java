@@ -1,35 +1,40 @@
 package io.anyway.galaxy.message;
 
 import com.alibaba.fastjson.JSON;
-import io.anyway.galaxy.common.Constants;
 import io.anyway.galaxy.common.TransactionStatusEnum;
-import io.anyway.galaxy.common.TransactionTypeEnum;
 import io.anyway.galaxy.context.support.ServiceExecutePayload;
 import io.anyway.galaxy.domain.TransactionInfo;
-import io.anyway.galaxy.extension.ExtensionFactory;
+import io.anyway.galaxy.exception.DistributedTransactionException;
 import io.anyway.galaxy.message.producer.MessageProducer;
 import io.anyway.galaxy.repository.TransactionRepository;
 import io.anyway.galaxy.spring.DataSourceAdaptor;
-import io.anyway.galaxy.spring.SpringContextUtil;
 import io.anyway.galaxy.util.ProxyUtil;
-import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.jdbc.datasource.DataSourceUtils;
-import org.springframework.stereotype.Component;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.ServiceLoader;
-
+import java.sql.Date;
+import java.util.concurrent.*;
 
 /**
- * Created by xiong.j on 2016/7/25.
+ * Created by xiong.j on 2016/7/28.
  */
-@Slf4j
-@Component
-public class TransactionMessageServiceImpl implements MessageService<TransactionMessage> {
+public class TransactionMessageServiceImpl implements ApplicationContextAware {
+
+    private final static Log logger = LogFactory.getLog(io.anyway.galaxy.message.TransactionMessageService.class);
 
     @Autowired
     private DataSourceAdaptor dataSourceAdaptor;
@@ -38,105 +43,166 @@ public class TransactionMessageServiceImpl implements MessageService<Transaction
     private TransactionRepository transactionRepository;
 
     @Autowired
-    private ExtensionFactory extensionFactory;
+    private MessageProducer<TransactionMessage> messageProducer;
 
-    @Value("${mq.type}")
-    private String mqType = Constants.KAFKA;
+    private ApplicationContext applicationContext;
+
+    @Autowired
+    private ThreadPoolTaskExecutor txMsgTaskExecutor;
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void sendMessage(long txId, TransactionStatusEnum txStatus) throws Throwable {
+        //先发送消息,如果发送失败会抛出Runtime异常
+        TransactionMessage message = new TransactionMessage();
+        message.setTxId(txId);
+        message.setTxStatus(txStatus.getCode());
+        messageProducer.sendMessage(message);
+
+        //发消息成功后更改TX的状态
+        TransactionInfo transactionInfo = new TransactionInfo();
+        transactionInfo.setTxId(txId);
+        transactionInfo.setTxStatus(getNextStatus(txStatus).getCode());
+        Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
+        transactionRepository.update(conn, transactionInfo);
+    }
 
     @Transactional
-    public void handleMessage(TransactionMessage txMsg) throws Throwable{
+    public boolean isValidMessage(TransactionMessage message) {
         Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
-        TransactionInfo transactionInfo;
-
-        try {
-            transactionInfo = transactionRepository.lockById(conn, txMsg.getTxId());
-        } catch (Exception e) {
-            log.info("Lock failed, txId = " + txMsg.getTxId());
-            throw e;
+        TransactionInfo transactionInfo = transactionRepository.directFindById(conn, message.getTxId());
+        if (transactionInfo == null) {
+            logger.warn("no tx record, message: " + message);
+            return false;
         }
 
-        if (validation(txMsg, transactionInfo)) {
-            ServiceExecutePayload bean = JSON.parseObject(transactionInfo.getContext(), ServiceExecutePayload.class);
-            Object objectClass = SpringContextUtil.getBean(bean.getTarget().getName());
-
-            String methodName = null;
-            if (TransactionStatusEnum.CANCELLING.getCode() == txMsg.getTxStatus()) {
-                // 补偿
-                methodName = bean.getCancelMethod();
-            } else if(TransactionStatusEnum.CONFIRMING.getCode() == txMsg.getTxStatus()) {
-                // 确认
-                methodName = bean.getConfirmMethod();
-            }
-
-            // 执行消息对应的操作
-            ProxyUtil.proxyMethod(objectClass, methodName, bean.getTypes(), bean.getArgs());
-
-            // 处理成功后更新事务状态，在拦截器中以处理?
-            /*transactionInfo = new TransactionInfo();
-            transactionInfo.setTxStatus(TransactionStatusEnum.CANCELLED.getCode());
-            transactionInfo.setTxId(txMsg.getTxId());
-            transactionRepository.update(dataSourceAdaptor.getDataSource().getConnection(), transactionInfo);*/
-        } else {
-            log.error("validation error, txMsg=", txMsg, " txInfo=", transactionInfo);
-        }
-    }
-
-    public void sendMessage(TransactionMessage txMsg) throws Throwable{
-
-        MessageProducer messageProducer = extensionFactory.getExtension(MessageProducer.class, mqType);
-        messageProducer.sendMessage(txMsg);
-
-        TransactionInfo transactionInfo = new TransactionInfo();
-        transactionInfo.setTxStatus(TransactionStatusEnum.CANCELLED.getCode());
-        transactionInfo.setTxId(txMsg.getTxId());
-        transactionRepository.update(dataSourceAdaptor.getDataSource().getConnection(), transactionInfo);
-    }
-
-    // TODO
-    public boolean isProcessed(TransactionMessage txMsg) throws Throwable {
-        try {
-            Connection conn = dataSourceAdaptor.getDataSource().getConnection();
-            if (transactionRepository.directFindById(conn, txMsg.getTxId()) != null) {
-                TransactionInfo transactionInfo = new TransactionInfo();
-                transactionInfo.setPayload(JSON.toJSONString(txMsg));
-                transactionInfo.setTxId(txMsg.getTxId());
+        if (message.getTxStatus() == TransactionStatusEnum.CONFIRMING.getCode()) {
+            if (transactionInfo.getTxStatus() == TransactionStatusEnum.CONFIRMING.getCode()) {
+                if (logger.isInfoEnabled()) {
+                    logger.info("in confirming operation, message: " + message);
+                }
                 return false;
             }
-        } catch (SQLException e) {
-            log.warn("Check record failed, txId=" + txMsg.getTxId());
+            if (transactionInfo.getTxStatus() == TransactionStatusEnum.CONFIRMED.getCode()) {
+                if (logger.isInfoEnabled()) {
+                    logger.info("completed confirm operation, message: " + message);
+                }
+                return false;
+            }
+        } else {
+            if (transactionInfo.getTxStatus() == TransactionStatusEnum.CANCELLING.getCode()) {
+                if (logger.isInfoEnabled()) {
+                    logger.info("in cancelling operation, message: " + message);
+                }
+                return false;
+            }
+            if (transactionInfo.getTxStatus() == TransactionStatusEnum.CANCELLED.getCode()) {
+                if (logger.isInfoEnabled()) {
+                    logger.info("completed cancel operation, message: " + message);
+                }
+                return false;
+            }
         }
 
+        TransactionInfo newTransactionInfo = new TransactionInfo();
+        newTransactionInfo.setTxStatus(message.getTxStatus());
+        newTransactionInfo.setTxId(message.getTxId());
+        newTransactionInfo.setGmtModified(new Date(new java.util.Date().getTime()));
+        transactionRepository.update(conn, newTransactionInfo);
+        if (logger.isInfoEnabled()) {
+            logger.info("update TxStatus CANCELLING , message: " + message);
+        }
         return true;
     }
 
-    public TransactionInfo msg2TransInfo(TransactionMessage txMsg) {
-        return null;
+    public void asyncHandleMessage(final TransactionMessage message) {
+        txMsgTaskExecutor.execute(new Runnable() {
+            @Override
+            public void run() {
+                io.anyway.galaxy.message.TransactionMessageService service = applicationContext.getBean(io.anyway.galaxy.message.TransactionMessageService.class);
+                try {
+                    service.asyncHandleMessage(message);
+                } catch (Throwable e) {
+                    logger.error(e);
+                }
+            }
+        });
     }
 
-    public TransactionMessage transInfo2Msg(TransactionInfo txInfo) {
-        return null;
+    @Transactional
+    public void handleMessage(TransactionMessage message) throws Throwable {
+        Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
+        TransactionInfo transactionInfo;
+        try {
+            transactionInfo = transactionRepository.lockById(conn, message.getTxId());
+        } catch (Exception e) {
+            logger.warn("Lock failed, txId = " + message.getTxId());
+            throw new DistributedTransactionException(e);
+        }
+        if (validation(message, transactionInfo)) {
+            ServiceExecutePayload payload = JSON.parseObject(transactionInfo.getContext(), ServiceExecutePayload.class);
+            Object bean = applicationContext.getBean(payload.getTarget());
+
+            String methodName = null;
+            if (TransactionStatusEnum.CANCELLING.getCode() == message.getTxStatus()) {
+                // 补偿
+                methodName = payload.getCancelMethod();
+                if (StringUtils.isEmpty(methodName)) {
+                    logger.error("miss cancel method, serviceExecutePayload: " + payload);
+                    return;
+                }
+            } else if (TransactionStatusEnum.CONFIRMING.getCode() == message.getTxStatus()) {
+                // 确认
+                methodName = payload.getConfirmMethod();
+                if (StringUtils.isEmpty(methodName)) {
+                    logger.error("miss confirm method, serviceExecutePayload: " + payload);
+                    return;
+                }
+            }
+            // 执行消息对应的操作
+            ProxyUtil.proxyMethod(bean, methodName, payload.getTypes(), payload.getArgs());
+        } else {
+            logger.warn("validation error, txMsg=" + message + " txInfo=" + transactionInfo);
+        }
+
     }
 
-    private boolean validation(TransactionMessage txMsg, TransactionInfo txInfo){
-        if (txInfo.getTxType() != txMsg.getTxType()) {
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
+    }
+
+    private ServiceExecutePayload parsePayload(TransactionInfo transactionInfo) {
+        String payload = transactionInfo.getPayload();
+        return JSON.parseObject(payload, ServiceExecutePayload.class);
+    }
+
+    private TransactionStatusEnum getNextStatus(TransactionStatusEnum txStatus){
+
+        if (txStatus.equals(TransactionStatusEnum.CANCELLING)) return TransactionStatusEnum.CANCELLED;
+
+        if (txStatus.equals(TransactionStatusEnum.CONFIRMING)) return TransactionStatusEnum.CONFIRMED;
+
+        return null;
+
+    }
+
+    private boolean validation(TransactionMessage message, TransactionInfo txInfo) {
+        if (txInfo == null) {
             return false;
         }
 
-        if (txInfo.getTxType() == TransactionTypeEnum.TC.getCode()
-                && txInfo.getTxStatus() == TransactionStatusEnum.CANCELLING.getCode()) {
-            return false;
-        }
-        if (txMsg.getTxStatus() == TransactionStatusEnum.CANCELLING.getCode()
+        if (message.getTxStatus() == TransactionStatusEnum.CANCELLING.getCode()
                 && txInfo.getTxStatus() == TransactionStatusEnum.CANCELLED.getCode()) {
             return false;
         }
 
-        if (txMsg.getTxStatus() == TransactionStatusEnum.CONFIRMING.getCode()
+        if (message.getTxStatus() == TransactionStatusEnum.CONFIRMING.getCode()
                 && txInfo.getTxStatus() == TransactionStatusEnum.CONFIRMED.getCode()) {
             return false;
         }
 
         return true;
     }
+
 
 }
