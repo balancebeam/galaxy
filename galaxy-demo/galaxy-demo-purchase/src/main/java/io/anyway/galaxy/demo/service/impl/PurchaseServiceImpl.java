@@ -2,8 +2,9 @@ package io.anyway.galaxy.demo.service.impl;
 
 import io.anyway.galaxy.annotation.TXAction;
 import io.anyway.galaxy.common.TransactionTypeEnum;
+import io.anyway.galaxy.context.SerialNumberGenerator;
+import io.anyway.galaxy.context.TXContext;
 import io.anyway.galaxy.context.TXContextHolder;
-import io.anyway.galaxy.context.support.TXContextSupport;
 import io.anyway.galaxy.demo.domain.OrderDO;
 import io.anyway.galaxy.demo.service.PurchaseService;
 import io.anyway.galaxy.demo.service.OrderService;
@@ -34,14 +35,14 @@ public class PurchaseServiceImpl implements PurchaseService {
 
     @Override
     @Transactional
-    @TXAction(TransactionTypeEnum.TC)
-    public String purchase(long userId, long repositoryId, long number)throws Exception{
+    @TXAction(value = TransactionTypeEnum.TC,bizType = "purchase")
+    public String purchase(SerialNumberGenerator scenario, long userId, long repositoryId, long number)throws Exception{
 
-        long txId= TXContextHolder.getTXContext().getTxId();
+        TXContext ctx= TXContextHolder.getTXContext();
 
-        Future<Boolean> task= doRepository(txId,repositoryId,number);
+        Future<Boolean> task= doRepository(ctx,repositoryId,number);
         if(task.get()){
-            task= doOrder(txId,repositoryId,userId,number);
+            task= doOrder(ctx,repositoryId,userId,number);
             if(task.get()){
                 return "下单成功，请在30分钟内付款!";
             }
@@ -49,23 +50,21 @@ public class PurchaseServiceImpl implements PurchaseService {
         throw new Exception("下单失败.");
     }
 
-    private Future<Boolean> doRepository(final long txId,final long repositoryId, final long number){
+    private Future<Boolean> doRepository(final TXContext ctx,final long repositoryId, final long number){
        return executorService.submit(new Callable<Boolean>(){
             @Override
             public Boolean call() throws Exception {
-                TXContextHolder.setTXContext(new TXContextSupport(txId));
-                return repositoryService.decreaseRepository(repositoryId,number);
+                return repositoryService.decreaseRepository(ctx,repositoryId,number);
             }
         });
     }
 
-    private Future<Boolean> doOrder(final long txId,final long repositoryId,final long userId,final long number){
+    private Future<Boolean> doOrder(final TXContext ctx,final long repositoryId,final long userId,final long number){
         return executorService.submit(new Callable<Boolean>(){
             @Override
             public Boolean call() throws Exception {
-                TXContextHolder.setTXContext(new TXContextSupport(txId));
                 OrderDO orderDO = new OrderDO(oId.getAndIncrement(), repositoryId, userId,"待支付", number * 100);
-                return orderService.addOrder(orderDO);
+                return orderService.addOrder(ctx,orderDO);
             }
         });
     }

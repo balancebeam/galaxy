@@ -1,11 +1,14 @@
 package io.anyway.galaxy.demo.controller;
 
+import io.anyway.galaxy.context.SerialNumberGenerator;
 import io.anyway.galaxy.demo.service.PurchaseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
+
+import java.util.Random;
 
 /**
  * 下单
@@ -24,7 +27,12 @@ public class PurchaseController {
         long id = 1;
         long item_id = 1;
         long number = 2;
-        return purchaseService.purchase(id, item_id, number);
+        return purchaseService.purchase(new SerialNumberGenerator() {
+            @Override
+            public String getSerialNumber() {
+                return ""+ new Random ().nextInt(100000);
+            }
+        }, id, item_id, number);
     }
 
 

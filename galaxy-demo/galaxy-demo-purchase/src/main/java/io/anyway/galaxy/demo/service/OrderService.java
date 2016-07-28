@@ -1,5 +1,6 @@
 package io.anyway.galaxy.demo.service;
 
+import io.anyway.galaxy.context.TXContext;
 import io.anyway.galaxy.demo.domain.OrderDO;
 
 /**
@@ -7,5 +8,5 @@ import io.anyway.galaxy.demo.domain.OrderDO;
  */
 public interface OrderService {
 
-    boolean addOrder(OrderDO orderDO);
+    boolean addOrder(TXContext ctx,OrderDO orderDO);
 }

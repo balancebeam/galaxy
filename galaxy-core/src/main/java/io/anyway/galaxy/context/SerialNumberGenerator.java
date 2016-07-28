@@ -5,7 +5,7 @@ import java.io.Serializable;
 /**
  * Created by yangzz on 16/7/28.
  */
-public interface SerialNumberScenario extends Serializable {
+public interface SerialNumberGenerator extends Serializable {
     /**
      * 获取交易流水号
      * @return
