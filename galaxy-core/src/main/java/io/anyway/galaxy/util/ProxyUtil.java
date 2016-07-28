@@ -2,6 +2,7 @@ package io.anyway.galaxy.util;
 
 import io.anyway.galaxy.proxy.ProxyFactory;
 import io.anyway.galaxy.proxy.TXOperationProxy;
+import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Method;
 
@@ -17,11 +18,14 @@ public class ProxyUtil {
      * @param methodName 方法名
      * @param types 参数类型
      * @param args 参数值
+     * @return Object
      * @throws Throwable
+     *
      */
-    public static void proxyMethod(Object target, String methodName, Class<?>[] types, Object[] args) throws Throwable {
-        Method method = target.getClass().getMethod(methodName, types);
-        method.invoke(target, args);
+    public static Object proxyMethod(Object target, String methodName, Class<?>[] types, Object[] args) throws Throwable {
+        Method method = ReflectionUtils.findMethod(target.getClass(),methodName,types);
+        ReflectionUtils.makeAccessible(method);
+        return ReflectionUtils.invokeMethod(method,target,args);
     }
 
     /**
