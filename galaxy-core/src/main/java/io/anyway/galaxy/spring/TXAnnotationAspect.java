@@ -4,12 +4,14 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.sql.DataSource;
 
+import io.anyway.galaxy.context.TXContext;
+import io.anyway.galaxy.context.SerialNumberScenario;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -29,9 +31,6 @@ import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-
 import io.anyway.galaxy.annotation.TXAction;
 import io.anyway.galaxy.annotation.TXTry;
 import io.anyway.galaxy.common.TransactionTypeEnum;
@@ -50,7 +49,6 @@ import io.anyway.galaxy.intercepter.ServiceIntercepter;
  */
 @Component
 @Aspect
-//TODO 合併 "@Transactional"
 public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
 
     private static Log logger= LogFactory.getLog(TXAnnotationAspect.class);
@@ -66,7 +64,7 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
     @Autowired
     private ServiceIntercepter serviceIntercepter;
 
-    private Cache<Method, AbstractExecutePayload> cache= CacheBuilder.newBuilder().expireAfterAccess(300, TimeUnit.SECONDS).maximumSize(1000).build();
+    private ConcurrentHashMap<Method, AbstractExecutePayload> cache= new ConcurrentHashMap<Method, AbstractExecutePayload>();
 
     private TransactionServer transactionServer;
     
@@ -93,50 +91,73 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
 
     @Around("pointcutTXAction()")
     public Object processTXAction(ProceedingJoinPoint pjp) throws Throwable {
+        if (TXContextHolder.getTXContext()!= null){
+            return pjp.proceed();
+        }
         //需要判断最外层是否开启了写事务
         assertTransactional();
 
         //获取方法上的注解内容
-        MethodSignature signature = (MethodSignature) pjp.getSignature();
-        Method method= signature.getMethod();
+        Method actionMethod = ((MethodSignature) pjp.getSignature()).getMethod();
 
-        ActionExecutePayload cachedPayload = (ActionExecutePayload)cache.getIfPresent(method);
-        if(cachedPayload==null){
-            synchronized (method) {
-                cachedPayload = (ActionExecutePayload)cache.getIfPresent(method);
-                if(cachedPayload==null){
-                    TXAction action = method.getAnnotation(TXAction.class);
-                    Class<?> target = pjp.getTarget().getClass();
-                    String bizType = action.bizType();
-                    if (StringUtils.isEmpty(bizType)) {
-                        logger.warn("miss business type, class=" + target + ",method=" + method);
-                    }
-                    cachedPayload = new ActionExecutePayload(bizType, target, method.getName(), method.getParameterTypes());
-                    cachedPayload.setTimeout(action.timeout());
-                    cachedPayload.setTxType(action.value());
-                    cache.put(method, cachedPayload);
+        String serialNumber= "";
+        //根据Action第一个入参获(类型必须是TradeContext)取交易流水号
+        if(pjp.getArgs().length==0){
+            logger.warn("no any incoming parameter,you need input first value typeof SerialNumberScenario, method: "+actionMethod);
+        }
+        else{
+            Object firstValue= pjp.getArgs()[0];
+            if(!(firstValue instanceof SerialNumberScenario)){
+                logger.warn("the first value is not typeof SerialNumberScenario, method: "+actionMethod+", inArgs: "+pjp.getArgs());
+            }
+            else{
+                serialNumber= ((SerialNumberScenario)firstValue).getSerialNumber();
+                if(StringUtils.isEmpty(serialNumber)){
+                    logger.warn("incoming trade serial number is empty, method: "+actionMethod+", inArgs: "+pjp.getArgs());
                 }
             }
+        }
+        //缓存actionMethod解析注解的内容
+        ActionExecutePayload cachedPayload = (ActionExecutePayload)cache.get(actionMethod);
+        for(;cachedPayload==null;){
+            TXAction action = actionMethod.getAnnotation(TXAction.class);
+            Class<?> target = pjp.getTarget().getClass();
+            String bizType = action.bizType();
+            if (StringUtils.isEmpty(bizType)) {
+                logger.warn("miss business type, class: " + target + ",method: " + actionMethod);
+            }
+            cachedPayload = new ActionExecutePayload(bizType, target, actionMethod.getName(), actionMethod.getParameterTypes());
+            cachedPayload.setTimeout(action.timeout());
+            //设置分布式事务类型: TC | TCC
+            cachedPayload.setTxType(action.value());
+            cache.putIfAbsent(actionMethod, cachedPayload);
+            cachedPayload = (ActionExecutePayload)cache.get(actionMethod);
         }
         final ActionExecutePayload payload= cachedPayload.clone();
         //设置运行时的入参
         payload.setArgs(pjp.getArgs());
 
         try {
-            //获取外出业务开启事务的对应的数据库连接
-            final Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
-            //获取新的连接开启新事务新增一条TransactionAction记录
-            final long txId = actionIntercepter.addAction(payload);
+            //开启事务上下文
+            final TXContextSupport ctx= new TXContextSupport();
+            //设置业务流水号
+            ctx.setSerialNumber(serialNumber);
+            //绑定到ThreadLocal中
+            TXContextHolder.setTXContext(ctx);
+            //设置在Action操作里
+            TXContextHolder.setAction(true);
+            //获取新的连接开启新事务新增一条TX记录
+            long txId = actionIntercepter.addAction(payload,serialNumber);
+            //设置事务编号
+            ctx.setTxId(txId);
             if (logger.isInfoEnabled()) {
-                logger.info("generated new txId=" + txId+", payload="+payload);
+                logger.info("generate TXContext: " + ctx+", actionExecutePayload: "+payload);
             }
 
-            TXContextSupport ctx= new TXContextSupport(txId);
-            ctx.setAction(true);
-            TXContextHolder.setTXContext(ctx);
-
+            //获取外出业务开启事务的对应的数据库连接
+            final Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
             ConnectionHolder conHolder = (ConnectionHolder) TransactionSynchronizationManager.getResource(dataSourceAdaptor.getDataSource());
-            method= ReflectionUtils.findMethod(ConnectionHolder.class,"setConnection",Connection.class);
+            Method method= ReflectionUtils.findMethod(ConnectionHolder.class,"setConnection",Connection.class);
             ReflectionUtils.makeAccessible(method);
             ReflectionUtils.invokeMethod(method,conHolder,
                 Proxy.newProxyInstance(resourceLoader.getClassLoader(),
@@ -152,16 +173,16 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
                                 //如果是TCC类型事务才发送confirm消息
                                 if(payload.getTxType()== TransactionTypeEnum.TCC){
                                     if (logger.isInfoEnabled()) {
-                                        logger.info("will send \"confirm\" message, txId=" + txId+", payload="+payload);
+                                        logger.info("will send \"confirm\" message, TXContext: " + ctx+", actionExecutePayload: "+payload);
                                     }
-                                    actionIntercepter.confirmAction(txId);
+                                    actionIntercepter.confirmAction(ctx.getTxId());
                                 }
                                 //确保在cancel之后执行通知方法
                             } else if ("rollback".equals(method.getName())) {
                                 if (logger.isInfoEnabled()) {
-                                    logger.info("will send \"cancel\" message, txId=" + txId+", payload="+payload);
+                                    logger.info("will send \"cancel\" message, TXContext: " + ctx+", actionExecutePayload: "+payload);
                                 }
-                                actionIntercepter.cancelAction(txId);
+                                actionIntercepter.cancelAction(ctx.getTxId());
                             }
                         }
                     }
@@ -169,15 +190,14 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
 
             //先执行业务操作
             Object result= pjp.proceed();
-            //更新TX表状态为成功态,在根据TX类型确定是否要发送Confirm消息
-            if(StringUtils.isEmpty(TXContextHolder.getTXContext().getBizSerial())){
-                logger.warn("miss business serial, txId="+txId+",payload="+payload);
-            }
+            //更改TX记录状态为TRIED
             actionIntercepter.tryAction(conn, txId);
             return result;
 
         }finally{
+            //清空上下文内容
             TXContextHolder.setTXContext(null);
+            TXContextHolder.setAction(null);
         }
     }
 
@@ -187,51 +207,50 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
 
     @Around("pointcutTXTry()")
     public Object processTXTry(ProceedingJoinPoint pjp) throws Throwable {
-        //先验证事务
-        assertTransactional();
-        //交易txid
-        Assert.notNull(TXContextHolder.getTXContext());
         //如果调用关系在Action内不需要执行切面动作
-        if(TXContextHolder.getTXContext().isAction()){
+        if(TXContextHolder.isAction()){
             return pjp.proceed();
         }
-        long txId= TXContextHolder.getTXContext().getTxId();
+        //先验证事务
+        assertTransactional();
+        TXContext ctx= TXContextHolder.getTXContext();
+        if(ctx ==null && pjp.getArgs().length> 0){
+            //规定第一个参数为TXContext里面传递txId等信息
+            Object firstValue= pjp.getArgs()[0];
+            if(firstValue instanceof TXContext){
+                ctx= (TXContext) firstValue;
+            }
+        }
+        Assert.notNull(ctx);
 
         //获取方法上的注解内容
-        MethodSignature signature = (MethodSignature) pjp.getSignature();
-        Method method= signature.getMethod();
-
-        ServiceExecutePayload cachedPayload = (ServiceExecutePayload)cache.getIfPresent(method);
-        if(cachedPayload==null){
-            synchronized (method) {
-                cachedPayload = (ServiceExecutePayload)cache.getIfPresent(method);
-                if(cachedPayload==null){
-                    TXTry txTry= method.getAnnotation(TXTry.class);
-                    Class<?> target = pjp.getTarget().getClass();
-                    String bizType = txTry.bizType();
-                    if (StringUtils.isEmpty(bizType)) {
-                        logger.warn("miss business type, class=" + target + ",method=" + method);
-                    }
-                    cachedPayload = new ServiceExecutePayload(bizType, target, method.getName(), method.getParameterTypes());
-                    cachedPayload.setConfirmMethod(txTry.confirm());
-                    cachedPayload.setCancelMethod(txTry.cancel());
-                    cache.put(method, cachedPayload);
-                }
+        Method serviceMethod = ((MethodSignature) pjp.getSignature()).getMethod();
+        //缓存serviceMethod解析注解的内容
+        ServiceExecutePayload cachedPayload = (ServiceExecutePayload)cache.get(serviceMethod);
+        for(;cachedPayload==null;){
+            TXTry txTry= serviceMethod.getAnnotation(TXTry.class);
+            Class<?> target = pjp.getTarget().getClass();
+            String bizType = txTry.bizType();
+            if (StringUtils.isEmpty(bizType)) {
+                logger.warn("miss business type, class: " + target + ",serviceExecutePayload: " + serviceMethod);
             }
+            cachedPayload = new ServiceExecutePayload(bizType, target, serviceMethod.getName(), serviceMethod.getParameterTypes());
+            cachedPayload.setConfirmMethod(txTry.confirm());
+            cachedPayload.setCancelMethod(txTry.cancel());
+            cache.putIfAbsent(serviceMethod, cachedPayload);
+            cachedPayload = (ServiceExecutePayload)cache.get(serviceMethod);
         }
         ServiceExecutePayload payload= cachedPayload.clone();
         //设置运行时的入参
         payload.setArgs(pjp.getArgs());
-
         if (logger.isInfoEnabled()) {
-            logger.info("transfer txId=" + txId+", payload="+payload);
+            logger.info("found TXContext: " + ctx+", serviceExecutePayload: "+payload);
         }
-
         //先调用业务方法
         Object result= pjp.proceed();
         //获取外出业务开启事务的对应的数据库连接
         Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
-        serviceIntercepter.tryService(conn,payload,txId);
+        serviceIntercepter.tryService(conn,payload,ctx.getTxId(),ctx.getSerialNumber());
         return result;
     }
 
@@ -241,25 +260,31 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
 
     @Around("pointcutTXConfirm()")
     public Object processTXConfirm(ProceedingJoinPoint pjp) throws Throwable {
-        //先验证事务
-        assertTransactional();
-        //交易txid
-        Assert.notNull(TXContextHolder.getTXContext());
         //如果调用关系在Action内不需要执行切面动作
-        if(TXContextHolder.getTXContext().isAction()){
+        if(TXContextHolder.isAction()){
             return pjp.proceed();
         }
-        long txId= TXContextHolder.getTXContext().getTxId();
+        //先验证事务
+        assertTransactional();
+        TXContext ctx= TXContextHolder.getTXContext();
+        if(ctx ==null && pjp.getArgs().length> 0){
+            //规定第一个参数为TXContext里面传递txId等信息
+            Object firstValue= pjp.getArgs()[0];
+            if(firstValue instanceof TXContext){
+                ctx= (TXContext) firstValue;
+            }
+        }
+        Assert.notNull(ctx);
 
         if (logger.isInfoEnabled()) {
-            logger.info("transfer txId=" + txId);
+            logger.info("found TXContext: " + ctx);
         }
 
         Object result= pjp.proceed();
         //获取外出业务开启事务的对应的数据库连接
         Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
         //提交TX表的confirm状态
-        serviceIntercepter.confirmService(conn,txId);
+        serviceIntercepter.confirmService(conn,ctx.getTxId());
         return result;
     }
 
@@ -269,25 +294,31 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
 
     @Around("pointcutTXCancel()")
     public Object processTXCancel(ProceedingJoinPoint pjp) throws Throwable {
-        //先验证事务
-        assertTransactional();
-        //交易txid
-        Assert.notNull(TXContextHolder.getTXContext());
         //如果调用关系在Action内不需要执行切面动作
-        if(TXContextHolder.getTXContext().isAction()){
+        if(TXContextHolder.isAction()){
             return pjp.proceed();
         }
-        long txId= TXContextHolder.getTXContext().getTxId();
+        //先验证事务
+        assertTransactional();
+        TXContext ctx= TXContextHolder.getTXContext();
+        if(ctx ==null && pjp.getArgs().length> 0){
+            //规定第一个参数为TXContext里面传递txId等信息
+            Object firstValue= pjp.getArgs()[0];
+            if(firstValue instanceof TXContext){
+                ctx= (TXContext) firstValue;
+            }
+        }
+        Assert.notNull(ctx);
 
         if (logger.isInfoEnabled()) {
-            logger.info("transfer txId=" + txId);
+            logger.info("found TXContext: " + ctx);
         }
 
         Object result= pjp.proceed();
         //获取外出业务开启事务的对应的数据库连接
         Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
         //提交TX表的confirm状态
-        serviceIntercepter.cancelService(conn,txId);
+        serviceIntercepter.cancelService(conn,ctx.getTxId());
         return result;
     }
 

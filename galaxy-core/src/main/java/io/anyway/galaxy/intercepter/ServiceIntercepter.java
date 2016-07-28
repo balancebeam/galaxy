@@ -14,8 +14,9 @@ public interface ServiceIntercepter {
      * @param conn 业务操作开启的数据库连接
      * @param payload 存储的Service执行体内容,包含了try/confirm/cancel等方法定义
      * @param txId 事务编号
+     * @param serialNumber 业务流水号
      */
-    void tryService(Connection conn, ServiceExecutePayload payload, long txId);
+    void tryService(Connection conn, ServiceExecutePayload payload, long txId,String serialNumber);
 
     /**
      * 提交事务,努力送达型通过调度任务实现持久化成功

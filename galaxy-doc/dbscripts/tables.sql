@@ -3,7 +3,7 @@ CREATE TABLE transaction_info
 (
   tx_id bigint,
   parent_id  bigint,
-  business_id bigint,
+  business_id character varying(64),
   business_type character varying(64),
   tx_type smallint,
   tx_status smallint,
