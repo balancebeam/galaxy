@@ -16,7 +16,7 @@ public class TransactionMessageDeserializer implements Deserializer<TransactionM
     private String encoding = "UTF8";
 
     @Override
-    public void configure(Map configs, boolean isKey) {
+    public void configure(Map<String, ?> configs, boolean isKey) {
 
         String propertyName = isKey?"key.deserializer.encoding":"value.deserializer.encoding";
         Object encodingValue = configs.get(propertyName);

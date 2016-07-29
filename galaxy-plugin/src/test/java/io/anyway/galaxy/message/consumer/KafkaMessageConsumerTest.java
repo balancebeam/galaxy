@@ -11,7 +11,7 @@ import java.util.ServiceLoader;
  *
  * @author <Authors name>
  * @version 1.0
- * @since <pre>���� 22, 2016</pre>
+ * @since <pre>22, 2016</pre>
  */
 public class KafkaMessageConsumerTest {
 
