@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -26,7 +27,7 @@ public class OrderRest {
 
     private AtomicLong orderNextId= new AtomicLong(1);
 
-    @RequestMapping()
+    @RequestMapping(method = RequestMethod.POST)
     public boolean purchase(@RequestBody Map<String,Object> params)throws Exception {
     	long txId= (Long)params.get("txId");
     	String serialNumber= (String)params.get("serialNumber");
