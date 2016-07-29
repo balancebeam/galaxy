@@ -2,7 +2,10 @@ package io.anyway.galaxy.message;
 
 import com.alibaba.fastjson.JSON;
 import io.anyway.galaxy.common.TransactionStatusEnum;
+import io.anyway.galaxy.context.TXContext;
+import io.anyway.galaxy.context.TXContextHolder;
 import io.anyway.galaxy.context.support.ServiceExecutePayload;
+import io.anyway.galaxy.context.support.TXContextSupport;
 import io.anyway.galaxy.domain.TransactionInfo;
 import io.anyway.galaxy.exception.DistributedTransactionException;
 import io.anyway.galaxy.message.producer.MessageProducer;
@@ -48,16 +51,17 @@ public class TransactionMessageServiceImpl implements TransactionMessageService,
     private ThreadPoolTaskExecutor txMsgTaskExecutor;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void sendMessage(long txId, TransactionStatusEnum txStatus) throws Throwable {
+    public void sendMessage(final TXContext ctx, TransactionStatusEnum txStatus) throws Throwable {
         //先发送消息,如果发送失败会抛出Runtime异常
         TransactionMessage message = new TransactionMessage();
-        message.setTxId(txId);
+        message.setTxId(ctx.getTxId());
+        message.setSerialNumber(ctx.getSerialNumber());
         message.setTxStatus(txStatus.getCode());
         messageProducer.sendMessage(message);
 
         //发消息成功后更改TX的状态
         TransactionInfo transactionInfo = new TransactionInfo();
-        transactionInfo.setTxId(txId);
+        transactionInfo.setTxId(ctx.getTxId());
         transactionInfo.setTxStatus(getNextStatus(txStatus).getCode());
         Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
         transactionRepository.update(conn, transactionInfo);
@@ -115,52 +119,60 @@ public class TransactionMessageServiceImpl implements TransactionMessageService,
         txMsgTaskExecutor.execute(new Runnable() {
             @Override
             public void run() {
-                io.anyway.galaxy.message.TransactionMessageService service = applicationContext.getBean(io.anyway.galaxy.message.TransactionMessageService.class);
-                try {
-                    service.handleMessage(message);
-                } catch (Throwable e) {
-                    logger.error(e);
-                }
+            TransactionMessageService service = applicationContext.getBean(TransactionMessageService.class);
+            try {
+                service.handleMessage(message);
+            } catch (Throwable e) {
+                logger.error(e);
+            }
             }
         });
     }
 
     @Transactional
     public void handleMessage(TransactionMessage message) throws Throwable {
-        Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
-        TransactionInfo transactionInfo;
         try {
-            transactionInfo = transactionRepository.lockById(conn, message.getTxId());
-        } catch (Exception e) {
-            logger.warn("Lock failed, txId = " + message.getTxId());
-            throw new DistributedTransactionException(e);
-        }
-        if (validation(message, transactionInfo)) {
-            ServiceExecutePayload payload = JSON.parseObject(transactionInfo.getContext(), ServiceExecutePayload.class);
-            Object bean = applicationContext.getBean(payload.getTarget());
+            //从消息中获取事务的标识和业务序列号
+            TXContext ctx = new TXContextSupport(message.getTxId(), message.getSerialNumber());
+            //设置到上下文中
+            TXContextHolder.setTXContext(ctx);
 
-            String methodName = null;
-            if (TransactionStatusEnum.CANCELLING.getCode() == message.getTxStatus()) {
-                // 补偿
-                methodName = payload.getCancelMethod();
-                if (StringUtils.isEmpty(methodName)) {
-                    logger.error("miss cancel method, serviceExecutePayload: " + payload);
-                    return;
-                }
-            } else if (TransactionStatusEnum.CONFIRMING.getCode() == message.getTxStatus()) {
-                // 确认
-                methodName = payload.getConfirmMethod();
-                if (StringUtils.isEmpty(methodName)) {
-                    logger.error("miss confirm method, serviceExecutePayload: " + payload);
-                    return;
-                }
+            Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
+            TransactionInfo transactionInfo;
+            try {
+                transactionInfo = transactionRepository.lockById(conn, message.getTxId());
+            } catch (Exception e) {
+                logger.warn("Lock failed, txId = " + message.getTxId());
+                throw new DistributedTransactionException(e);
             }
-            // 执行消息对应的操作
-            ProxyUtil.proxyMethod(bean, methodName, payload.getTypes(), payload.getArgs());
-        } else {
-            logger.warn("validation error, txMsg=" + message + " txInfo=" + transactionInfo);
-        }
+            if (validation(message, transactionInfo)) {
+                ServiceExecutePayload payload = JSON.parseObject(transactionInfo.getContext(), ServiceExecutePayload.class);
+                Object bean = applicationContext.getBean(payload.getTarget());
 
+                String methodName = null;
+                if (TransactionStatusEnum.CANCELLING.getCode() == message.getTxStatus()) {
+                    // 补偿
+                    methodName = payload.getCancelMethod();
+                    if (StringUtils.isEmpty(methodName)) {
+                        logger.error("miss cancel method, serviceExecutePayload: " + payload);
+                        return;
+                    }
+                } else if (TransactionStatusEnum.CONFIRMING.getCode() == message.getTxStatus()) {
+                    // 确认
+                    methodName = payload.getConfirmMethod();
+                    if (StringUtils.isEmpty(methodName)) {
+                        logger.error("miss confirm method, serviceExecutePayload: " + payload);
+                        return;
+                    }
+                }
+                // 执行消息对应的操作
+                ProxyUtil.proxyMethod(bean, methodName, payload.getTypes(), payload.getArgs());
+            } else {
+                logger.warn("validation error, txMsg=" + message + " txInfo=" + transactionInfo);
+            }
+        }finally {
+            TXContextHolder.setTXContext(null);
+        }
     }
 
     @Override

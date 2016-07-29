@@ -2,6 +2,7 @@ package io.anyway.galaxy.demo.service.impl;
 
 import io.anyway.galaxy.annotation.TXCancel;
 import io.anyway.galaxy.annotation.TXTry;
+import io.anyway.galaxy.context.TXContext;
 import io.anyway.galaxy.demo.dao.OrderDao;
 import io.anyway.galaxy.demo.domain.OrderDO;
 import io.anyway.galaxy.demo.service.OrderService;
@@ -21,13 +22,13 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     @TXTry(cancel = "deleteOrder")
-    public boolean addOrder(OrderDO orderDO) {
+    public boolean addOrder(TXContext ctx,OrderDO orderDO) {
         return 0< dao.addOrder(orderDO);
     }
 
     @Transactional
     @TXCancel
-    public boolean deleteOrder(OrderDO orderDO){
+    public boolean deleteOrder(TXContext ctx,OrderDO orderDO){
         return 0 < dao.deleteOrder(orderDO);
     }
 }

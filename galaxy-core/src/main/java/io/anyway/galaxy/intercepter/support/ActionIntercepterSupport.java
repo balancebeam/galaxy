@@ -2,6 +2,7 @@ package io.anyway.galaxy.intercepter.support;
 
 import com.alibaba.fastjson.JSON;
 import io.anyway.galaxy.common.TransactionStatusEnum;
+import io.anyway.galaxy.context.TXContext;
 import io.anyway.galaxy.context.support.ActionExecutePayload;
 import io.anyway.galaxy.domain.TransactionInfo;
 import io.anyway.galaxy.intercepter.ActionIntercepter;
@@ -58,12 +59,12 @@ public class ActionIntercepterSupport implements ActionIntercepter{
     }
 
     @Override
-    public void confirmAction(long txId) throws Throwable {
-        transactionMessageService.sendMessage(txId, TransactionStatusEnum.CONFIRMING);
+    public void confirmAction(TXContext ctx) throws Throwable {
+        transactionMessageService.sendMessage(ctx, TransactionStatusEnum.CONFIRMING);
     }
 
     @Override
-    public void cancelAction(long txId) throws Throwable {
-        transactionMessageService.sendMessage(txId, TransactionStatusEnum.CANCELLING);
+    public void cancelAction(TXContext ctx) throws Throwable {
+        transactionMessageService.sendMessage(ctx, TransactionStatusEnum.CANCELLING);
     }
 }

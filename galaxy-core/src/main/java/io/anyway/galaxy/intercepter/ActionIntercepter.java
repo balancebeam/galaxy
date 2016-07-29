@@ -1,6 +1,7 @@
 package io.anyway.galaxy.intercepter;
 
 import io.anyway.galaxy.common.TransactionTypeEnum;
+import io.anyway.galaxy.context.TXContext;
 import io.anyway.galaxy.context.support.ActionExecutePayload;
 
 import java.sql.Connection;
@@ -27,14 +28,14 @@ public interface ActionIntercepter {
     void tryAction(Connection conn, long txId) throws Throwable;
     /**
      * 更新事务状态为confirmed
-     * @param txId 事务编号
+     * @param ctx 分布式上下文,包括事务编号和业务流水编号
      */
-    void confirmAction(long txId) throws Throwable;
+    void confirmAction(TXContext ctx) throws Throwable;
 
     /**
      * 更新事务状态为cancelled
-     * @param txId 事务编号
+     * @param ctx 分布式上下文,包括事务编号和业务流水编号
      */
-    void cancelAction(long txId) throws Throwable;
+    void cancelAction(TXContext ctx) throws Throwable;
 
 }

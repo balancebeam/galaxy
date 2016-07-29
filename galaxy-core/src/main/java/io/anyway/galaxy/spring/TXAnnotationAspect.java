@@ -11,7 +11,7 @@ import javax.annotation.PreDestroy;
 import javax.sql.DataSource;
 
 import io.anyway.galaxy.context.TXContext;
-import io.anyway.galaxy.context.SerialNumberScenario;
+import io.anyway.galaxy.context.SerialNumberGenerator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -101,17 +101,17 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
         Method actionMethod = ((MethodSignature) pjp.getSignature()).getMethod();
 
         String serialNumber= "";
-        //根据Action第一个入参获(类型必须是TradeContext)取交易流水号
+        //根据Action第一个入参获(类型必须是SerialNumberGenerator)取交易流水号
         if(pjp.getArgs().length==0){
-            logger.warn("no any incoming parameter,you need input first value typeof SerialNumberScenario, method: "+actionMethod);
+            logger.warn("no any incoming parameter,you need input first value typeof SerialNumberGenerator, method: "+actionMethod);
         }
         else{
             Object firstValue= pjp.getArgs()[0];
-            if(!(firstValue instanceof SerialNumberScenario)){
-                logger.warn("the first value is not typeof SerialNumberScenario, method: "+actionMethod+", inArgs: "+pjp.getArgs());
+            if(!(firstValue instanceof SerialNumberGenerator)){
+                logger.warn("the first value is not typeof SerialNumberGenerator, method: "+actionMethod+", inArgs: "+pjp.getArgs());
             }
             else{
-                serialNumber= ((SerialNumberScenario)firstValue).getSerialNumber();
+                serialNumber= ((SerialNumberGenerator)firstValue).getSerialNumber();
                 if(StringUtils.isEmpty(serialNumber)){
                     logger.warn("incoming trade serial number is empty, method: "+actionMethod+", inArgs: "+pjp.getArgs());
                 }
@@ -175,14 +175,14 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
                                     if (logger.isInfoEnabled()) {
                                         logger.info("will send \"confirm\" message, TXContext: " + ctx+", actionExecutePayload: "+payload);
                                     }
-                                    actionIntercepter.confirmAction(ctx.getTxId());
+                                    actionIntercepter.confirmAction(ctx);
                                 }
                                 //确保在cancel之后执行通知方法
                             } else if ("rollback".equals(method.getName())) {
                                 if (logger.isInfoEnabled()) {
                                     logger.info("will send \"cancel\" message, TXContext: " + ctx+", actionExecutePayload: "+payload);
                                 }
-                                actionIntercepter.cancelAction(ctx.getTxId());
+                                actionIntercepter.cancelAction(ctx);
                             }
                         }
                     }

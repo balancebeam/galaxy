@@ -1,5 +1,6 @@
 package io.anyway.galaxy.demo.service;
 
+import io.anyway.galaxy.context.TXContext;
 import io.anyway.galaxy.demo.domain.RepositoryDO;
 
 /**
@@ -7,5 +8,5 @@ import io.anyway.galaxy.demo.domain.RepositoryDO;
  */
 public interface RepositoryService {
 
-    boolean decreaseRepository(long id,long stock);
+    boolean decreaseRepository(TXContext ctx,long id, long stock);
 }

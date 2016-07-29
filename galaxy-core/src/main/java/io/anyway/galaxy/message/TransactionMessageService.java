@@ -1,6 +1,7 @@
 package io.anyway.galaxy.message;
 
 import io.anyway.galaxy.common.TransactionStatusEnum;
+import io.anyway.galaxy.context.TXContext;
 import io.anyway.galaxy.domain.TransactionInfo;
 
 /**
@@ -10,11 +11,11 @@ public interface TransactionMessageService{
 
     /**
      * 同步发送消息
-     * @param txId
+     * @param ctx
      * @param txStatus
      * @throws Throwable
      */
-    public void sendMessage(long txId, TransactionStatusEnum txStatus) throws Throwable;
+    public void sendMessage(TXContext ctx, TransactionStatusEnum txStatus) throws Throwable;
 
     /**
      * 判断消息是否已处理，如未处理则保存消息
