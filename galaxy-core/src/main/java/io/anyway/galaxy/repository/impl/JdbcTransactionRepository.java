@@ -4,8 +4,13 @@ import com.google.common.base.Strings;
 import io.anyway.galaxy.common.Constants;
 import io.anyway.galaxy.domain.TransactionInfo;
 import io.anyway.galaxy.exception.DistributedTransactionException;
+import io.anyway.galaxy.spring.DataSourceAdaptor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.jdbc.support.JdbcUtils;
 import org.springframework.stereotype.Repository;
 
+import javax.sql.DataSource;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +24,9 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 	private static final String PG_DATE_SQL = "current_timestamp(0)::timestamp without time zone";
 
 	private static final String ORACLE_DATE_SQL = "sysdate";
+
+	@Autowired
+	private DataSourceAdaptor dataSourceAdaptor;
 
 	protected int doCreate(Connection conn, TransactionInfo transactionInfo) {
 
@@ -49,7 +57,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			throw new DistributedTransactionException(e);
 		} finally {
 			closeStatement(stmt);
-			// this.releaseConnection(conn);
+			this.releaseConnection(conn);
 		}
 	}
 
@@ -107,7 +115,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			throw new DistributedTransactionException(e);
 		} finally {
 			closeStatement(stmt);
-			// this.releaseConnection(connection);
+			this.releaseConnection(conn);
 		}
 	}
 
@@ -129,7 +137,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			throw new DistributedTransactionException(e);
 		} finally {
 			closeStatement(stmt);
-			// this.releaseConnection(connection);
+			this.releaseConnection(conn);
 		}
 	}
 
@@ -160,7 +168,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			throw new DistributedTransactionException(e);
 		} finally {
 			closeStatement(stmt);
-			// this.releaseConnection(conn);
+			this.releaseConnection(conn);
 		}
 
 		return transactionInfos;
@@ -190,7 +198,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			throw new DistributedTransactionException(e);
 		} finally {
 			closeStatement(stmt);
-			// this.releaseConnection(conn);
+			this.releaseConnection(conn);
 		}
 
 		return transactionInfo;
@@ -220,7 +228,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			throw new DistributedTransactionException(e);
 		} finally {
 			closeStatement(stmt);
-			// this.releaseConnection(conn);
+			this.releaseConnection(conn);
 		}
 
 		return transactionInfo;
@@ -245,20 +253,13 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 	}
 
 	protected void releaseConnection(Connection conn) {
-		try {
-			if (conn != null && !conn.isClosed()) {
-				conn.close();
-			}
-		} catch (SQLException e) {
-			throw new DistributedTransactionException(e);
-		}
+		DataSourceUtils.releaseConnection(conn, dataSourceAdaptor.getDataSource());
 	}
 
 	private void closeStatement(Statement stmt) {
 		try {
-			if (stmt != null && !stmt.isClosed()) {
-				stmt.close();
-			}
+			JdbcUtils.closeStatement(stmt);
+			stmt = null;
 		} catch (Exception ex) {
 			throw new DistributedTransactionException(ex);
 		}
