@@ -72,33 +72,33 @@ public class TransactionMessageServiceImpl implements TransactionMessageService,
         Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
         TransactionInfo transactionInfo = transactionRepository.directFindById(conn, message.getTxId());
         if (transactionInfo == null) {
-            logger.warn("no tx record, message: " + message);
+            logger.warn("Haven't transaction record, message: " + message);
             return false;
         }
 
         if (message.getTxStatus() == TransactionStatusEnum.CONFIRMING.getCode()) {
             if (transactionInfo.getTxStatus() == TransactionStatusEnum.CONFIRMING.getCode()) {
                 if (logger.isInfoEnabled()) {
-                    logger.info("in confirming operation, message: " + message);
+                    logger.info("in confirming operation, ignored message: " + message);
                 }
                 return false;
             }
             if (transactionInfo.getTxStatus() == TransactionStatusEnum.CONFIRMED.getCode()) {
                 if (logger.isInfoEnabled()) {
-                    logger.info("completed confirm operation, message: " + message);
+                    logger.info("completed confirm operation, ignored message: " + message);
                 }
                 return false;
             }
         } else {
             if (transactionInfo.getTxStatus() == TransactionStatusEnum.CANCELLING.getCode()) {
                 if (logger.isInfoEnabled()) {
-                    logger.info("in cancelling operation, message: " + message);
+                    logger.info("in cancelling operation, ignored message: " + message);
                 }
                 return false;
             }
             if (transactionInfo.getTxStatus() == TransactionStatusEnum.CANCELLED.getCode()) {
                 if (logger.isInfoEnabled()) {
-                    logger.info("completed cancel operation, message: " + message);
+                    logger.info("completed cancel operation, ignored message: " + message);
                 }
                 return false;
             }
@@ -107,10 +107,10 @@ public class TransactionMessageServiceImpl implements TransactionMessageService,
         TransactionInfo newTransactionInfo = new TransactionInfo();
         newTransactionInfo.setTxStatus(message.getTxStatus());
         newTransactionInfo.setTxId(message.getTxId());
-        newTransactionInfo.setGmtModified(new Date(new java.util.Date().getTime()));
+        //newTransactionInfo.setGmtModified(new Date(new java.util.Date().getTime()));
         transactionRepository.update(conn, newTransactionInfo);
         if (logger.isInfoEnabled()) {
-            logger.info("update TxStatus CANCELLING , message: " + message);
+            logger.info("Valid message and saved to db: " + message + ", status=" + TransactionStatusEnum.getMemo(message.getTxStatus()));
         }
         return true;
     }
@@ -146,7 +146,7 @@ public class TransactionMessageServiceImpl implements TransactionMessageService,
                 throw new DistributedTransactionException(e);
             }
             if (validation(message, transactionInfo)) {
-                ServiceExecutePayload payload = JSON.parseObject(transactionInfo.getContext(), ServiceExecutePayload.class);
+                ServiceExecutePayload payload = parsePayload(transactionInfo);
                 Object bean = applicationContext.getBean(payload.getTarget());
 
                 String methodName = null;
@@ -181,7 +181,7 @@ public class TransactionMessageServiceImpl implements TransactionMessageService,
     }
 
     private ServiceExecutePayload parsePayload(TransactionInfo transactionInfo) {
-        String payload = transactionInfo.getPayload();
+        String payload = transactionInfo.getContext();
         return JSON.parseObject(payload, ServiceExecutePayload.class);
     }
 

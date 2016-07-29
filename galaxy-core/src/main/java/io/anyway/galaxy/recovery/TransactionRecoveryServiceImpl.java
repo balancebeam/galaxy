@@ -83,6 +83,7 @@ public class TransactionRecoveryServiceImpl implements TransactionRecoveryServic
     private TransactionMessage transInfo2Msg(TransactionInfo txInfo){
         TransactionMessage txMsg = new TransactionMessage();
         txMsg.setTxId(txInfo.getTxId());
+        txMsg.setBusinessId(txInfo.getBusinessId());
         txMsg.setTxStatus(txInfo.getTxStatus());
         return txMsg;
     }
