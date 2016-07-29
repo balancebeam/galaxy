@@ -7,6 +7,12 @@ import io.anyway.galaxy.demo.domain.RepositoryDO;
  * Created by yangzz on 16/7/19.
  */
 public interface RepositoryService {
-
-    boolean decreaseRepository(TXContext ctx,long id, long stock);
+    /**
+     * 减库存操作
+     * @param ctx
+     * @param productId 产品ID
+     * @param amount 购买产品数量
+     * @return
+     */
+    boolean decreaseRepository(TXContext ctx,long productId, long amount);
 }

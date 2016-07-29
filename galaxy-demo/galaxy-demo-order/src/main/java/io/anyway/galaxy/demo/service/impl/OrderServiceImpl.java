@@ -21,14 +21,14 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    @TXTry(cancel = "deleteOrder")
+    @TXTry(cancel = "cancelOrder")
     public boolean addOrder(TXContext ctx,OrderDO orderDO) {
         return 0< dao.addOrder(orderDO);
     }
 
     @Transactional
     @TXCancel
-    public boolean deleteOrder(TXContext ctx,OrderDO orderDO){
+    public boolean cancelOrder(TXContext ctx,OrderDO orderDO){
         return 0 < dao.deleteOrder(orderDO);
     }
 }

@@ -26,15 +26,15 @@ public class RepositoryServiceImpl implements RepositoryService{
     }
 
     @Override
-    @Transactional(propagation=Propagation.REQUIRES_NEW)
+    @Transactional
     @TXTry(cancel = "increaseRepository")
-    public boolean decreaseRepository(TXContext ctx,long id, long stock){
-        return 0 < dao.decrease(new RepositoryDO(id, stock));
+    public boolean decreaseRepository(TXContext ctx,long productId, long amount){
+        return 0 < dao.decrease(new RepositoryDO(productId, amount));
     }
 
     @Transactional
     @TXCancel
-    boolean increaseRepository(TXContext ctx,int id,long stock){
-        return 0 < dao.increase(new RepositoryDO(id, stock));
+    boolean increaseRepository(TXContext ctx,int productId,long amount){
+        return 0 < dao.increase(new RepositoryDO(productId, amount));
     }
 }

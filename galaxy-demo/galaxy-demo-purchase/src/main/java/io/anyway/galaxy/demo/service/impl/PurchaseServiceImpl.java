@@ -5,15 +5,18 @@ import io.anyway.galaxy.common.TransactionTypeEnum;
 import io.anyway.galaxy.context.SerialNumberGenerator;
 import io.anyway.galaxy.context.TXContext;
 import io.anyway.galaxy.context.TXContextHolder;
-import io.anyway.galaxy.demo.domain.OrderDO;
 import io.anyway.galaxy.demo.service.PurchaseService;
-import io.anyway.galaxy.demo.service.OrderService;
-import io.anyway.galaxy.demo.service.RepositoryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestOperations;
+import org.springframework.web.client.RestTemplate;
 
-import java.util.concurrent.*;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -25,47 +28,39 @@ public class PurchaseServiceImpl implements PurchaseService {
 
     private AtomicInteger oId = new AtomicInteger(1);
 
-    @Autowired
-    private RepositoryService repositoryService;
+    @Value("${rest.repository.url}")
+    private String repositoryURL;
+
+    @Value("${rest.order.url}")
+    private String orderURL;
 
     @Autowired
-    private OrderService orderService;
-
-    private ExecutorService executorService= Executors.newCachedThreadPool();
+    private RestOperations restOperations;
 
     @Override
     @Transactional
     @TXAction(value = TransactionTypeEnum.TC,bizType = "purchase")
-    public String purchase(SerialNumberGenerator scenario, long userId, long repositoryId, long number)throws Exception{
+    public String purchase(SerialNumberGenerator generator, long userId, long productId, long amount)throws Exception{
 
         TXContext ctx= TXContextHolder.getTXContext();
 
-        Future<Boolean> task= doRepository(ctx,repositoryId,number);
-        if(task.get()){
-            task= doOrder(ctx,repositoryId,userId,number);
-            if(task.get()){
-                return "下单成功，请在30分钟内付款!";
+        final MultiValueMap<String,Object> params= new LinkedMultiValueMap<String,Object>();
+        params.add("txId",ctx.getTxId());
+        params.add("serialNumber",ctx.getSerialNumber());
+        params.add("productId",productId);
+        params.add("amount",amount);
+        params.add("userId",userId);
+
+        if(restOperations.postForObject(repositoryURL,params,Boolean.class)){
+            if(restOperations.postForObject(orderURL,params,Boolean.class)){
+                return "购买产品成功";
             }
+            throw new Exception("生成订单操作失败.");
         }
-        throw new Exception("下单失败.");
+        else{
+            throw new Exception("减库存操作失败.");
+        }
     }
 
-    private Future<Boolean> doRepository(final TXContext ctx,final long repositoryId, final long number){
-       return executorService.submit(new Callable<Boolean>(){
-            @Override
-            public Boolean call() throws Exception {
-                return repositoryService.decreaseRepository(ctx,repositoryId,number);
-            }
-        });
-    }
 
-    private Future<Boolean> doOrder(final TXContext ctx,final long repositoryId,final long userId,final long number){
-        return executorService.submit(new Callable<Boolean>(){
-            @Override
-            public Boolean call() throws Exception {
-                OrderDO orderDO = new OrderDO(oId.getAndIncrement(), repositoryId, userId,"待支付", number * 100);
-                return orderService.addOrder(ctx,orderDO);
-            }
-        });
-    }
 }

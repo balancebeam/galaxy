@@ -8,14 +8,4 @@
 
     <description>Dao配置</description>
 
-    <bean id="mySqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
-        <property name="dataSource" ref="dataSource" />
-        <property name="mapperLocations" value="classpath:sqlmap/*.xml" />
-    </bean>
-
-    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
-        <property name="basePackage" value="io.anyway.galaxy.demo.dao" />
-        <property name="sqlSessionFactoryBeanName" value="mySqlSessionFactory" />
-    </bean>
-
 </beans>

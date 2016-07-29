@@ -12,21 +12,24 @@ import java.io.Serializable;
 @Setter
 public class OrderDO implements Serializable {
 
-    private long order_id;
+    private long orderId;
 
-    private long item_id;
+    private long productId;
 
-    private long user_id;
+    private long userId;
 
     private String status;
 
-    private long amout;
+    private long amount;
 
-    public OrderDO(long order_id, long item_id, long user_id, String status, long amout) {
-        this.order_id = order_id;
-        this.item_id = item_id;
-        this.user_id = user_id;
+    public OrderDO(){
+    }
+
+    public OrderDO(long orderId, long productId, long userId, String status, long amount) {
+        this.orderId = orderId;
+        this.productId = productId;
+        this.userId = userId;
         this.status = status;
-        this.amout = amout;
+        this.amount = amount;
     }
 }

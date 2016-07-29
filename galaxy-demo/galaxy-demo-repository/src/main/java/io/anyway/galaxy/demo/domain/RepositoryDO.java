@@ -12,24 +12,24 @@ import java.io.Serializable;
 @Getter
 public class RepositoryDO implements Serializable{
 
-    private long id;
+    private long productId;
 
-    private String name;
+    private String category;
 
-    private long stock;
+    private long amount;
 
-    private long unit_price;
+    private long price;
 
-    public RepositoryDO(long id, long stock) {
-        this.id = id;
-        this.stock = stock;
+    public RepositoryDO(long productId, long amount) {
+        this.productId = productId;
+        this.amount = amount;
     }
 
-    public RepositoryDO(long id, String name, long stock, long unit_price) {
-        this.id = id;
-        this.name = name;
-        this.stock = stock;
-        this.unit_price = unit_price;
+    public RepositoryDO(long productId, String category, long amount, long price) {
+        this.productId = productId;
+        this.category = category;
+        this.amount = amount;
+        this.price = price;
     }
 
 }

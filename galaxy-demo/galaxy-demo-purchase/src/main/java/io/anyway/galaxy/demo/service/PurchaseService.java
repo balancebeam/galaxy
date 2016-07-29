@@ -7,7 +7,13 @@ import io.anyway.galaxy.context.SerialNumberGenerator;
  */
 public interface PurchaseService {
     /**
-     *购买操作
+     * 购买理财产品
+     * @param generator 业务流水号生成器
+     * @param userId 用户标识
+     * @param productId 商品ID
+     * @param amount 购买数量
+     * @return
+     * @throws Exception
      */
-    String purchase(SerialNumberGenerator scenario, long userId, long repositoryId, long number)throws Exception;
+    String purchase(SerialNumberGenerator generator, long userId, long productId, long amount)throws Exception;
 }
