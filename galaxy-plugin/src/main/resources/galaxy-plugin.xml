@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:reg="http://www.dangdang.com/schema/ddframe/reg"
+       xmlns:job="http://www.dangdang.com/schema/ddframe/job"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                        http://www.springframework.org/schema/beans/spring-beans.xsd
+                        http://www.springframework.org/schema/context
+                        http://www.springframework.org/schema/context/spring-context.xsd
+                        http://www.dangdang.com/schema/ddframe/reg
+                        http://www.dangdang.com/schema/ddframe/reg/reg.xsd
+                        http://www.dangdang.com/schema/ddframe/job
+                        http://www.dangdang.com/schema/ddframe/job/job.xsd
+                        ">
+
+    <context:property-placeholder location="galaxy-plugin.properties" />
+
+    <reg:zookeeper id="regCenter" serverLists="${zk.serverLists}" namespace="${zk.namespace}" baseSleepTimeMilliseconds="${zk.baseSleepTimeMilliseconds}" maxSleepTimeMilliseconds="${zk.maxSleepTimeMilliseconds}" maxRetries="${zk.maxRetries}" />
+
+    <job:bean id="transactionRecoveryJob" class="io.anyway.galaxy.scheduler.TransactionRecoveryJob" regCenter="regCenter"
+              shardingTotalCount="${transactionRecoveryJob.shardingTotalCount}"
+              cron="${transactionRecoveryJob.cron}"
+              description="${transactionRecoveryJob.description}" />
+
+</beans>

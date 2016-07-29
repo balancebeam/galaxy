@@ -36,7 +36,7 @@ public class JsonConvert<T> implements Convert<T> {
 		Convert<TransactionInfo> c = new JsonConvert<TransactionInfo>();
 		
 		TransactionInfo t = new TransactionInfo();
-		t.setSerialNumber("1");
+		t.setBusinessId("1");
 		t.setBusinessType("ddd");
 		
 		System.out.println(c.toString(t));

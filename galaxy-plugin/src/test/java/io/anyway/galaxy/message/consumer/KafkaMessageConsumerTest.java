@@ -4,6 +4,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ServiceLoader;
 
 /**
  * KafkaMessageConsumer Tester.
@@ -28,7 +29,10 @@ public class KafkaMessageConsumerTest {
      */
     @Test
     public void testHandleMessage() throws Throwable {
-       
+//        ServiceLoader<MessageConsumer> serviceLoader = ServiceLoader.load(MessageConsumer.class);
+//        for (MessageConsumer consumer : serviceLoader) {
+//            consumer.handleMessage("test!!");
+//        }
     }
 
 

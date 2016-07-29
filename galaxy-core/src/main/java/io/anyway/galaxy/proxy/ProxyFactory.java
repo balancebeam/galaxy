@@ -81,6 +81,7 @@ public class ProxyFactory {
 
         //生成Class
         cls = cc.toClass();
+        // TODO 用method名， 有可能一个类有多个Try方法
         CLASSES.putIfAbsent(object.getClass().getSimpleName(), cls);
 
         return cls;

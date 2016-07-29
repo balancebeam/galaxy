@@ -11,7 +11,7 @@ public class TransactionMessage implements Serializable{
 
     private long txId;
 
-    private String serialNumber;
+    private String businessId;
 
     private int txStatus = -1;
 
@@ -25,12 +25,12 @@ public class TransactionMessage implements Serializable{
         this.txId = txId;
     }
 
-    public String getSerialNumber() {
-        return serialNumber;
+    public String getBusinessId() {
+        return businessId;
     }
 
-    public void setSerialNumber(String serialNumber) {
-        this.serialNumber = serialNumber;
+    public void setBusinessId(String businessId) {
+        this.businessId = businessId;
     }
 
     public int getTxStatus() {

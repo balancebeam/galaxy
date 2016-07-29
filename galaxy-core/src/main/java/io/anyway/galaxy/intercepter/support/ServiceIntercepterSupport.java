@@ -26,7 +26,7 @@ public class ServiceIntercepterSupport implements ServiceIntercepter {
         TransactionInfo transactionInfo = new TransactionInfo();
         transactionInfo.setTxId(TransactionIdGenerator.next());
         transactionInfo.setContext(JSON.toJSONString(bean));
-        transactionInfo.setSerialNumber(serialNumber);
+        transactionInfo.setBusinessId(serialNumber);
         transactionInfo.setBusinessType(bean.getBizType());
         transactionInfo.setTxStatus(TransactionStatusEnum.BEGIN.getCode());
         transactionRepository.create(conn, transactionInfo);
