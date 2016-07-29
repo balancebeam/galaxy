@@ -9,6 +9,8 @@
 	<artifactId>galaxy-demo</artifactId>
 	<packaging>pom</packaging>
 	<modules>
+		<module>galaxy-demo-repository</module>
+		<module>galaxy-demo-order</module>
         <module>galaxy-demo-purchase</module>
     </modules>
 </project>
