@@ -40,7 +40,7 @@ public class ActionIntercepterSupport implements ActionIntercepter{
 
         transactionInfo.setTxId(TransactionIdGenerator.next());
         transactionInfo.setContext(JSON.toJSONString(bean));
-        transactionInfo.setSerialNumber(serialNumber); //业务流水号
+        transactionInfo.setBusinessId(serialNumber); //业务流水号
         transactionInfo.setBusinessType(bean.getBizType()); //业务类型
         transactionInfo.setTxType(bean.getTxType().getCode()); //TC | TCC
         transactionInfo.setTxStatus(TransactionStatusEnum.BEGIN.getCode()); //begin状态

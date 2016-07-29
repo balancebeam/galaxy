@@ -10,7 +10,6 @@ import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.jdbc.support.JdbcUtils;
 import org.springframework.stereotype.Repository;
 
-import javax.sql.DataSource;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +42,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
 			stmt.setLong(1, transactionInfo.getTxId());
 			stmt.setLong(2, transactionInfo.getParentId());
-			stmt.setString(3, transactionInfo.getSerialNumber());
+			stmt.setString(3, transactionInfo.getBusinessId());
 			stmt.setString(4, transactionInfo.getBusinessType());
 			stmt.setInt(5, transactionInfo.getTxType());
 			stmt.setInt(6, transactionInfo.getTxStatus());
@@ -142,7 +141,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 	}
 
 	@Override
-	protected List<TransactionInfo> doFindSince(Connection conn, Date date, int txStatus) {
+	protected List<TransactionInfo> doFindSince(Connection conn, Date date, Integer[] txStatus) {
 
 		List<TransactionInfo> transactionInfos = new ArrayList<TransactionInfo>();
 
@@ -153,7 +152,18 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			StringBuilder builder = new StringBuilder();
 			builder.append(
 					"SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, GMT_CREATE, GMT_MODIFIED"
-							+ "  FROM TCC_TRANSACTION WHERE GMT_MODIFIED < ? AND TX_STATUS = ?");
+							+ " FROM TCC_TRANSACTION WHERE GMT_MODIFIED < ? AND TX_STATUS ");
+
+			if (txStatus.length > 1) {
+				builder.append(" IN (");
+				for (int i = 0; i < txStatus.length; i++) {
+					if (i == 0) {
+						builder.append(txStatus[i]);
+					} else {
+						builder.append(",").append(txStatus[i]);
+					}
+				}
+			}
 
 			stmt = conn.prepareStatement(builder.toString());
 
@@ -174,6 +184,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 		return transactionInfos;
 	}
 
+	@Override
 	protected TransactionInfo doFindById(Connection conn, long txId) {
 
 		TransactionInfo transactionInfo = null;
@@ -239,7 +250,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
 		transactionInfo.setTxId(resultSet.getLong(1));
 		transactionInfo.setParentId(resultSet.getLong(2));
-		transactionInfo.setSerialNumber(resultSet.getString(3));
+		transactionInfo.setBusinessId(resultSet.getString(3));
 		transactionInfo.setBusinessType(resultSet.getString(4));
 		transactionInfo.setTxType(resultSet.getInt(5));
 		transactionInfo.setTxStatus(resultSet.getInt(6));

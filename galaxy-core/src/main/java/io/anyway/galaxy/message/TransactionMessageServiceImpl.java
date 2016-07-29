@@ -55,7 +55,7 @@ public class TransactionMessageServiceImpl implements TransactionMessageService,
         //先发送消息,如果发送失败会抛出Runtime异常
         TransactionMessage message = new TransactionMessage();
         message.setTxId(ctx.getTxId());
-        message.setSerialNumber(ctx.getSerialNumber());
+        message.setBusinessId(ctx.getSerialNumber());
         message.setTxStatus(txStatus.getCode());
         messageProducer.sendMessage(message);
 
@@ -133,7 +133,7 @@ public class TransactionMessageServiceImpl implements TransactionMessageService,
     public void handleMessage(TransactionMessage message) throws Throwable {
         try {
             //从消息中获取事务的标识和业务序列号
-            TXContext ctx = new TXContextSupport(message.getTxId(), message.getSerialNumber());
+            TXContext ctx = new TXContextSupport(message.getTxId(), message.getBusinessId());
             //设置到上下文中
             TXContextHolder.setTXContext(ctx);
 
