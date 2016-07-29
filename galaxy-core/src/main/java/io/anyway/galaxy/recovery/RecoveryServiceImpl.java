@@ -1,22 +1,21 @@
 package io.anyway.galaxy.recovery;
 
-import com.alibaba.fastjson.JSON;
+import java.sql.Connection;
+import java.sql.Date;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+
 import io.anyway.galaxy.common.TransactionStatusEnum;
-import io.anyway.galaxy.context.support.ServiceExecutePayload;
+import io.anyway.galaxy.context.TXContext;
+import io.anyway.galaxy.context.support.TXContextSupport;
 import io.anyway.galaxy.domain.TransactionInfo;
 import io.anyway.galaxy.message.TransactionMessage;
 import io.anyway.galaxy.message.TransactionMessageService;
 import io.anyway.galaxy.repository.TransactionRepository;
 import io.anyway.galaxy.spring.DataSourceAdaptor;
-import io.anyway.galaxy.spring.SpringContextUtil;
 import io.anyway.galaxy.util.DateUtil;
-import io.anyway.galaxy.util.ProxyUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import java.sql.Connection;
-import java.sql.Date;
-import java.util.List;
 
 /**
  * Created by xiong.j on 2016/7/25.
@@ -56,7 +55,8 @@ public class RecoveryServiceImpl implements RecoveryService{
             if(TransactionStatusEnum.BEGIN.getCode() == info.getTxStatus()){
                 // TODO BEGIN状态需要回查是否Try成功，后续优化
                 try {
-                    transactionMessageService.sendMessage(info.getTxId(), TransactionStatusEnum.CANCELLING);
+                	TXContext ctx= new TXContextSupport(info.getTxId(),info.getSerialNumber());
+                    transactionMessageService.sendMessage(ctx, TransactionStatusEnum.CANCELLING);
                 } catch (Throwable throwable) {
                     log.warn("Send cancel message error, TransactionInfo=", info);
                 }
