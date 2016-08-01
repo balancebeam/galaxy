@@ -73,11 +73,11 @@
         </dependency>
         <dependency>
             <groupId>com.dangdang</groupId>
-            <artifactId>elastic-job-core</artifactId>
+            <artifactId>elastic-jobx-core</artifactId>
         </dependency>
         <dependency>
             <groupId>com.dangdang</groupId>
-            <artifactId>elastic-job-spring</artifactId>
+            <artifactId>elastic-jobx-spring</artifactId>
         </dependency>
 
         <!-- junit testcase -->
