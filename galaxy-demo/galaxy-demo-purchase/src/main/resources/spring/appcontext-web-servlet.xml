@@ -16,16 +16,16 @@
     <description>Spring公共配置</description>
 
     <context:annotation-config />
-    <context:component-scan base-package="io.anyway.galaxy.demo"/>
 
     <bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
-	    <property name="location">
-	        <value>classpath:config.properties</value>
-	    </property>
-        <property name="fileEncoding">
-            <value>UTF-8</value>
+        <property name="order" value="1" />
+        <property name="ignoreUnresolvablePlaceholders" value="true" />
+        <property name="locations">
+            <list>
+                <value>classpath:config.properties</value>
+            </list>
         </property>
-	</bean>
+    </bean>
 
     <mvc:annotation-driven>
         <mvc:message-converters register-defaults="true">
@@ -41,6 +41,30 @@
         </mvc:message-converters>
     </mvc:annotation-driven>
 
+    <bean id="ky.requestFactory" class="org.springframework.http.client.SimpleClientHttpRequestFactory">
+        <property name="readTimeout" value="10000"/>
+        <property name="connectTimeout" value="5000"/>
+    </bean>
+
+    <bean id="simpleRestTemplate" class="org.springframework.web.client.RestTemplate">
+        <constructor-arg ref="ky.requestFactory"/>
+        <property name="messageConverters">
+            <list>
+                <bean class="org.springframework.http.converter.FormHttpMessageConverter"/>
+                <bean class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter"/>
+                <bean class="org.springframework.http.converter.StringHttpMessageConverter">
+                    <property name="supportedMediaTypes">
+                        <list>
+                            <value>text/plain;charset=UTF-8</value>
+                        </list>
+                    </property>
+                </bean>
+            </list>
+        </property>
+    </bean>
+
+    <import resource="classpath:galaxy-transaction.xml"/>
+    <import resource="classpath:galaxy-plugin.xml"/>
     <import resource="appcontext-service-db.xml" />
     <import resource="appcontext-service-dao.xml" />
 

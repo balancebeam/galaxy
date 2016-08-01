@@ -120,8 +120,9 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
         //缓存actionMethod解析注解的内容
         ActionExecutePayload cachedPayload = (ActionExecutePayload)cache.get(actionMethod);
         for(;cachedPayload==null;){
-            TXAction action = actionMethod.getAnnotation(TXAction.class);
             Class<?> target = pjp.getTarget().getClass();
+            actionMethod= target.getDeclaredMethod(actionMethod.getName(),actionMethod.getParameterTypes());
+            TXAction action = actionMethod.getAnnotation(TXAction.class);
             String bizType = action.bizType();
             if (StringUtils.isEmpty(bizType)) {
                 logger.warn("miss business type, class: " + target + ",method: " + actionMethod);
@@ -154,9 +155,9 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
                 logger.info("generate TXContext: " + ctx+", actionExecutePayload: "+payload);
             }
 
-            //获取外出业务开启事务的对应的数据库连接
-            final Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
+            //获取外层业务开启事务的对应的数据库连接
             ConnectionHolder conHolder = (ConnectionHolder) TransactionSynchronizationManager.getResource(dataSourceAdaptor.getDataSource());
+            final Connection conn = conHolder.getConnection();
             Method method= ReflectionUtils.findMethod(ConnectionHolder.class,"setConnection",Connection.class);
             ReflectionUtils.makeAccessible(method);
             ReflectionUtils.invokeMethod(method,conHolder,
@@ -228,8 +229,9 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
         //缓存serviceMethod解析注解的内容
         ServiceExecutePayload cachedPayload = (ServiceExecutePayload)cache.get(serviceMethod);
         for(;cachedPayload==null;){
-            TXTry txTry= serviceMethod.getAnnotation(TXTry.class);
             Class<?> target = pjp.getTarget().getClass();
+            serviceMethod= target.getDeclaredMethod(serviceMethod.getName(),serviceMethod.getParameterTypes());
+            TXTry txTry= serviceMethod.getAnnotation(TXTry.class);
             String bizType = txTry.bizType();
             if (StringUtils.isEmpty(bizType)) {
                 logger.warn("miss business type, class: " + target + ",serviceExecutePayload: " + serviceMethod);

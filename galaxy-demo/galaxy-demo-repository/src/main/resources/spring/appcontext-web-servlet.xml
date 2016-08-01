@@ -16,16 +16,15 @@
     <description>Spring公共配置</description>
 
     <context:annotation-config />
-    <context:component-scan base-package="io.anyway.galaxy.demo"/>
 
     <bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
-	    <property name="location">
-	        <value>classpath:config.properties</value>
-	    </property>
-        <property name="fileEncoding">
-            <value>UTF-8</value>
+        <property name="order" value="1" />
+        <property name="locations">
+            <list>
+                <value>classpath:config.properties</value>
+            </list>
         </property>
-	</bean>
+    </bean>
 
     <mvc:annotation-driven>
         <mvc:message-converters register-defaults="true">
@@ -41,6 +40,8 @@
         </mvc:message-converters>
     </mvc:annotation-driven>
 
+    <import resource="classpath:galaxy-transaction.xml"/>
+    <import resource="classpath:galaxy-plugin.xml"/>
     <import resource="appcontext-service-db.xml" />
     <import resource="appcontext-service-dao.xml" />
 

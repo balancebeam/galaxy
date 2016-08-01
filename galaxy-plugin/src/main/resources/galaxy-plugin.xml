@@ -14,11 +14,24 @@
                         http://www.dangdang.com/schema/ddframe/job/job.xsd
                         ">
 
-    <context:property-placeholder location="galaxy-plugin.properties" />
+    <bean id="galaxy.plugin.propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="order" value="2" />
+        <property name="locations">
+            <list>
+                <value>classpath:galaxy-plugin.properties</value>
+            </list>
+        </property>
+    </bean>
 
-    <reg:zookeeper id="regCenter" serverLists="${zk.serverLists}" namespace="${zk.namespace}" baseSleepTimeMilliseconds="${zk.baseSleepTimeMilliseconds}" maxSleepTimeMilliseconds="${zk.maxSleepTimeMilliseconds}" maxRetries="${zk.maxRetries}" />
+    <reg:zookeeper id="regCenter"
+                   serverLists="${zk.serverLists}"
+                   namespace="${zk.namespace}"
+                   baseSleepTimeMilliseconds="${zk.baseSleepTimeMilliseconds}"
+                   maxSleepTimeMilliseconds="${zk.maxSleepTimeMilliseconds}"
+                   maxRetries="${zk.maxRetries}" />
 
-    <job:bean id="transactionRecoveryJob" class="io.anyway.galaxy.scheduler.TransactionRecoveryJob" regCenter="regCenter"
+    <job:bean id="transactionRecoveryJob" class="io.anyway.galaxy.scheduler.TransactionRecoveryJob"
+              regCenter="regCenter"
               shardingTotalCount="${transactionRecoveryJob.shardingTotalCount}"
               cron="${transactionRecoveryJob.cron}"
               description="${transactionRecoveryJob.description}" />

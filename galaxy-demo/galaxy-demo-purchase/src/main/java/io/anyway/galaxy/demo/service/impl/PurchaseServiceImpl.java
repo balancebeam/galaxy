@@ -44,15 +44,15 @@ public class PurchaseServiceImpl implements PurchaseService {
 
         TXContext ctx= TXContextHolder.getTXContext();
 
-        final MultiValueMap<String,Object> params= new LinkedMultiValueMap<String,Object>();
-        params.add("txId",ctx.getTxId());
-        params.add("serialNumber",ctx.getSerialNumber());
-        params.add("productId",productId);
-        params.add("amount",amount);
-        params.add("userId",userId);
+        final Map<String,Object> params= new HashMap<String, Object>();
+        params.put("txId",ctx.getTxId());
+        params.put("serialNumber",ctx.getSerialNumber());
+        params.put("productId",productId);
+        params.put("amount",amount);
+        params.put("userId",userId);
 
-        if(restOperations.postForObject(repositoryURL,params,Boolean.class)){
-            if(restOperations.postForObject(orderURL,params,Boolean.class)){
+        if(restOperations.postForObject(repositoryURL,null,Boolean.class,params)){
+            if(restOperations.postForObject(orderURL,null,Boolean.class,params)){
                 return "购买产品成功";
             }
             throw new Exception("生成订单操作失败.");

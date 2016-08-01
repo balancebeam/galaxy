@@ -8,10 +8,12 @@
     <aop:aspectj-autoproxy/>
     <context:component-scan base-package="io.anyway.galaxy"/>
 
-    <bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <bean id="galaxy.propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="order" value="2" />
+        <property name="ignoreUnresolvablePlaceholders" value="true" />
         <property name="locations">
             <list>
-                <value>galaxy-core.properties</value>
+                <value>classpath:galaxy-core.properties</value>
             </list>
         </property>
     </bean>
