@@ -38,7 +38,8 @@ public class PurchaseRest {
         long userId = 1;
         long productId = 1;
 
-        return purchaseService.purchase(generator,userId,productId,amount);
+        String result=  purchaseService.purchase(generator,userId,productId,amount);
+        return result;
     }
 
 }

@@ -17,8 +17,8 @@ public abstract class TXContextHolder {
         ctxHolder.set(ctx);
     }
 
-    public static Boolean isAction(){
-        return true==actionHolder.get();
+    public static boolean isAction(){
+        return actionHolder.get()!=null? actionHolder.get(): false;
     }
 
     public static void setAction(Boolean action){

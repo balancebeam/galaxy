@@ -189,6 +189,9 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
             Object result= pjp.proceed();
             //更改TX记录状态为TRIED
             actionIntercepter.tryAction(ctx);
+            if (logger.isInfoEnabled()) {
+                logger.info("Update TX : " + ctx+" status TRIED");
+            }
             return result;
 
         }finally{
@@ -248,6 +251,9 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
         Object result= pjp.proceed();
         //更改TX状态为TRIED
         serviceIntercepter.tryService(ctx,payload);
+        if (logger.isInfoEnabled()) {
+            logger.info("Update TX : " + ctx+" status TRIED");
+        }
         return result;
     }
 
@@ -280,6 +286,9 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
         Object result= pjp.proceed();
         //更改TX表的状态为CONFIRMED
         serviceIntercepter.confirmService(ctx);
+        if (logger.isInfoEnabled()) {
+            logger.info("Update TX : " + ctx+" status CONFIRMED");
+        }
         return result;
     }
 
@@ -312,6 +321,9 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
         Object result= pjp.proceed();
         //更改TX表的状态为CANCELLED
         serviceIntercepter.cancelService(ctx);
+        if (logger.isInfoEnabled()) {
+            logger.info("Update TX : " + ctx+" status CANCELLED");
+        }
         return result;
     }
 
