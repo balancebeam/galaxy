@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import io.anyway.galaxy.common.TransactionStatusEnum;
 import io.anyway.galaxy.context.TXContext;
 import io.anyway.galaxy.context.support.ActionExecutePayload;
+import io.anyway.galaxy.context.support.TXContextSupport;
 import io.anyway.galaxy.domain.TransactionInfo;
 import io.anyway.galaxy.intercepter.ActionIntercepter;
 import io.anyway.galaxy.message.TransactionMessageService;
@@ -25,9 +26,6 @@ import java.sql.Connection;
 public class ActionIntercepterSupport implements ActionIntercepter{
 
     @Autowired
-    private DataSourceAdaptor dataSourceAdaptor;
-
-    @Autowired
     private TransactionRepository transactionRepository;
 
     @Autowired
@@ -35,7 +33,7 @@ public class ActionIntercepterSupport implements ActionIntercepter{
 
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public long addAction(ActionExecutePayload bean,String serialNumber){
+    public TXContext addAction(String serialNumber,ActionExecutePayload bean)throws Throwable{
         TransactionInfo transactionInfo = new TransactionInfo();
 
         transactionInfo.setTxId(TransactionIdGenerator.next());
@@ -45,17 +43,19 @@ public class ActionIntercepterSupport implements ActionIntercepter{
         transactionInfo.setTxType(bean.getTxType().getCode()); //TC | TCC
         transactionInfo.setTxStatus(TransactionStatusEnum.BEGIN.getCode()); //begin状态
 
-        Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
-        transactionRepository.create(conn, transactionInfo);
-        return transactionInfo.getTxId();
+        transactionRepository.create(transactionInfo);
+        TXContextSupport ctx= new TXContextSupport();
+        ctx.setTxId(transactionInfo.getTxId());
+        ctx.setSerialNumber(serialNumber);
+        return ctx;
     }
 
     @Override
-    public void tryAction(final Connection conn, long txId) throws Throwable {
+    public void tryAction(TXContext ctx) throws Throwable {
         TransactionInfo transactionInfo = new TransactionInfo();
-        transactionInfo.setTxId(txId);
+        transactionInfo.setTxId(ctx.getTxId());
         transactionInfo.setTxStatus(TransactionStatusEnum.TRIED.getCode());
-        transactionRepository.update(conn, transactionInfo);
+        transactionRepository.update(transactionInfo);
     }
 
     @Override

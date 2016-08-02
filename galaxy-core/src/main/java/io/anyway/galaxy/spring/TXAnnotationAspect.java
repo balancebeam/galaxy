@@ -75,14 +75,14 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
     
     @PostConstruct
     public void init(){
-    	this.transactionServer = TransactionServer.instance();
-    	this.transactionServer.setDataSource(dataSourceAdaptor);
-    	this.transactionServer.start();
+//    	this.transactionServer = TransactionServer.instance();
+//    	this.transactionServer.setDataSource(dataSourceAdaptor);
+//    	this.transactionServer.start();
     }
     
     @PreDestroy
     public void destroy(){
-    	this.transactionServer.shutdown();
+//        this.transactionServer.shutdown();
     }
 
     //切面注解TXAction
@@ -98,7 +98,7 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
         assertTransactional();
 
         //获取方法上的注解内容
-        Method actionMethod = ((MethodSignature) pjp.getSignature()).getMethod();
+        final Method actionMethod = ((MethodSignature) pjp.getSignature()).getMethod();
 
         String serialNumber= "";
         //根据Action第一个入参获(类型必须是SerialNumberGenerator)取交易流水号
@@ -121,8 +121,8 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
         ActionExecutePayload cachedPayload = (ActionExecutePayload)cache.get(actionMethod);
         for(;cachedPayload==null;){
             Class<?> target = pjp.getTarget().getClass();
-            actionMethod= target.getDeclaredMethod(actionMethod.getName(),actionMethod.getParameterTypes());
-            TXAction action = actionMethod.getAnnotation(TXAction.class);
+            Method targetMethod= target.getDeclaredMethod(actionMethod.getName(),actionMethod.getParameterTypes());
+            TXAction action = targetMethod.getAnnotation(TXAction.class);
             String bizType = action.bizType();
             if (StringUtils.isEmpty(bizType)) {
                 logger.warn("miss business type, class: " + target + ",method: " + actionMethod);
@@ -139,18 +139,14 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
         payload.setArgs(pjp.getArgs());
 
         try {
-            //开启事务上下文
-            final TXContextSupport ctx= new TXContextSupport();
-            //设置业务流水号
-            ctx.setSerialNumber(serialNumber);
+            //获取新的连接开启新事务新增一条TX记录
+            final TXContext ctx = actionIntercepter.addAction(serialNumber,payload);
+
             //绑定到ThreadLocal中
             TXContextHolder.setTXContext(ctx);
             //设置在Action操作里
             TXContextHolder.setAction(true);
-            //获取新的连接开启新事务新增一条TX记录
-            long txId = actionIntercepter.addAction(payload,serialNumber);
-            //设置事务编号
-            ctx.setTxId(txId);
+
             if (logger.isInfoEnabled()) {
                 logger.info("generate TXContext: " + ctx+", actionExecutePayload: "+payload);
             }
@@ -192,7 +188,7 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
             //先执行业务操作
             Object result= pjp.proceed();
             //更改TX记录状态为TRIED
-            actionIntercepter.tryAction(conn, txId);
+            actionIntercepter.tryAction(ctx);
             return result;
 
         }finally{
@@ -225,13 +221,13 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
         Assert.notNull(ctx);
 
         //获取方法上的注解内容
-        Method serviceMethod = ((MethodSignature) pjp.getSignature()).getMethod();
+        final Method serviceMethod = ((MethodSignature) pjp.getSignature()).getMethod();
         //缓存serviceMethod解析注解的内容
         ServiceExecutePayload cachedPayload = (ServiceExecutePayload)cache.get(serviceMethod);
         for(;cachedPayload==null;){
             Class<?> target = pjp.getTarget().getClass();
-            serviceMethod= target.getDeclaredMethod(serviceMethod.getName(),serviceMethod.getParameterTypes());
-            TXTry txTry= serviceMethod.getAnnotation(TXTry.class);
+            Method targetMethod= target.getDeclaredMethod(serviceMethod.getName(),serviceMethod.getParameterTypes());
+            TXTry txTry= targetMethod.getAnnotation(TXTry.class);
             String bizType = txTry.bizType();
             if (StringUtils.isEmpty(bizType)) {
                 logger.warn("miss business type, class: " + target + ",serviceExecutePayload: " + serviceMethod);
@@ -250,9 +246,8 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
         }
         //先调用业务方法
         Object result= pjp.proceed();
-        //获取外出业务开启事务的对应的数据库连接
-        Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
-        serviceIntercepter.tryService(conn,payload,ctx.getTxId(),ctx.getSerialNumber());
+        //更改TX状态为TRIED
+        serviceIntercepter.tryService(ctx,payload);
         return result;
     }
 
@@ -283,10 +278,8 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
         }
 
         Object result= pjp.proceed();
-        //获取外出业务开启事务的对应的数据库连接
-        Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
-        //提交TX表的confirm状态
-        serviceIntercepter.confirmService(conn,ctx.getTxId());
+        //更改TX表的状态为CONFIRMED
+        serviceIntercepter.confirmService(ctx);
         return result;
     }
 
@@ -317,10 +310,8 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
         }
 
         Object result= pjp.proceed();
-        //获取外出业务开启事务的对应的数据库连接
-        Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
-        //提交TX表的confirm状态
-        serviceIntercepter.cancelService(conn,ctx.getTxId());
+        //更改TX表的状态为CANCELLED
+        serviceIntercepter.cancelService(ctx);
         return result;
     }
 

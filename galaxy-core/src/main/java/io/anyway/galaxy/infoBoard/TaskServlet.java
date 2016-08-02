@@ -28,40 +28,33 @@ public class TaskServlet extends HttpServlet {
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
 		JdbcTransactionRepository transactionRepository = new JdbcTransactionRepository();
-		try {
-			
-			String param = req.getParameter("interval");
-			int interval = 0;
-			
-			if(StringUtils.isNotEmpty(param)){
-				interval = Integer.parseInt(param);
+
+		String param = req.getParameter("interval");
+		int interval = 0;
+
+		if(StringUtils.isNotEmpty(param)){
+			interval = Integer.parseInt(param);
+		}
+
+		List<TransactionInfo> list = transactionRepository.listSince(DateUtil.getPrevDate(interval));
+
+		String jsonStr = JSON.toJSONString(list);
+		resp.setCharacterEncoding("utf-8");
+		resp.addHeader("Access-Control-Allow-Origin", "*");
+		resp.addHeader("Access-Control-Allow-Headers","Content-Type, Accept");
+		resp.setContentType("application/json");
+
+		PrintWriter writer = resp.getWriter();
+		try{
+			writer.write(jsonStr);
+			resp.setStatus(Response.SC_OK);
+		} finally {
+			if (writer != null) {
+				writer.close();
 			}
+		}
 			
-			Connection conn = TransactionServer.instance().getDataSource().getDataSource().getConnection();
-			
-			List<TransactionInfo> list = transactionRepository.listSince(conn, DateUtil.getPrevDate(interval));
 
-	        String jsonStr = JSON.toJSONString(list);
-	        resp.setCharacterEncoding("utf-8");
-	        resp.addHeader("Access-Control-Allow-Origin", "*");
-	        resp.addHeader("Access-Control-Allow-Headers","Content-Type, Accept");
-	        resp.setContentType("application/json");
-
-	        PrintWriter writer = resp.getWriter();
-	        try{
-	            writer.write(jsonStr);
-	            resp.setStatus(Response.SC_OK);
-	        } finally {
-	            if (writer != null) {
-	                writer.close();
-	            }
-	        }
-			
-			
-			conn.close();			
-		} catch (SQLException e) {
-			log.error("query task fail.", e);
-		} 
 	}
 
 }

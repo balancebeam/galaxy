@@ -37,6 +37,9 @@
         <property name="maxPoolPreparedStatementPerConnectionSize" value="50" />
     </bean>
 
+    <bean class="io.anyway.galaxy.spring.DataSourceAdaptor">
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
 
     <bean id="transactionManager"
           class="org.springframework.jdbc.datasource.DataSourceTransactionManager">

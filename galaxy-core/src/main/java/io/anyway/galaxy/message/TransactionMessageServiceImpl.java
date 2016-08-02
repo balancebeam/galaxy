@@ -37,9 +37,6 @@ public class TransactionMessageServiceImpl implements TransactionMessageService,
     private final static Log logger = LogFactory.getLog(io.anyway.galaxy.message.TransactionMessageService.class);
 
     @Autowired
-    private DataSourceAdaptor dataSourceAdaptor;
-
-    @Autowired
     private TransactionRepository transactionRepository;
 
     @Autowired
@@ -63,14 +60,12 @@ public class TransactionMessageServiceImpl implements TransactionMessageService,
         TransactionInfo transactionInfo = new TransactionInfo();
         transactionInfo.setTxId(ctx.getTxId());
         transactionInfo.setTxStatus(getNextStatus(txStatus).getCode());
-        Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
-        transactionRepository.update(conn, transactionInfo);
+        transactionRepository.update(transactionInfo);
     }
 
     @Transactional
     public boolean isValidMessage(TransactionMessage message) {
-        Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
-        TransactionInfo transactionInfo = transactionRepository.directFindById(conn, message.getTxId());
+        TransactionInfo transactionInfo = transactionRepository.directFindById(message.getTxId());
         if (transactionInfo == null) {
             logger.warn("Haven't transaction record, message: " + message);
             return false;
@@ -108,7 +103,7 @@ public class TransactionMessageServiceImpl implements TransactionMessageService,
         newTransactionInfo.setTxStatus(message.getTxStatus());
         newTransactionInfo.setTxId(message.getTxId());
         //newTransactionInfo.setGmtModified(new Date(new java.util.Date().getTime()));
-        transactionRepository.update(conn, newTransactionInfo);
+        transactionRepository.update(newTransactionInfo);
         if (logger.isInfoEnabled()) {
             logger.info("Valid message and saved to db: " + message + ", status=" + TransactionStatusEnum.getMemo(message.getTxStatus()));
         }
@@ -137,10 +132,9 @@ public class TransactionMessageServiceImpl implements TransactionMessageService,
             //设置到上下文中
             TXContextHolder.setTXContext(ctx);
 
-            Connection conn = DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
             TransactionInfo transactionInfo;
             try {
-                transactionInfo = transactionRepository.lockById(conn, message.getTxId());
+                transactionInfo = transactionRepository.lockById( message.getTxId());
             } catch (Exception e) {
                 logger.warn("Lock failed, txId = " + message.getTxId());
                 throw new DistributedTransactionException(e);

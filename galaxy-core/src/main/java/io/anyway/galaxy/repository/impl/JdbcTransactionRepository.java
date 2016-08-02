@@ -27,7 +27,9 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 	@Autowired
 	private DataSourceAdaptor dataSourceAdaptor;
 
-	protected int doCreate(Connection conn, TransactionInfo transactionInfo) {
+	protected int doCreate(TransactionInfo transactionInfo) {
+
+		Connection conn= DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
 
 		PreparedStatement stmt = null;
 
@@ -56,11 +58,13 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			throw new DistributedTransactionException(e);
 		} finally {
 			closeStatement(stmt);
-			this.releaseConnection(conn);
+			releaseConnection(conn);
 		}
 	}
 
-	protected int doUpdate(Connection conn, TransactionInfo transactionInfo) {
+	protected int doUpdate(TransactionInfo transactionInfo) {
+
+		Connection conn= DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
 		PreparedStatement stmt = null;
 
 		try {
@@ -114,11 +118,13 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			throw new DistributedTransactionException(e);
 		} finally {
 			closeStatement(stmt);
-			this.releaseConnection(conn);
+			releaseConnection(conn);
 		}
 	}
 
-	protected int doDelete(Connection conn, TransactionInfo transactionInfo) {
+	protected int doDelete(TransactionInfo transactionInfo) {
+
+		Connection conn= DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
 		PreparedStatement stmt = null;
 
 		try {
@@ -136,12 +142,14 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			throw new DistributedTransactionException(e);
 		} finally {
 			closeStatement(stmt);
-			this.releaseConnection(conn);
+			releaseConnection(conn);
 		}
 	}
 
 	@Override
-	protected List<TransactionInfo> doFindSince(Connection conn, Date date, Integer[] txStatus) {
+	protected List<TransactionInfo> doFindSince(Date date, Integer[] txStatus) {
+
+		Connection conn= DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
 
 		List<TransactionInfo> transactionInfos = new ArrayList<TransactionInfo>();
 
@@ -178,14 +186,16 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			throw new DistributedTransactionException(e);
 		} finally {
 			closeStatement(stmt);
-			this.releaseConnection(conn);
+			releaseConnection(conn);
 		}
 
 		return transactionInfos;
 	}
 
 	@Override
-	protected TransactionInfo doFindById(Connection conn, long txId) {
+	protected TransactionInfo doFindById(long txId) {
+
+		Connection conn= DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
 
 		TransactionInfo transactionInfo = null;
 
@@ -209,13 +219,15 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			throw new DistributedTransactionException(e);
 		} finally {
 			closeStatement(stmt);
-			this.releaseConnection(conn);
+			releaseConnection(conn);
 		}
 
 		return transactionInfo;
 	}
 
-	protected TransactionInfo doLockById(Connection conn, long txId) {
+	protected TransactionInfo doLockById(long txId) {
+
+		Connection conn= DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
 
 		TransactionInfo transactionInfo = null;
 
@@ -239,7 +251,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			throw new DistributedTransactionException(e);
 		} finally {
 			closeStatement(stmt);
-			this.releaseConnection(conn);
+			releaseConnection(conn);
 		}
 
 		return transactionInfo;
@@ -272,7 +284,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			JdbcUtils.closeStatement(stmt);
 			stmt = null;
 		} catch (Exception ex) {
-			throw new DistributedTransactionException(ex);
+			//throw new DistributedTransactionException(ex);
 		}
 	}
 
@@ -292,7 +304,9 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
 
 	@Override
-	public List<TransactionInfo> listSince(Connection conn, Date date) {
+	public List<TransactionInfo> listSince(Date date) {
+
+		Connection conn= DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
 
 		List<TransactionInfo> transactionInfos = new ArrayList<TransactionInfo>();
 
@@ -318,6 +332,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			throw new DistributedTransactionException(e);
 		} finally {
 			closeStatement(stmt);
+			releaseConnection(conn);
 		}
 
 		return transactionInfos;

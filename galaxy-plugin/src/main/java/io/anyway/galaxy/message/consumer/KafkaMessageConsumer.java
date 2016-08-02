@@ -31,6 +31,9 @@ public class KafkaMessageConsumer implements InitializingBean,DisposableBean{
     @Value("${kafka.consumer.group}")
     private String group;
 
+    @Value("${kafka.client.id}")
+    private String client;
+
     @Value("${kafka.consumer.timeout}")
     private int timeout= 30;
 
@@ -47,6 +50,7 @@ public class KafkaMessageConsumer implements InitializingBean,DisposableBean{
         Properties props = new Properties();
         props.put("bootstrap.servers", servers);
         props.put("group.id", group);
+        props.put("client.id",client);
         props.put("enable.auto.commit", "false");
         props.put("auto.commit.interval.ms", "1000");
         props.put("session.timeout.ms", "30000");

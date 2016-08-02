@@ -36,4 +36,9 @@ public class TXContextSupport implements TXContext{
     public void setSerialNumber(String serialNumber){
         this.serialNumber = serialNumber;
     }
+
+    @Override
+    public String toString() {
+        return "{txId="+txId+",serialNumber="+serialNumber+"}";
+    }
 }

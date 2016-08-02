@@ -10,21 +10,21 @@ import java.util.List;
  */
 public interface TransactionRepository {
 
-    int create(Connection conn, TransactionInfo transactionInfo);
+    int create(TransactionInfo transactionInfo);
 
-    int update(Connection conn, TransactionInfo transactionInfo);
+    int update(TransactionInfo transactionInfo);
 
-    int delete(Connection conn, TransactionInfo transactionInfo);
+    int delete(TransactionInfo transactionInfo);
 
-    TransactionInfo findById(Connection conn, long txId);
+    TransactionInfo findById(long txId);
 
-    TransactionInfo directFindById(Connection conn, long txId);
+    TransactionInfo directFindById(long txId);
 
-    TransactionInfo lockById(Connection conn, long txId);
+    TransactionInfo lockById(long txId);
 
-    List<TransactionInfo> findSince(Connection conn, java.sql.Date date, int txStatus);
+    List<TransactionInfo> findSince(java.sql.Date date, int txStatus);
 
-    List<TransactionInfo> findSince(Connection conn, java.sql.Date date, Integer[] txStatus);
+    List<TransactionInfo> findSince(java.sql.Date date, Integer[] txStatus);
     
-    List<TransactionInfo> listSince(Connection conn, java.sql.Date date);
+    List<TransactionInfo> listSince(java.sql.Date date);
 }

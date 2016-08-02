@@ -21,8 +21,8 @@ public abstract class CacheableTransactionRepository implements TransactionRepos
     private Cache<Long, TransactionInfo> transactionInfoCache;
 
     @Override
-    public int create(Connection conn, TransactionInfo transactionInfo) {
-        int result = doCreate(conn, transactionInfo);
+    public int create(TransactionInfo transactionInfo) {
+        int result = doCreate(transactionInfo);
         if (result > 0) {
             putToCache(transactionInfo);
         }
@@ -30,8 +30,8 @@ public abstract class CacheableTransactionRepository implements TransactionRepos
     }
 
     @Override
-    public int update(Connection conn, TransactionInfo transactionInfo) {
-        int result = doUpdate(conn, transactionInfo);
+    public int update(TransactionInfo transactionInfo) {
+        int result = doUpdate(transactionInfo);
         if (result > 0) {
             putToCache(transactionInfo);
         } else {
@@ -41,8 +41,8 @@ public abstract class CacheableTransactionRepository implements TransactionRepos
     }
 
     @Override
-    public int delete(Connection conn, TransactionInfo transactionInfo) {
-        int result = doDelete(conn, transactionInfo);
+    public int delete(TransactionInfo transactionInfo) {
+        int result = doDelete(transactionInfo);
         if (result > 0) {
             removeFromCache(transactionInfo);
         }
@@ -50,11 +50,11 @@ public abstract class CacheableTransactionRepository implements TransactionRepos
     }
 
     @Override
-    public TransactionInfo findById(Connection conn, long txId) {
+    public TransactionInfo findById(long txId) {
         TransactionInfo transactionInfo = findFromCache(txId);
 
         if (transactionInfo == null) {
-            transactionInfo = doFindById(conn, txId);
+            transactionInfo = doFindById(txId);
 
             if (transactionInfo != null) {
                 putToCache(transactionInfo);
@@ -65,8 +65,8 @@ public abstract class CacheableTransactionRepository implements TransactionRepos
     }
 
     @Override
-    public TransactionInfo lockById(Connection conn, long txId) {
-        TransactionInfo transactionInfo = doLockById(conn, txId);
+    public TransactionInfo lockById(long txId) {
+        TransactionInfo transactionInfo = doLockById(txId);
 
         if (transactionInfo != null) {
             putToCache(transactionInfo);
@@ -76,8 +76,8 @@ public abstract class CacheableTransactionRepository implements TransactionRepos
     }
 
     @Override
-    public TransactionInfo directFindById(Connection conn, long txId) {
-        TransactionInfo transactionInfo = doFindById(conn, txId);
+    public TransactionInfo directFindById( long txId) {
+        TransactionInfo transactionInfo = doFindById(txId);
 
         if (transactionInfo != null) {
             putToCache(transactionInfo);
@@ -87,9 +87,9 @@ public abstract class CacheableTransactionRepository implements TransactionRepos
     }
 
     @Override
-    public List<TransactionInfo> findSince(Connection conn, java.sql.Date date, int txStatus) {
+    public List<TransactionInfo> findSince(java.sql.Date date, int txStatus) {
 
-        List<TransactionInfo> transactionInfos = doFindSince(conn, date, new Integer[]{txStatus});
+        List<TransactionInfo> transactionInfos = doFindSince(date, new Integer[]{txStatus});
 
 //        for (TransactionInfo transactionInfo : transactionInfos) {
 //            putToCache(transactionInfo);
@@ -99,9 +99,9 @@ public abstract class CacheableTransactionRepository implements TransactionRepos
     }
 
     @Override
-    public List<TransactionInfo> findSince(Connection conn, java.sql.Date date, Integer[] txStatus) {
+    public List<TransactionInfo> findSince(java.sql.Date date, Integer[] txStatus) {
 
-        List<TransactionInfo> transactionInfos = doFindSince(conn, date, txStatus);
+        List<TransactionInfo> transactionInfos = doFindSince(date, txStatus);
 
         return transactionInfos;
     }
@@ -126,15 +126,15 @@ public abstract class CacheableTransactionRepository implements TransactionRepos
         this.expireDuration = durationInSeconds;
     }
 
-    protected abstract int doCreate(Connection conn, TransactionInfo transactionInfo);
+    protected abstract int doCreate( TransactionInfo transactionInfo);
 
-    protected abstract int doUpdate(Connection conn, TransactionInfo transactionInfo);
+    protected abstract int doUpdate(TransactionInfo transactionInfo);
 
-    protected abstract int doDelete(Connection conn, TransactionInfo transactionInfo);
+    protected abstract int doDelete(TransactionInfo transactionInfo);
 
-    protected abstract TransactionInfo doLockById(Connection conn, long txId);
+    protected abstract TransactionInfo doLockById( long txId);
 
-    protected abstract TransactionInfo doFindById(Connection conn, long txId);
+    protected abstract TransactionInfo doFindById(long txId);
 
-    protected abstract List<TransactionInfo> doFindSince(Connection conn, java.sql.Date date, Integer[] txStatus);
+    protected abstract List<TransactionInfo> doFindSince(java.sql.Date date, Integer[] txStatus);
 }

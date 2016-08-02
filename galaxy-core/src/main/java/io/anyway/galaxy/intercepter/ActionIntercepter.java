@@ -14,18 +14,17 @@ public interface ActionIntercepter {
     /**
      * 在开启业务事务时先记录一条TX记录,状态为trying
      * 这个过程开启新的事务,成功返回唯一的事务编号,失败抛异常
-     * @param payload Action执行体定义
      * @param serialNumber 业务流水号
-     * @return 事务编号
+     * @param payload Action执行体定义
+     * @return 事务上下文包含事务标识和业务流水号
      */
-    long addAction(ActionExecutePayload payload,String serialNumber);
+    TXContext addAction(String serialNumber,ActionExecutePayload payload) throws Throwable;
 
     /**
      * 尝试成功更新,更新事务状态为tried
-     * @param conn 业务操作的数据库连接
-     * @param txId 事务编号
+     * @param ctx 分布式上下文,包括事务编号和业务流水编号
      */
-    void tryAction(Connection conn, long txId) throws Throwable;
+    void tryAction(TXContext ctx) throws Throwable;
     /**
      * 更新事务状态为confirmed
      * @param ctx 分布式上下文,包括事务编号和业务流水编号

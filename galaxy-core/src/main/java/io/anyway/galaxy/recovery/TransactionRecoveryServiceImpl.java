@@ -10,6 +10,7 @@ import io.anyway.galaxy.spring.DataSourceAdaptor;
 import io.anyway.galaxy.util.DateUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.sql.Connection;
 import java.sql.Date;
@@ -19,10 +20,8 @@ import java.util.List;
  * Created by xiong.j on 2016/7/25.
  */
 @Slf4j
+@Component
 public class TransactionRecoveryServiceImpl implements TransactionRecoveryService {
-
-    @Autowired
-    private DataSourceAdaptor dataSourceAdaptor;
 
     @Autowired
     private TransactionRepository transactionRepository;
@@ -32,17 +31,10 @@ public class TransactionRecoveryServiceImpl implements TransactionRecoveryServic
 
     @Override
     public List<TransactionInfo> fetchData(List<Integer> shardingItem) {
-        Connection conn = null;
-        try {
-            conn = dataSourceAdaptor.getDataSource().getConnection();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
         // 30天前
         Date searchDate = DateUtil.getPrevDate(30);
 
-        return transactionRepository.findSince(conn, searchDate, (Integer[])shardingItem.toArray());
+        return transactionRepository.findSince(searchDate, (Integer[])shardingItem.toArray());
     }
 
     public int execute(List<TransactionInfo> transactionInfos) {

@@ -31,6 +31,9 @@ public class KafkaMessageProducer implements MessageProducer<TransactionMessage>
     @Value("${kafka.producer.timeout}")
     private int timeout= 30;
 
+    @Value("${kafka.client.id}")
+    private String client;
+
     private Producer<String, TransactionMessage> producer;
 
     @Override
@@ -48,19 +51,20 @@ public class KafkaMessageProducer implements MessageProducer<TransactionMessage>
 
     @Override
     public void afterPropertiesSet() throws Exception {
-//        Properties props = new Properties();
-//        props.put("bootstrap.servers", servers);
-//        props.put("acks", "all");
-//        props.put("retries", 0);
-//        props.put("batch.size", 16384);
-//        props.put("linger.ms", 1);
-//        props.put("buffer.memory", 33554432);
-//        props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-//        props.put("value.serializer", "io.anyway.galaxy.message.serialization.TransactionMessageSerializer");
-//        producer = new KafkaProducer<String,TransactionMessage>(props);
-//        if(logger.isInfoEnabled()){
-//            logger.info("crete kafka producer: "+producer);
-//        }
+        Properties props = new Properties();
+        props.put("bootstrap.servers", servers);
+        props.put("client.id",client);
+        props.put("acks", "all");
+        props.put("retries", 0);
+        props.put("batch.size", 16384);
+        props.put("linger.ms", 1);
+        props.put("buffer.memory", 33554432);
+        props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        props.put("value.serializer", "io.anyway.galaxy.message.serialization.TransactionMessageSerializer");
+        producer = new KafkaProducer<String,TransactionMessage>(props);
+        if(logger.isInfoEnabled()){
+            logger.info("crete kafka producer: "+producer);
+        }
     }
 
     @Override

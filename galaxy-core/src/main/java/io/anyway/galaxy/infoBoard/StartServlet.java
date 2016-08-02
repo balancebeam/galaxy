@@ -26,41 +26,34 @@ public class StartServlet extends HttpServlet {
 		
 		
 		JdbcTransactionRepository transactionRepository = new JdbcTransactionRepository();
-		try {
-			
-			String param = req.getParameter("txid");
-			
-			long txId = Long.parseLong(param);
-			
-			Connection conn = TransactionServer.instance().getDataSource().getDataSource().getConnection();
-			
-			TransactionInfo info = transactionRepository.findById(conn, txId);
-			
-			if(info != null){
-				info.setGmtModified(new Date(System.currentTimeMillis()));
-				info.setRetried_count(0);
-				transactionRepository.update(conn, info);
+
+		String param = req.getParameter("txid");
+
+		long txId = Long.parseLong(param);
+
+		TransactionInfo info = transactionRepository.findById(txId);
+
+		if(info != null){
+			info.setGmtModified(new Date(System.currentTimeMillis()));
+			info.setRetried_count(0);
+			transactionRepository.update(info);
+		}
+
+		resp.setCharacterEncoding("utf-8");
+		resp.addHeader("Access-Control-Allow-Origin", "*");
+		resp.addHeader("Access-Control-Allow-Headers","Content-Type, Accept");
+		resp.setContentType("application/json");
+
+		PrintWriter writer = resp.getWriter();
+		try{
+			resp.setStatus(Response.SC_OK);
+		} finally {
+			if (writer != null) {
+				writer.close();
 			}
-
-	        resp.setCharacterEncoding("utf-8");
-	        resp.addHeader("Access-Control-Allow-Origin", "*");
-	        resp.addHeader("Access-Control-Allow-Headers","Content-Type, Accept");
-	        resp.setContentType("application/json");
-
-	        PrintWriter writer = resp.getWriter();
-	        try{
-	            resp.setStatus(Response.SC_OK);
-	        } finally {
-	            if (writer != null) {
-	                writer.close();
-	            }
-	        }
+		}
 			
-			
-			conn.close();			
-		} catch (SQLException e) {
-			log.error("query task fail.", e);
-		} 
+
 	}
 
 }
