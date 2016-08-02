@@ -15,16 +15,18 @@ public class ProxyFactory {
     private static final ConcurrentMap<Class<?>, Object> INSTANCES = new ConcurrentHashMap<Class<?>, Object>();
 
     /**
-     * 根据代理接口生成代理
+     * 根据代理接口生成代理(支持一个类多个Try方法)
      *
+     * @param className 类名(Try方法名)
      * @param object 被代理对象
      * @param clz 代理接口
+     * @param targetMethod 被代理代理方法
      * @param types 参数类型
      * @param <T>
      * @return 代理对象
      */
-    public static <T> T getProxy(Object object, Class<?> clz, Class<?>[] types) throws Throwable {
-        return getInstance(getProxyClass(object, clz, types));
+    public static <T> T getProxy(String className, Object object, Class<?> clz, String[] targetMethod, Class<?>[] types) throws Throwable {
+        return getInstance(getProxyClass(className, object, clz, targetMethod, types));
     }
 
     private static <T> T getInstance(Class<?> clazz) throws Throwable {
@@ -40,7 +42,7 @@ public class ProxyFactory {
         return instance;
     }
 
-    private static Class<?> getProxyClass(Object object, Class<?> clz, Class<?>[] types) throws Throwable{
+    private static Class<?> getProxyClass(String className, Object object, Class<?> clz, String[] targetMethod, Class<?>[] types) throws Throwable{
         if (object == null) {
             return null;
         }
@@ -52,7 +54,7 @@ public class ProxyFactory {
 
         ClassPool pool = new ClassPool(true);
         pool.appendClassPath(new LoaderClassPath(getClassloader(object)));
-        CtClass cc = pool.makeClass(object.getClass().getSimpleName() + "ProxyStub");
+        CtClass cc = pool.makeClass(className + "ProxyStub");
         cc.addInterface(pool.get(clz.getName()));
         // Method append
         CtMethod mthd;
@@ -60,19 +62,23 @@ public class ProxyFactory {
         String methodName;
         for (int i = 0; i < clz.getMethods().length; i++) {
             methodName = clz.getMethods()[i].getName();
-            sb.append("public void ").append(methodName).append("(Object target, Object[] args){ ");
-            sb.append("((").append(object.getClass().getName()).append(")target).").append(methodName).append("(");
+            sb.append("public static void ").append(methodName).append("(Object target, Object[] args){ ");
 
-            for (int j = 0; j < types.length; j++) {
-                if (j == 0) {
-                    sb.append("(").append(types[j].getName()).append(")").append("args[").append(j).append("]");
-                } else {
-                    sb.append(", (").append(types[j].getName()).append(")").append("args[").append(j).append("]");
+            if (i <= targetMethod.length - 1) {
+                sb.append("((").append(object.getClass().getName()).append(")target).").append(targetMethod[i]).append("(");
+
+                for (int j = 0; j < types.length; j++) {
+                    if (j == 0) {
+                        sb.append("(").append(types[j].getName()).append(")").append("args[").append(j).append("]");
+                    } else {
+                        sb.append(", (").append(types[j].getName()).append(")").append("args[").append(j).append("]");
+                    }
                 }
+                sb.append(");");
+            } else {
+                sb.append("throw new Exception(\"Not support this method : ").append(methodName).append("\");");
             }
-
-            sb.append(");}");
-
+            sb.append("}");
             System.out.println(sb.toString());
             mthd = CtNewMethod.make(sb.toString(),cc);
             cc.addMethod(mthd);
@@ -81,8 +87,7 @@ public class ProxyFactory {
 
         //生成Class
         cls = cc.toClass();
-        // TODO 用method名， 有可能一个类有多个Try方法
-        CLASSES.putIfAbsent(object.getClass().getSimpleName(), cls);
+        CLASSES.putIfAbsent(className, cls);
 
         return cls;
     }

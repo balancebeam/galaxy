@@ -31,26 +31,29 @@ public class ProxyUtil {
     /**
      * 静态代理方法调用TXOperationProxy.invokeCancel
      *
+     * @param className 类名(Try方法名)
      * @param target 目标对象
      * @param types 参数类型
+     * @param targetMethod 被代理代理方法
      * @param args 参数值
-     * @throws Throwable
      */
-    public static void invokeCancel(Object target, Class<?>[] types, Object[] args) throws Throwable {
-        TXOperationProxy txOperationProxy = ProxyFactory.getProxy(target, TXOperationProxy.class, types);
+    public static void invokeCancel(String className, Object target, Class<?>[] types, String[] targetMethod, Object[] args) throws Throwable {
+        TXOperationProxy txOperationProxy = ProxyFactory.getProxy(className, target, TXOperationProxy.class, targetMethod, types);
         txOperationProxy.invokeCancel(target, args);
     }
 
     /**
      * 静态代理方法调用TXOperationProxy.invokeConfirm
      *
+     * @param className 类名(Try方法名)
      * @param target 目标对象
      * @param types 参数类型
+     * @param targetMethod 被代理代理方法
      * @param args 参数值
      * @throws Throwable
      */
-    public static void invokeConfirm(Object target, Class<?>[] types, Object[] args) throws Throwable {
-        TXOperationProxy txOperationProxy = ProxyFactory.getProxy(target, TXOperationProxy.class, types);
+    public static void invokeConfirm(String className, Object target, Class<?>[] types, String[] targetMethod, Object[] args) throws Throwable {
+        TXOperationProxy txOperationProxy = ProxyFactory.getProxy(className, target, TXOperationProxy.class, targetMethod, types);
         txOperationProxy.invokeConfirm(target, args);
     }
 }
