@@ -15,8 +15,8 @@
 		<property name="mapperLocations" value="classpath:rsqlmap/*.xml" />
 	</bean>
 
-	<bean id="sqlSessionTemplate" class="io.anyway.galaxy.console.dal.db.SqlSessionTemplateWrapper">
-		<property name="sqlSessionFactory" ref="defaultSessionFactory" />
+	<bean id="sqlSessionTemplate" class="io.anyway.galaxy.console.dal.db.CustomSqlSessionTemplate">
+		<constructor-arg ref="defaultSessionFactory" />
 		<property name="targetSqlSessionFactorys">
 			<map>
 				<entry value-ref="defaultSessionFactory" key="default"/>
@@ -24,6 +24,16 @@
 			</map>
 		</property>
 	</bean>
+
+	<!--<bean id="sqlSessionTemplate" class="io.anyway.galaxy.console.dal.db.SqlSessionTemplateWrapper">
+		<property name="sqlSessionFactory" ref="defaultSessionFactory" />
+		<property name="targetSqlSessionFactorys">
+			<map>
+				<entry value-ref="defaultSessionFactory" key="default"/>
+				<entry value-ref="dynamicSessionFactory" key="dynamic"/>
+			</map>
+		</property>
+	</bean>-->
 
 	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
 		<property name="basePackage" value="io.anyway.galaxy.console.dal.dao,io.anyway.galaxy.console.dal.rdao" />
