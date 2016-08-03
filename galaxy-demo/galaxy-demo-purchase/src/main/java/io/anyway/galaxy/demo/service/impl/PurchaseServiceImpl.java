@@ -1,5 +1,7 @@
 package io.anyway.galaxy.demo.service.impl;
 
+import com.alibaba.fastjson.JSONObject;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import io.anyway.galaxy.annotation.TXAction;
 import io.anyway.galaxy.common.TransactionTypeEnum;
 import io.anyway.galaxy.context.SerialNumberGenerator;
@@ -8,6 +10,7 @@ import io.anyway.galaxy.context.TXContextHolder;
 import io.anyway.galaxy.demo.service.PurchaseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
@@ -44,15 +47,21 @@ public class PurchaseServiceImpl implements PurchaseService {
 
         TXContext ctx= TXContextHolder.getTXContext();
 
-        final Map<String,Object> params= new HashMap<String, Object>();
-        params.put("txId",ctx.getTxId());
-        params.put("serialNumber",ctx.getSerialNumber());
-        params.put("productId",productId);
-        params.put("amount",amount);
-        params.put("userId",userId);
+        final JSONObject request= new JSONObject();
+        request.put("txId",ctx.getTxId());
+        request.put("serialNumber",ctx.getSerialNumber());
+        request.put("productId",productId);
+        request.put("amount",amount);
+        request.put("userId",userId);
 
-        if(restOperations.postForObject(repositoryURL,null,Boolean.class,params)){
-            if(restOperations.postForObject(orderURL,null,Boolean.class,params)){
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<JSONObject> entity = new HttpEntity<JSONObject>(request, headers);
+
+        ResponseEntity<Boolean> result= restOperations.exchange(repositoryURL, HttpMethod.POST,entity, Boolean.class);
+        if(result.getBody()){
+            result= restOperations.exchange(orderURL, HttpMethod.POST,entity, Boolean.class);
+            if(result.getBody()){
                 return "购买产品成功";
             }
             throw new Exception("生成订单操作失败.");

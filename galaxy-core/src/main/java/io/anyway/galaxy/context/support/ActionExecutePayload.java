@@ -16,8 +16,8 @@ public class ActionExecutePayload extends AbstractExecutePayload {
 
     public ActionExecutePayload(){}
 
-    public ActionExecutePayload(String bizType,Class<?> target, String actionMethod, Class[] types) {
-        super(bizType,target,types);
+    public ActionExecutePayload(String bizType,String moduleId,Class<?> target, String actionMethod, Class[] types) {
+        super(bizType,moduleId,target,types);
         this.actionMethod= actionMethod;
     }
 
@@ -50,6 +50,8 @@ public class ActionExecutePayload extends AbstractExecutePayload {
         StringBuilder builder= new StringBuilder();
         builder.append("{bizType=")
                 .append(getBizType())
+                .append(",moduleId=")
+                .append(moduleId)
                 .append(",timeout=")
                 .append(timeout)
                 .append(",TxType=")
@@ -70,6 +72,7 @@ public class ActionExecutePayload extends AbstractExecutePayload {
     public ActionExecutePayload clone(){
         ActionExecutePayload newPayload= new ActionExecutePayload();
         newPayload.bizType= bizType;
+        newPayload.moduleId= moduleId;
         newPayload.target= target;
         newPayload.types= types;
         newPayload.txType = txType;

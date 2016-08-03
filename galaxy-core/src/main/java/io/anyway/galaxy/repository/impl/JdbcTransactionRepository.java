@@ -37,8 +37,8 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
 			StringBuilder builder = new StringBuilder();
 			builder.append("INSERT INTO TRANSACTION_INFO " + "(TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE"
-					+ ", TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, GMT_CREATE" + ", GMT_MODIFIED)"
-					+ " VALUES(?,?,?,?,?" + ",?,?,?,?," + getDateSql(conn) + ", " + getDateSql(conn) + ")");
+					+ ", TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, MODULE_ID, GMT_CREATE" + ", GMT_MODIFIED)"
+					+ " VALUES(?,?,?,?,?" + ",?,?,?,?,?," + getDateSql(conn) + ", " + getDateSql(conn) + ")");
 
 			stmt = conn.prepareStatement(builder.toString());
 
@@ -51,6 +51,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			stmt.setString(7, transactionInfo.getContext());
 			stmt.setString(8, transactionInfo.getPayload());
 			stmt.setInt(9, transactionInfo.getRetried_count());
+			stmt.setString(10,transactionInfo.getModuleId());
 
 			return stmt.executeUpdate();
 
@@ -159,7 +160,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
 			StringBuilder builder = new StringBuilder();
 			builder.append(
-					"SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, GMT_CREATE, GMT_MODIFIED"
+					"SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, MODULE_ID, GMT_CREATE, GMT_MODIFIED"
 							+ " FROM TCC_TRANSACTION WHERE GMT_MODIFIED < ? AND TX_STATUS ");
 
 			if (txStatus.length > 1) {
@@ -205,7 +206,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
 			StringBuilder builder = new StringBuilder();
 			builder.append(
-					"SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, GMT_CREATE, GMT_MODIFIED"
+					"SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, MODULE_ID, GMT_CREATE, GMT_MODIFIED"
 							+ "  FROM TRANSACTION_INFO WHERE TX_ID = ?");
 
 			stmt = conn.prepareStatement(builder.toString());
@@ -237,7 +238,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
 			StringBuilder builder = new StringBuilder();
 			builder.append(
-					"SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, GMT_CREATE, GMT_MODIFIED"
+					"SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, MODULE_ID, GMT_CREATE, GMT_MODIFIED"
 							+ "  FROM TRANSACTION_INFO WHERE TX_ID = ? FOR UPDATE NO WAIT");
 			stmt = conn.prepareStatement(builder.toString());
 			stmt.setLong(1, txId);
@@ -269,8 +270,9 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 		transactionInfo.setContext(resultSet.getString(7));
 		transactionInfo.setPayload(resultSet.getString(8));
 		transactionInfo.setRetried_count(resultSet.getInt(9));
-		transactionInfo.setGmtCreated(new Date(resultSet.getTimestamp(10).getTime()));
-		transactionInfo.setGmtModified(new Date(resultSet.getTimestamp(11).getTime()));
+		transactionInfo.setModuleId(resultSet.getString(10));
+		transactionInfo.setGmtCreated(new Date(resultSet.getTimestamp(11).getTime()));
+		transactionInfo.setGmtModified(new Date(resultSet.getTimestamp(12).getTime()));
 
 		return transactionInfo;
 	}
@@ -316,7 +318,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
 			StringBuilder builder = new StringBuilder();
 			builder.append(
-					"SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, GMT_CREATE, GMT_MODIFIED")
+					"SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, MODULE_ID, GMT_CREATE, GMT_MODIFIED")
 					.append("  FROM TRANSACTION_INFO WHERE GMT_MODIFIED > ?");
 
 			stmt = conn.prepareStatement(builder.toString());

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.Map;
 
@@ -24,12 +25,13 @@ public class RepositoryRest {
     private RepositoryService repositoryService;
 
     @RequestMapping(method = RequestMethod.POST)
+    @ResponseBody
     public boolean purchase(@RequestBody  Map<String,Object> params)throws Exception {
-    	long txId= (Long)params.get("txId");
+    	long txId= Long.parseLong(params.get("txId").toString());
     	String serialNumber= (String)params.get("serialNumber");
     	TXContext tx= new TXContextSupport(txId,serialNumber);
-        long productId= (Long)params.get("productId");
-        long amount= (Long)params.get("amount");
+        long productId= Long.parseLong(params.get("productId").toString());
+        long amount= Long.parseLong(params.get("amount").toString());
     	return repositoryService.decreaseRepository(tx,productId,amount);
     }
 
