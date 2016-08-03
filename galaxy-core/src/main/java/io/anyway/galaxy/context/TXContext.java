@@ -9,6 +9,5 @@ public interface TXContext extends SerialNumberGenerator {
      * @return
      */
     long getTxId();
-
 }
 

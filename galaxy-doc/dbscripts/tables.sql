@@ -10,6 +10,7 @@ CREATE TABLE transaction_info
   context text,
   payload text,
   retried_count smallint default 0,
+  module_id character varying(64),
   gmt_create timestamp,
   gmt_modified timestamp,
   CONSTRAINT tran_info_pkey PRIMARY KEY (tx_id)

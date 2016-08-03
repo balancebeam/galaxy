@@ -17,8 +17,8 @@ public class ServiceExecutePayload extends AbstractExecutePayload {
     public ServiceExecutePayload(){
     }
 
-    public ServiceExecutePayload(String bizType,Class<?> target, String tryMethod, Class[] types) {
-        super(bizType,target, types);
+    public ServiceExecutePayload(String bizType,String moduleId,Class<?> target, String tryMethod, Class[] types) {
+        super(bizType,moduleId,target, types);
         this.tryMethod= tryMethod;
     }
 
@@ -49,7 +49,11 @@ public class ServiceExecutePayload extends AbstractExecutePayload {
     @Override
     public String toString(){
         StringBuilder builder= new StringBuilder();
-        builder.append("{class=")
+        builder.append("{bizType=")
+                .append(getBizType())
+                .append(",moduleId=")
+                .append(moduleId)
+                .append(",class=")
                 .append(getTarget().getName())
                 .append(",tryMethod=")
                 .append(tryMethod);
@@ -73,6 +77,7 @@ public class ServiceExecutePayload extends AbstractExecutePayload {
     public ServiceExecutePayload clone(){
         ServiceExecutePayload newPayload= new ServiceExecutePayload();
         newPayload.bizType= bizType;
+        newPayload.moduleId= moduleId;
         newPayload.target= target;
         newPayload.types= types;
         newPayload.tryMethod= tryMethod;

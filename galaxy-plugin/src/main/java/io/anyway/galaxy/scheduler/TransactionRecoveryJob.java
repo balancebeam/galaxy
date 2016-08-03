@@ -5,6 +5,7 @@ import com.dangdang.ddframe.job.plugin.job.type.dataflow.AbstractBatchThroughput
 import io.anyway.galaxy.common.TransactionStatusEnum;
 import io.anyway.galaxy.domain.TransactionInfo;
 import io.anyway.galaxy.recovery.TransactionRecoveryService;
+import io.anyway.galaxy.spring.SpringContextUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
@@ -16,9 +17,6 @@ import java.util.Map;
  * Created by xiong.j on 2016/7/29.
  */
 public class TransactionRecoveryJob extends AbstractBatchThroughputDataFlowElasticJob<TransactionInfo> {
-
-    @Autowired
-    private TransactionRecoveryService transactionRecoveryService;
 
     private static Map<Integer, Integer> statusMap = initStatus();
 
@@ -32,7 +30,7 @@ public class TransactionRecoveryJob extends AbstractBatchThroughputDataFlowElast
             }
             shardingItems.add(statusMap.get(sharding));
         }
-        return transactionRecoveryService.fetchData(shardingItems);
+        return getTransactionRecoveryService().fetchData(shardingItems);
     }
 
     @Override
@@ -42,7 +40,7 @@ public class TransactionRecoveryJob extends AbstractBatchThroughputDataFlowElast
 
     @Override
     public int processData(JobExecutionMultipleShardingContext shardingContext, List<TransactionInfo> data) {
-        return transactionRecoveryService.execute(data);
+        return getTransactionRecoveryService().execute(data);
     }
 
     public static Map<Integer, Integer> initStatus() {
@@ -51,5 +49,9 @@ public class TransactionRecoveryJob extends AbstractBatchThroughputDataFlowElast
         statusMap.put(1, TransactionStatusEnum.CANCELLING.getCode());
         statusMap.put(2, TransactionStatusEnum.CONFIRMING.getCode());
         return statusMap;
+    }
+
+    private TransactionRecoveryService getTransactionRecoveryService(){
+        return SpringContextUtil.getBean("webapplication",TransactionRecoveryService.class);
     }
 }

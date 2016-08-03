@@ -19,13 +19,14 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ResourceLoaderAware;
 import org.springframework.core.Ordered;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.jdbc.datasource.ConnectionHolder;
-import org.springframework.jdbc.datasource.DataSourceUtils;
-import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
@@ -38,7 +39,6 @@ import io.anyway.galaxy.context.AbstractExecutePayload;
 import io.anyway.galaxy.context.TXContextHolder;
 import io.anyway.galaxy.context.support.ActionExecutePayload;
 import io.anyway.galaxy.context.support.ServiceExecutePayload;
-import io.anyway.galaxy.context.support.TXContextSupport;
 import io.anyway.galaxy.exception.DistributedTransactionException;
 import io.anyway.galaxy.infoBoard.TransactionServer;
 import io.anyway.galaxy.intercepter.ActionIntercepter;
@@ -47,13 +47,14 @@ import io.anyway.galaxy.intercepter.ServiceIntercepter;
 /**
  * Created by yangzz on 16/7/20.
  */
-@Component
 @Aspect
-public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
+public class TXAspectProcessor implements Ordered,ResourceLoaderAware,ApplicationContextAware{
 
-    private static Log logger= LogFactory.getLog(TXAnnotationAspect.class);
+    private static Log logger= LogFactory.getLog(TXAspectProcessor.class);
 
     private ResourceLoader resourceLoader;
+
+    private ApplicationContext applicationContext;
 
     @Autowired
     private DataSourceAdaptor dataSourceAdaptor;
@@ -90,7 +91,7 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
     public void pointcutTXAction(){}
 
     @Around("pointcutTXAction()")
-    public Object processTXAction(ProceedingJoinPoint pjp) throws Throwable {
+    public Object doTXAction(ProceedingJoinPoint pjp) throws Throwable {
         if (TXContextHolder.getTXContext()!= null){
             return pjp.proceed();
         }
@@ -127,7 +128,10 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
             if (StringUtils.isEmpty(bizType)) {
                 logger.warn("miss business type, class: " + target + ",method: " + actionMethod);
             }
-            cachedPayload = new ActionExecutePayload(bizType, target, actionMethod.getName(), actionMethod.getParameterTypes());
+            String moduleId= applicationContext.getBean(SpringContextUtil.class).getModuleId();
+            String methodName= actionMethod.getName();
+            Class[] types= actionMethod.getParameterTypes();
+            cachedPayload= new ActionExecutePayload(bizType,moduleId, target, methodName, types);
             cachedPayload.setTimeout(action.timeout());
             //设置分布式事务类型: TC | TCC
             cachedPayload.setTxType(action.value());
@@ -206,7 +210,7 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
     public void pointcutTXTry(){ }
 
     @Around("pointcutTXTry()")
-    public Object processTXTry(ProceedingJoinPoint pjp) throws Throwable {
+    public Object doTXTry(ProceedingJoinPoint pjp) throws Throwable {
         //如果调用关系在Action内不需要执行切面动作
         if(TXContextHolder.isAction()){
             return pjp.proceed();
@@ -235,7 +239,10 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
             if (StringUtils.isEmpty(bizType)) {
                 logger.warn("miss business type, class: " + target + ",serviceExecutePayload: " + serviceMethod);
             }
-            cachedPayload = new ServiceExecutePayload(bizType, target, serviceMethod.getName(), serviceMethod.getParameterTypes());
+            String moduleId= applicationContext.getBean(SpringContextUtil.class).getModuleId();
+            String methodName= serviceMethod.getName();
+            Class[] types= serviceMethod.getParameterTypes();
+            cachedPayload= new ServiceExecutePayload(bizType,moduleId, target, methodName, types);
             cachedPayload.setConfirmMethod(txTry.confirm());
             cachedPayload.setCancelMethod(txTry.cancel());
             cache.putIfAbsent(serviceMethod, cachedPayload);
@@ -262,7 +269,7 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
     public void pointcutTXConfirm(){}
 
     @Around("pointcutTXConfirm()")
-    public Object processTXConfirm(ProceedingJoinPoint pjp) throws Throwable {
+    public Object doTXConfirm(ProceedingJoinPoint pjp) throws Throwable {
         //如果调用关系在Action内不需要执行切面动作
         if(TXContextHolder.isAction()){
             return pjp.proceed();
@@ -297,7 +304,7 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
     public void pointcutTXCancel(){}
 
     @Around("pointcutTXCancel()")
-    public Object processTXCancel(ProceedingJoinPoint pjp) throws Throwable {
+    public Object doTXCancel(ProceedingJoinPoint pjp) throws Throwable {
         //如果调用关系在Action内不需要执行切面动作
         if(TXContextHolder.isAction()){
             return pjp.proceed();
@@ -339,6 +346,11 @@ public class TXAnnotationAspect implements Ordered,ResourceLoaderAware{
     @Override
     public void setResourceLoader(ResourceLoader resourceLoader) {
         this.resourceLoader= resourceLoader;
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext= applicationContext;
     }
 }
 

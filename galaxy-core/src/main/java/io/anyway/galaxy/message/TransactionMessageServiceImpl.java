@@ -1,7 +1,11 @@
 package io.anyway.galaxy.message;
 
+import java.lang.reflect.Type;
 import java.sql.Connection;
 
+import com.alibaba.fastjson.parser.Feature;
+import com.alibaba.fastjson.parser.ParserConfig;
+import io.anyway.galaxy.spring.SpringContextUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
@@ -129,20 +133,21 @@ public class TransactionMessageServiceImpl implements TransactionMessageService,
     public void handleMessage(TransactionMessage message) throws Throwable {
         try {
             //从消息中获取事务的标识和业务序列号
-            TXContext ctx = new TXContextSupport(message.getTxId(), message.getBusinessId());
+            TXContext ctx= new TXContextSupport(message.getTxId(), message.getBusinessId());
             //设置到上下文中
             TXContextHolder.setTXContext(ctx);
 
             TransactionInfo transactionInfo;
             try {
-                transactionInfo = transactionRepository.lockById( message.getTxId());
+                transactionInfo = transactionRepository.lockById(message.getTxId());
             } catch (Exception e) {
                 logger.warn("Lock failed, txId = " + message.getTxId());
                 throw new DistributedTransactionException(e);
             }
             if (validation(message, transactionInfo)) {
                 ServiceExecutePayload payload = parsePayload(transactionInfo);
-                Object bean = applicationContext.getBean(payload.getTarget());
+                //根据模块的ApplicationContext获取Bean对象
+                Object bean= SpringContextUtil.getBean(transactionInfo.getModuleId(),payload.getTarget());
 
                 String methodName = null;
                 if (TransactionStatusEnum.CANCELLING.getCode() == message.getTxStatus()) {
@@ -177,17 +182,24 @@ public class TransactionMessageServiceImpl implements TransactionMessageService,
 
     private ServiceExecutePayload parsePayload(TransactionInfo transactionInfo) {
         String payload = transactionInfo.getContext();
-        return JSON.parseObject(payload, ServiceExecutePayload.class);
+        //获取模块的名称
+        String moduleId= transactionInfo.getModuleId();
+        ClassLoader classLoader= SpringContextUtil.getClassLoader(moduleId);
+        ParserConfig config= new ParserConfig();
+        //指定类加载器
+        config.setDefaultClassLoader(classLoader);
+        return JSON.parseObject(payload, (Type)ServiceExecutePayload.class, config, null, JSON.DEFAULT_PARSER_FEATURE, new Feature[0]);
     }
 
     private TransactionStatusEnum getNextStatus(TransactionStatusEnum txStatus){
-
-        if (txStatus.equals(TransactionStatusEnum.CANCELLING)) return TransactionStatusEnum.CANCELLED;
-
-        if (txStatus.equals(TransactionStatusEnum.CONFIRMING)) return TransactionStatusEnum.CONFIRMED;
-
-        return null;
-
+        switch(txStatus){
+            case CANCELLING:
+                return TransactionStatusEnum.CANCELLED;
+            case CONFIRMING:
+                return TransactionStatusEnum.CONFIRMED;
+            default:
+                return null;
+        }
     }
 
     private boolean validation(TransactionMessage message, TransactionInfo txInfo) {

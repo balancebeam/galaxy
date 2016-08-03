@@ -21,6 +21,8 @@ public class TransactionInfo {
 
     private String businessType;
 
+    private String moduleId;
+
     private int txStatus = -1;
 
     private int txType = -1;
@@ -137,6 +139,14 @@ public class TransactionInfo {
     
     public String getStrTXStatus(){
     	return TransactionStatusEnum.getMemo(txStatus);
+    }
+
+    public String getModuleId() {
+        return moduleId;
+    }
+
+    public void setModuleId(String moduleId) {
+        this.moduleId = moduleId;
     }
     
 }
