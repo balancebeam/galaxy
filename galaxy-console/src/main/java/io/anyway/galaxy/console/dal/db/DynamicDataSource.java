@@ -23,7 +23,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class DynamicDataSource extends AbstractRoutingDataSource implements ApplicationContextAware {
 
-    @Autowired
     private DataSourceInfoDao dataSourceInfoDao;
 
     private ApplicationContext applicationContext;
