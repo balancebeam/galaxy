@@ -27,6 +27,7 @@ import org.springframework.context.ResourceLoaderAware;
 import org.springframework.core.Ordered;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.jdbc.datasource.ConnectionHolder;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
@@ -47,6 +48,7 @@ import io.anyway.galaxy.intercepter.ServiceIntercepter;
 /**
  * Created by yangzz on 16/7/20.
  */
+@Component
 @Aspect
 public class TXAspectProcessor implements Ordered,ResourceLoaderAware,ApplicationContextAware{
 
