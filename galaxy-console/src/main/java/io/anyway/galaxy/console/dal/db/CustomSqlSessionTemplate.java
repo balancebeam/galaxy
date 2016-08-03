@@ -1,10 +1,12 @@
 package io.anyway.galaxy.console.dal.db;
 
-import static java.lang.reflect.Proxy.newProxyInstance;
-import static org.apache.ibatis.reflection.ExceptionUtil.unwrapThrowable;
-import static org.mybatis.spring.SqlSessionUtils.closeSqlSession;
-import static org.mybatis.spring.SqlSessionUtils.getSqlSession;
-import static org.mybatis.spring.SqlSessionUtils.isSqlSessionTransactional;
+import org.apache.ibatis.exceptions.PersistenceException;
+import org.apache.ibatis.executor.BatchResult;
+import org.apache.ibatis.session.*;
+import org.mybatis.spring.MyBatisExceptionTranslator;
+import org.mybatis.spring.SqlSessionTemplate;
+import org.springframework.dao.support.PersistenceExceptionTranslator;
+import org.springframework.util.Assert;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -12,18 +14,9 @@ import java.sql.Connection;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.ibatis.exceptions.PersistenceException;
-import org.apache.ibatis.executor.BatchResult;
-import org.apache.ibatis.session.Configuration;
-import org.apache.ibatis.session.ExecutorType;
-import org.apache.ibatis.session.ResultHandler;
-import org.apache.ibatis.session.RowBounds;
-import org.apache.ibatis.session.SqlSession;
-import org.apache.ibatis.session.SqlSessionFactory;
-import org.mybatis.spring.MyBatisExceptionTranslator;
-import org.mybatis.spring.SqlSessionTemplate;
-import org.springframework.dao.support.PersistenceExceptionTranslator;
-import org.springframework.util.Assert;
+import static java.lang.reflect.Proxy.newProxyInstance;
+import static org.apache.ibatis.reflection.ExceptionUtil.unwrapThrowable;
+import static org.mybatis.spring.SqlSessionUtils.*;
 
 /**
  * Created by xiong.j on 2016/8/1.
@@ -37,6 +30,7 @@ public class CustomSqlSessionTemplate extends SqlSessionTemplate {
 
     private Map<Object, SqlSessionFactory> targetSqlSessionFactorys;
     private SqlSessionFactory defaultTargetSqlSessionFactory;
+
 
     public void setTargetSqlSessionFactorys(Map<Object, SqlSessionFactory> targetSqlSessionFactorys) {
         this.targetSqlSessionFactorys = targetSqlSessionFactorys;

@@ -19,8 +19,6 @@
     <context:component-scan base-package="io.anyway.galaxy.console"/>
 
     <bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
-        <property name="order" value="1" />
-        <property name="ignoreUnresolvablePlaceholders" value="true" />
         <property name="locations">
             <list>
                 <value>classpath:config.properties</value>

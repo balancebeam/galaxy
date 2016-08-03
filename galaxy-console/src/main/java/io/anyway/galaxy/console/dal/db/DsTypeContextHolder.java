@@ -17,12 +17,6 @@ public class DsTypeContextHolder {
 
     private static final ThreadLocal<Map<Object, Object>> contextHolder = new ThreadLocal<Map<Object, Object>>();
 
-    // init
-    static {
-        Map<Object, Object> map = new HashMap<Object, Object>(2);
-        contextHolder.set(map);
-    }
-
     public static void setDsType(long dsType) {
         contextHolder.get().put(DS_TYPE, dsType);
     }

@@ -111,7 +111,7 @@ public class DynamicDataSource extends AbstractRoutingDataSource implements Appl
             log.error("Can't get datasource from JNDI:" + jndi, e);
         }*/
 
-        jndiDatasource =  resolveSpecifiedDataSource(jndi);
+        jndiDatasource = resolveSpecifiedDataSource(jndi);
 
         return jndiDatasource;
     }

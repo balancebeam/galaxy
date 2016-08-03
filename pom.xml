@@ -13,7 +13,7 @@
         <module>galaxy-core</module>
 		<module>galaxy-plugin</module>
         <module>galaxy-demo</module>
-		<!--<module>galaxy-console</module>-->
+		<module>galaxy-console</module>
 	</modules>
     
 	<properties>
