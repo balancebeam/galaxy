@@ -8,19 +8,12 @@ import io.anyway.galaxy.console.dal.dto.DataSourceInfoDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.support.BeanDefinitionBuilder;
-import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource;
-import org.springframework.util.Assert;
 
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
 import javax.sql.DataSource;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -28,44 +21,39 @@ import java.util.concurrent.ConcurrentHashMap;
  * Created by xiong.j on 2016/8/1.
  */
 @Slf4j
-
 public class DynamicDataSource extends AbstractRoutingDataSource implements ApplicationContextAware {
 
     @Autowired
     private DataSourceInfoDao dataSourceInfoDao;
 
-    @Autowired
-    private DataSource defaultDataSource;
-
     private ApplicationContext applicationContext;
 
     private Map<Long, DataSource> cacheDataSource = new ConcurrentHashMap<Long, DataSource>();
-
-    private Map<String, List<Long>> cacheBusiness = new ConcurrentHashMap<String, List<Long>>();
-
-    private static final String sessionFactoryBeanClass = "org.mybatis.spring.SqlSessionFactoryBean";
 
     private static final String dataSourceBeanClass = "org.mybatis.spring.SqlSessionFactoryBean";
 
     private static final String dataSourceName = "dynamicDataSource";
 
-    protected DataSource determineTargetDataSource() {
-        // TEST
-        DataSourceInfoDto dataSourceInfoDto = new DataSourceInfoDto();
-        if (cacheDataSource.get(1) == null) {
-            dataSourceInfoDto.setId(1);
-            dataSourceInfoDto.setUrl("jdbc:postgresql://localhost:5432/udb1");
-            dataSourceInfoDto.setUsername("postgreuser");
-            dataSourceInfoDto.setPassword("aaa123+-*/");
-            dataSourceInfoDto.setMaxActive(10);
-            dataSourceInfoDto.setInitialSize(2);
 
-            createDataSource(dataSourceInfoDto);
+    protected DataSource determineTargetDataSource() {
+
+        // 获取线程上下文所需使用的数据源ID
+        long id = DsTypeContextHolder.getDsType();
+
+        if (cacheDataSource.containsKey(id)) {
+            return cacheDataSource.get(id);
+        } else {
+            // 根据查询的数据源信息生成数据源
+            createDataSource(getDataSourceInfoDto(id));
         }
-        return cacheDataSource.get(dataSourceInfoDto.getId());
+
+        return cacheDataSource.get(id);
     }
 
-    public DataSource createDataSource(DataSourceInfoDto dto) {
+    public synchronized void createDataSource(DataSourceInfoDto dto) {
+
+        if (cacheDataSource.containsKey(dto.getId())) return;
+
         DataSource dataSource = null;
         if (Strings.isNullOrEmpty(dto.getJndi())) {
             dataSource = getDruidDataSource(dto);
@@ -74,27 +62,6 @@ public class DynamicDataSource extends AbstractRoutingDataSource implements Appl
         }
 
         cacheDataSource.put(dto.getId(), dataSource);
-        return null;
-    }
-    private void registerDataSourceBean(DataSourceInfoDto dto) {
-        DefaultListableBeanFactory defaultListableBeanFactory = (DefaultListableBeanFactory) applicationContext.getAutowireCapableBeanFactory();
-        BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder.rootBeanDefinition(dataSourceBeanClass);
-        beanDefinitionBuilder.getBeanDefinition().setAttribute("id", "dynamicDataSource" + dto.getId());
-        beanDefinitionBuilder.addPropertyValue("url", dto.getUrl());
-        beanDefinitionBuilder.addPropertyValue("username", dto.getUsername());
-        beanDefinitionBuilder.addPropertyValue("password", getPassword(dto.getUsername(), dto.getPassword()));
-        beanDefinitionBuilder.addPropertyValue("maxActive", dto.getMaxActive());
-        beanDefinitionBuilder.addPropertyValue("initialSize", dto.getInitialSize());
-        beanDefinitionBuilder.addPropertyValue("maxWait", 600000);
-        beanDefinitionBuilder.addPropertyValue("timeBetweenEvictionRunsMillis", 300000);
-        beanDefinitionBuilder.addPropertyValue("minEvictableIdleTimeMillis", 300000);
-        beanDefinitionBuilder.addPropertyValue("validationQuery", "select 1");
-        beanDefinitionBuilder.addPropertyValue("testWhileIdle", true);
-        beanDefinitionBuilder.addPropertyValue("testOnBorrow", false);
-        beanDefinitionBuilder.addPropertyValue("testOnReturn", false);
-        beanDefinitionBuilder.addPropertyValue("poolPreparedStatements", true);
-        beanDefinitionBuilder.addPropertyValue("maxPoolPreparedStatementPerConnectionSize", 50);
-        defaultListableBeanFactory.registerBeanDefinition("dynamicDataSource" + dto.getId(), beanDefinitionBuilder.getBeanDefinition());
     }
 
     private DataSource getDruidDataSource(DataSourceInfoDto dto) {
@@ -123,7 +90,7 @@ public class DynamicDataSource extends AbstractRoutingDataSource implements Appl
 
     private DataSource getJndiDataSource(String jndi) {
         DataSource jndiDatasource = null;
-        try {
+        /*try {
             Context context = new InitialContext();
             Context envContext = null;
             try {
@@ -142,9 +109,25 @@ public class DynamicDataSource extends AbstractRoutingDataSource implements Appl
             }
         } catch (NamingException e) {
             log.error("Can't get datasource from JNDI:" + jndi, e);
-        }
+        }*/
+
+        jndiDatasource =  resolveSpecifiedDataSource(jndi);
 
         return jndiDatasource;
+    }
+
+    private DataSourceInfoDto getDataSourceInfoDto(long id) {
+        // 切换线程上下文使用本地库查询数据源信息后，还原线程上下文
+        String contextType = DsTypeContextHolder.getContextType();
+        DsTypeContextHolder.setContextType(DsTypeContextHolder.DEFAULT_SESSION_FACTORY);
+
+        if (dataSourceInfoDao == null) {
+            dataSourceInfoDao = applicationContext.getBean("dataSourceInfoDao", io.anyway.galaxy.console.dal.dao.DataSourceInfoDao.class);
+        }
+        DataSourceInfoDto dataSourceInfoDto = dataSourceInfoDao.get(id);
+        DsTypeContextHolder.setContextType(contextType);
+
+        return dataSourceInfoDto;
     }
 
     private String getPassword(String username, String password) {
@@ -158,9 +141,33 @@ public class DynamicDataSource extends AbstractRoutingDataSource implements Appl
 
     public void close(){
         for (Map.Entry<Long, DataSource> entry : cacheDataSource.entrySet()) {
-            //entry.getValue();
+            if (entry.getValue() instanceof DruidDataSource){
+                ((DruidDataSource) entry.getValue()).close();
+            }
         }
+        cacheDataSource.clear();
     }
+
+    /*private void registerDataSourceBean(DataSourceInfoDto dto) {
+        DefaultListableBeanFactory defaultListableBeanFactory = (DefaultListableBeanFactory) applicationContext.getAutowireCapableBeanFactory();
+        BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder.rootBeanDefinition(dataSourceBeanClass);
+        beanDefinitionBuilder.getBeanDefinition().setAttribute("id", "dynamicDataSource" + dto.getId());
+        beanDefinitionBuilder.addPropertyValue("url", dto.getUrl());
+        beanDefinitionBuilder.addPropertyValue("username", dto.getUsername());
+        beanDefinitionBuilder.addPropertyValue("password", getPassword(dto.getUsername(), dto.getPassword()));
+        beanDefinitionBuilder.addPropertyValue("maxActive", dto.getMaxActive());
+        beanDefinitionBuilder.addPropertyValue("initialSize", dto.getInitialSize());
+        beanDefinitionBuilder.addPropertyValue("maxWait", 600000);
+        beanDefinitionBuilder.addPropertyValue("timeBetweenEvictionRunsMillis", 300000);
+        beanDefinitionBuilder.addPropertyValue("minEvictableIdleTimeMillis", 300000);
+        beanDefinitionBuilder.addPropertyValue("validationQuery", "select 1");
+        beanDefinitionBuilder.addPropertyValue("testWhileIdle", true);
+        beanDefinitionBuilder.addPropertyValue("testOnBorrow", false);
+        beanDefinitionBuilder.addPropertyValue("testOnReturn", false);
+        beanDefinitionBuilder.addPropertyValue("poolPreparedStatements", true);
+        beanDefinitionBuilder.addPropertyValue("maxPoolPreparedStatementPerConnectionSize", 50);
+        defaultListableBeanFactory.registerBeanDefinition("dynamicDataSource" + dto.getId(), beanDefinitionBuilder.getBeanDefinition());
+    }*/
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {

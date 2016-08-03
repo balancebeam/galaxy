@@ -31,7 +31,7 @@ public class TransactionInfoDto {
 
     private String payload;
 
-    private int retried_count = -1;
+    private int retriedCount = -1;
 
     private Timestamp gmtCreated;
 
