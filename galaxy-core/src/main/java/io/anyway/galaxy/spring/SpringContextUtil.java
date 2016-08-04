@@ -1,6 +1,7 @@
 package io.anyway.galaxy.spring;
 
-import io.anyway.galaxy.context.support.ModuleContext;
+import io.anyway.galaxy.context.ModuleContext;
+import io.anyway.galaxy.context.ModuleContextAdapter;
 import io.anyway.galaxy.exception.DistributedTransactionException;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
@@ -123,6 +124,24 @@ public class SpringContextUtil implements ApplicationContextAware,ResourceLoader
      */
     public static ClassLoader getClassLoader(String moduleId){
         return moduleContexts.get(moduleId).getClassLoader();
+    }
+
+    /**
+     * 根据模块中的实例获取模块标识
+     * @param target
+     * @return
+     */
+    public static String getModuleIdByTarget(Object target){
+        if(target instanceof ModuleContextAdapter){
+            return ((ModuleContextAdapter)target).getModuleContext().getModuleId();
+        }
+        ClassLoader classLoader= target.getClass().getClassLoader();
+        for(ModuleContext each: moduleContexts.values()){
+            if(each.getClassLoader()==classLoader){
+                return each.getModuleId();
+            }
+        }
+        return "webapplication";
     }
 
 
