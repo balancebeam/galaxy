@@ -1,4 +1,4 @@
-package io.anyway.galaxy.context.support;
+package io.anyway.galaxy.context;
 
 import org.springframework.context.ApplicationContext;
 
@@ -6,6 +6,7 @@ import org.springframework.context.ApplicationContext;
  * Created by yangzz on 16/8/3.
  */
 public interface ModuleContext {
+
     /**
      * 获取模块的Spring应用上线文
      * @return

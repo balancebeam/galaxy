@@ -130,7 +130,7 @@ public class TXAspectProcessor implements Ordered,ResourceLoaderAware,Applicatio
             if (StringUtils.isEmpty(bizType)) {
                 logger.warn("miss business type, class: " + target + ",method: " + actionMethod);
             }
-            String moduleId= applicationContext.getBean(SpringContextUtil.class).getModuleId();
+            String moduleId= SpringContextUtil.getModuleIdByTarget(pjp.getTarget());
             String methodName= actionMethod.getName();
             Class[] types= actionMethod.getParameterTypes();
             cachedPayload= new ActionExecutePayload(bizType,moduleId, target, methodName, types);
@@ -241,7 +241,7 @@ public class TXAspectProcessor implements Ordered,ResourceLoaderAware,Applicatio
             if (StringUtils.isEmpty(bizType)) {
                 logger.warn("miss business type, class: " + target + ",serviceExecutePayload: " + serviceMethod);
             }
-            String moduleId= applicationContext.getBean(SpringContextUtil.class).getModuleId();
+            String moduleId= SpringContextUtil.getModuleIdByTarget(pjp.getTarget());
             String methodName= serviceMethod.getName();
             Class[] types= serviceMethod.getParameterTypes();
             cachedPayload= new ServiceExecutePayload(bizType,moduleId, target, methodName, types);
