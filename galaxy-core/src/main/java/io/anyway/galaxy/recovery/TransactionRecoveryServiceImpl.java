@@ -34,7 +34,7 @@ public class TransactionRecoveryServiceImpl implements TransactionRecoveryServic
         // 30天前
         Date searchDate = DateUtil.getPrevDate(30);
 
-        return transactionRepository.findSince(searchDate, (Integer[])shardingItem.toArray());
+        return transactionRepository.findSince(searchDate, shardingItem.toArray(new Integer[shardingItem.size()]));
     }
 
     public int execute(List<TransactionInfo> transactionInfos) {

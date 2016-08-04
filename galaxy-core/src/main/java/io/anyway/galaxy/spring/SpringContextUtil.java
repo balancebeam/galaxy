@@ -61,7 +61,12 @@ public class SpringContextUtil implements ApplicationContextAware,ResourceLoader
      * @throws BeansException
      */
     public static <T> T getBean(String moduleId,Class<T> requiredType) throws BeansException {
-        return getApplicationContext(moduleId).getBean(requiredType);
+        ApplicationContext ctx= getApplicationContext(moduleId);
+        Class<?>[] interfaces= requiredType.getInterfaces();
+        if(interfaces.length>0){
+            return (T)ctx.getBean(interfaces[0]);
+        }
+        return ctx.getBean(requiredType);
     }
 
     /**
@@ -182,6 +187,7 @@ public class SpringContextUtil implements ApplicationContextAware,ResourceLoader
         if(moduleContexts.contains(moduleId)){
             throw new DistributedTransactionException("duplicated applicationContext register, moduleId: "+moduleId);
         }
+        moduleContexts.putIfAbsent(moduleId,this);
     }
 
     @Override

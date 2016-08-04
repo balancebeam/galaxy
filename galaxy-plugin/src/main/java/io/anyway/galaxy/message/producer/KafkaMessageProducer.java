@@ -42,10 +42,10 @@ public class KafkaMessageProducer implements MessageProducer<TransactionMessage>
         try {
             RecordMetadata metadata= future.get(timeout, TimeUnit.SECONDS);
             if(logger.isInfoEnabled()){
-                logger.info("send message success: "+metadata);
+                logger.info("Send message: {topic:"+metadata.topic()+",partition:"+metadata.partition()+",offset:"+metadata.offset()+"}");
             }
         } catch (Exception e) {
-            throw new DistributedTransactionException("send message error: "+message,e);
+            throw new DistributedTransactionException("Send message error: "+message,e);
         }
     }
 
@@ -63,14 +63,14 @@ public class KafkaMessageProducer implements MessageProducer<TransactionMessage>
         props.put("value.serializer", "io.anyway.galaxy.message.serialization.TransactionMessageSerializer");
         producer = new KafkaProducer<String,TransactionMessage>(props);
         if(logger.isInfoEnabled()){
-            logger.info("crete kafka producer: "+producer);
+            logger.info("Crete kafka producer: "+producer);
         }
     }
 
     @Override
     public void destroy() throws Exception {
         if(logger.isInfoEnabled()){
-            logger.info("destroy kafka producer: "+producer);
+            logger.info("Destroy kafka producer: "+producer);
         }
         producer.close();
     }

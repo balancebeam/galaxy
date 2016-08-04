@@ -10,7 +10,6 @@ import io.anyway.galaxy.demo.domain.RepositoryDO;
 import io.anyway.galaxy.demo.service.RepositoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**add
@@ -25,6 +24,7 @@ public class RepositoryServiceImpl implements RepositoryService,ModuleContextAda
     @Autowired
     private RepositoryDao dao;
 
+
     @Transactional
     public void addRepository(RepositoryDO repositoryDO){
         dao.add(repositoryDO);
@@ -37,9 +37,10 @@ public class RepositoryServiceImpl implements RepositoryService,ModuleContextAda
         return 0 < dao.decrease(new RepositoryDO(productId, amount));
     }
 
+    @Override
     @Transactional
     @TXCancel
-    boolean increaseRepository(TXContext ctx,int productId,long amount){
+    public boolean increaseRepository(TXContext ctx,long productId,long amount){
         return 0 < dao.increase(new RepositoryDO(productId, amount));
     }
 
@@ -47,4 +48,5 @@ public class RepositoryServiceImpl implements RepositoryService,ModuleContextAda
     public ModuleContext getModuleContext() {
         return moduleContext;
     }
+
 }

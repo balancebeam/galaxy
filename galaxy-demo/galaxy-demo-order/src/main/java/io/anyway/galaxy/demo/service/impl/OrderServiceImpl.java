@@ -26,6 +26,7 @@ public class OrderServiceImpl implements OrderService {
         return 0< dao.addOrder(orderDO);
     }
 
+    @Override
     @Transactional
     @TXCancel
     public boolean cancelOrder(TXContext ctx,OrderDO orderDO){

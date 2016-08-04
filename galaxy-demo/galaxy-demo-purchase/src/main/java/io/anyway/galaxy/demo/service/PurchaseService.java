@@ -15,5 +15,5 @@ public interface PurchaseService {
      * @return
      * @throws Exception
      */
-    String purchase(SerialNumberGenerator generator, long userId, long productId, long amount)throws Exception;
+    String purchase(SerialNumberGenerator generator, long userId, long productId, long amount);
 }

@@ -106,17 +106,17 @@ public class TXAspectProcessor implements Ordered,ResourceLoaderAware,Applicatio
         String serialNumber= "";
         //根据Action第一个入参获(类型必须是SerialNumberGenerator)取交易流水号
         if(pjp.getArgs().length==0){
-            logger.warn("no any incoming parameter,you need input first value typeof SerialNumberGenerator, method: "+actionMethod);
+            logger.warn("No any incoming parameter,you need input first value typeof SerialNumberGenerator, method: "+actionMethod);
         }
         else{
             Object firstValue= pjp.getArgs()[0];
             if(!(firstValue instanceof SerialNumberGenerator)){
-                logger.warn("the first value is not typeof SerialNumberGenerator, method: "+actionMethod+", inArgs: "+pjp.getArgs());
+                logger.warn("The first value is not typeof SerialNumberGenerator, method: "+actionMethod+", inArgs: "+pjp.getArgs());
             }
             else{
                 serialNumber= ((SerialNumberGenerator)firstValue).getSerialNumber();
                 if(StringUtils.isEmpty(serialNumber)){
-                    logger.warn("incoming trade serial number is empty, method: "+actionMethod+", inArgs: "+pjp.getArgs());
+                    logger.warn("The incoming trade serial number is empty, method: "+actionMethod+", inArgs: "+pjp.getArgs());
                 }
             }
         }
@@ -128,7 +128,7 @@ public class TXAspectProcessor implements Ordered,ResourceLoaderAware,Applicatio
             TXAction action = targetMethod.getAnnotation(TXAction.class);
             String bizType = action.bizType();
             if (StringUtils.isEmpty(bizType)) {
-                logger.warn("miss business type, class: " + target + ",method: " + actionMethod);
+                logger.warn("Miss business type, class: " + target + ",method: " + actionMethod);
             }
             String moduleId= SpringContextUtil.getModuleIdByTarget(pjp.getTarget());
             String methodName= actionMethod.getName();
@@ -154,7 +154,7 @@ public class TXAspectProcessor implements Ordered,ResourceLoaderAware,Applicatio
             TXContextHolder.setAction(true);
 
             if (logger.isInfoEnabled()) {
-                logger.info("generate TXContext: " + ctx+", actionExecutePayload: "+payload);
+                logger.info("Generate TXContext: " + ctx+", actionExecutePayload: "+payload);
             }
 
             //获取外层业务开启事务的对应的数据库连接
@@ -176,14 +176,14 @@ public class TXAspectProcessor implements Ordered,ResourceLoaderAware,Applicatio
                                 //如果是TCC类型事务才发送confirm消息
                                 if(payload.getTxType()== TransactionTypeEnum.TCC){
                                     if (logger.isInfoEnabled()) {
-                                        logger.info("will send \"confirm\" message, TXContext: " + ctx+", actionExecutePayload: "+payload);
+                                        logger.info("Will send confirm message, TXContext: " + ctx+", actionExecutePayload: "+payload);
                                     }
                                     actionIntercepter.confirmAction(ctx);
                                 }
                                 //确保在cancel之后执行通知方法
                             } else if ("rollback".equals(method.getName())) {
                                 if (logger.isInfoEnabled()) {
-                                    logger.info("will send \"cancel\" message, TXContext: " + ctx+", actionExecutePayload: "+payload);
+                                    logger.info("Will send cancel message, TXContext: " + ctx+", actionExecutePayload: "+payload);
                                 }
                                 actionIntercepter.cancelAction(ctx);
                             }
@@ -254,14 +254,14 @@ public class TXAspectProcessor implements Ordered,ResourceLoaderAware,Applicatio
         //设置运行时的入参
         payload.setArgs(pjp.getArgs());
         if (logger.isInfoEnabled()) {
-            logger.info("found TXContext: " + ctx+", serviceExecutePayload: "+payload);
+            logger.info("Found TXContext: " + ctx+", try-method: "+serviceMethod);
         }
         //先调用业务方法
         Object result= pjp.proceed();
         //更改TX状态为TRIED
         serviceIntercepter.tryService(ctx,payload);
         if (logger.isInfoEnabled()) {
-            logger.info("Update TX : " + ctx+" status TRIED");
+            logger.info("Update TX TRIED, TXContext:" + ctx+", try-method: "+serviceMethod);
         }
         return result;
     }
@@ -289,14 +289,15 @@ public class TXAspectProcessor implements Ordered,ResourceLoaderAware,Applicatio
         Assert.notNull(ctx);
 
         if (logger.isInfoEnabled()) {
-            logger.info("found TXContext: " + ctx);
+            logger.info("Found TXContext: " + ctx+", confirm-method: "+((MethodSignature) pjp.getSignature()).getMethod());
         }
 
         Object result= pjp.proceed();
         //更改TX表的状态为CONFIRMED
         serviceIntercepter.confirmService(ctx);
+
         if (logger.isInfoEnabled()) {
-            logger.info("Update TX : " + ctx+" status CONFIRMED");
+            logger.info("Update TX CONFIRMED, TXContext:" + ctx+", confirm-method: "+((MethodSignature) pjp.getSignature()).getMethod());
         }
         return result;
     }
@@ -324,14 +325,15 @@ public class TXAspectProcessor implements Ordered,ResourceLoaderAware,Applicatio
         Assert.notNull(ctx);
 
         if (logger.isInfoEnabled()) {
-            logger.info("found TXContext: " + ctx);
+            logger.info("Found TXContext: " + ctx+", cancel-method: "+((MethodSignature) pjp.getSignature()).getMethod());
         }
 
         Object result= pjp.proceed();
         //更改TX表的状态为CANCELLED
         serviceIntercepter.cancelService(ctx);
+
         if (logger.isInfoEnabled()) {
-            logger.info("Update TX : " + ctx+" status CANCELLED");
+            logger.info("Update TX CANCELLED, TXContext:" + ctx+", cancel-method: "+((MethodSignature) pjp.getSignature()).getMethod());
         }
         return result;
     }

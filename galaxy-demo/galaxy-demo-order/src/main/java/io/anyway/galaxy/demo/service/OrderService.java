@@ -14,4 +14,6 @@ public interface OrderService {
      * @return
      */
     boolean addOrder(TXContext ctx,OrderDO orderDO);
+
+    boolean cancelOrder(TXContext ctx,OrderDO orderDO);
 }
