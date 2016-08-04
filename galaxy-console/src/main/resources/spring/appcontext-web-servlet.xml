@@ -40,6 +40,15 @@
         </mvc:message-converters>
     </mvc:annotation-driven>
 
+    <bean id="multTaskExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+        <property name="corePoolSize" value="${multTaskExecutor.corePoolSize}" />
+        <property name="maxPoolSize" value="${multTaskExecutor.maxPoolSize}" />
+        <property name="queueCapacity" value="${multTaskExecutor.queueCapacity}" />
+        <property name="rejectedExecutionHandler">
+            <bean class="java.util.concurrent.ThreadPoolExecutor$CallerRunsPolicy" />
+        </property>
+    </bean>
+
     <import resource="appcontext-service-db.xml" />
     <import resource="appcontext-service-dao.xml" />
 

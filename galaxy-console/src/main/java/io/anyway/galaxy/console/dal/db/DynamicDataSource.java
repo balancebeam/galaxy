@@ -14,6 +14,7 @@ import org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource;
 
 import javax.sql.DataSource;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -33,11 +34,18 @@ public class DynamicDataSource extends AbstractRoutingDataSource implements Appl
 
     private static final String dataSourceName = "dynamicDataSource";
 
+    private DataSource defaultDataSource;
+
+    public DynamicDataSource(){
+        setTargetDataSources(Collections.emptyMap());
+    }
 
     protected DataSource determineTargetDataSource() {
 
         // 获取线程上下文所需使用的数据源ID
-        long id = DsTypeContextHolder.getDsType();
+        Long id = DsTypeContextHolder.getDsType();
+
+        if (id == null) return defaultDataSource;
 
         if (cacheDataSource.containsKey(id)) {
             return cacheDataSource.get(id);
@@ -147,7 +155,7 @@ public class DynamicDataSource extends AbstractRoutingDataSource implements Appl
         cacheDataSource.clear();
     }
 
-    /*private void registerDataSourceBean(DataSourceInfoDto dto) {
+    /*private void registerDataSourceBean(DataSourceInfo dto) {
         DefaultListableBeanFactory defaultListableBeanFactory = (DefaultListableBeanFactory) applicationContext.getAutowireCapableBeanFactory();
         BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder.rootBeanDefinition(dataSourceBeanClass);
         beanDefinitionBuilder.getBeanDefinition().setAttribute("id", "dynamicDataSource" + dto.getId());
@@ -176,5 +184,9 @@ public class DynamicDataSource extends AbstractRoutingDataSource implements Appl
     @Override
     protected Object determineCurrentLookupKey() {
         return DsTypeContextHolder.getDsType();
+    }
+
+    public void setDefaultDataSource(DataSource defaultDataSource) {
+        this.defaultDataSource = defaultDataSource;
     }
 }

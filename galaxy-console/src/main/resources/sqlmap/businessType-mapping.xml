@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
-<mapper namespace="io.anyway.galaxy.console.dal.dao.BusinessTypeDto" >
+<mapper namespace="io.anyway.galaxy.console.dal.dao.BusinessTypeDao" >
 
   <resultMap type="io.anyway.galaxy.console.dal.dto.BusinessTypeDto" id="businessTypeDto">
     <id column="id" property="id" />
@@ -10,22 +10,6 @@
     <result column="memo" property="memo" />
     <result column="gmt_create" property="gmtCreate" />
     <result column="gmt_modified" property="gmtModified" />
-
-    <collection property="dataSourceInfoDtos" ofType="io.anyway.galaxy.console.dal.dto.DataSourceInfoDto">
-      <id column="id" property="id" />
-      <result column="name" property="name" />
-      <result column="driver_class" property="driverClass" />
-      <result column="jndi" property="jndi" />
-      <result column="url" property="url" />
-      <result column="max_active" property="maxActive" />
-      <result column="initial_size" property="initialSize" />
-      <result column="username" property="username" />
-      <result column="password" property="password" />
-      <result column="active_flag" property="activeFlag" />
-      <result column="memo" property="memo" />
-      <result column="gmt_create" property="gmtCreate" />
-      <result column="gmt_modified" property="gmtModified" />
-    </collection>
   </resultMap>
 
 
@@ -40,23 +24,15 @@
   </select>
 
   <select id="get" parameterType="long" resultMap="businessTypeDto">
-    select bt.id, bt.name, bt.ds_id,
-           di.id, di.name, di.driver_class ,di.jndi, di.url, di.max_active, di.initial_size, di.username, di.password
+    select bt.id, bt.name, bt.ds_id
     from business_type bt
-    left join datasource_info di on bt.ds_id = di.id
-    where bt.id = #{id} and bt.active_flag = 1 and di.active_flag = 1
+    where bt.id = #{id} and bt.active_flag = 1
   </select>
 
   <delete id="del" parameterType="long" >
     update datasource_info
     set active_flag = 0
     where id = #{id}
-  </delete>
-
-  <delete id="delDs" parameterType="long" >
-    update datasource_info
-    set active_flag = 0
-    where ds_id = #{dsId}
   </delete>
 
 </mapper>

@@ -1,4 +1,4 @@
-package io.anyway.galaxy.console.dal.dto;
+package io.anyway.galaxy.console.domain;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -11,7 +11,7 @@ import java.util.List;
  */
 @Getter
 @Setter
-public class BusinessTypeDto {
+public class BusinessTypeInfo {
     private long id;
     private String name;
     private String dsId;
@@ -19,5 +19,5 @@ public class BusinessTypeDto {
     private String memo;
     private Timestamp gmtCreate;
     private Timestamp gmtModified;
-    private List<DataSourceInfoDto> dataSourceInfoDtos;
+    private List<DataSourceInfo> dataSourceInfos;
 }

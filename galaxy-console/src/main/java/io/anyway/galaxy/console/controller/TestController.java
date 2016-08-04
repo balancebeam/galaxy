@@ -1,10 +1,14 @@
 package io.anyway.galaxy.console.controller;
 
+import io.anyway.galaxy.console.dal.dao.BusinessTypeDao;
 import io.anyway.galaxy.console.dal.dao.DataSourceInfoDao;
 import io.anyway.galaxy.console.dal.db.DsTypeContextHolder;
+import io.anyway.galaxy.console.dal.dto.BusinessTypeDto;
 import io.anyway.galaxy.console.dal.dto.TransactionInfoDto;
 import io.anyway.galaxy.console.dal.rdao.TransactionInfoDao;
-import io.anyway.galaxy.domain.TransactionInfo;
+import io.anyway.galaxy.console.domain.BusinessTypeInfo;
+import io.anyway.galaxy.console.domain.TransactionInfo;
+import io.anyway.galaxy.console.service.TransactionInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -13,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.xml.crypto.Data;
+import java.util.List;
 
 /**
  * Created by xiong.j on 2016/8/2.
@@ -26,6 +31,12 @@ public class TestController {
 
     @Autowired
     private DataSourceInfoDao dataSourceInfoDao;
+
+    @Autowired
+    private BusinessTypeDao businessTypeDao;
+
+    @Autowired
+    TransactionInfoService transactionInfoService;
 
     @RequestMapping(value="/testAysnJms/{times}")
     @ResponseBody
@@ -43,4 +54,31 @@ public class TestController {
         return "Test transactionInfoDao result|" + transactionInfoDto;
     }
 
+    @RequestMapping(value="/traninfo/{id}")
+    @ResponseBody
+    public String getTransactionInfo(Model model, @PathVariable int id) {
+        long start = System.currentTimeMillis();
+        TransactionInfoDto transactionInfoDto = null;
+
+        BusinessTypeInfo businessTypeInfo = new BusinessTypeInfo();
+        businessTypeInfo.setId(1);
+        businessTypeInfo.setName("test");
+        List<TransactionInfo> result = transactionInfoService.list(businessTypeInfo);
+        long end = System.currentTimeMillis() - start;
+        System.out.println("@@@@TestController.getTransactionInfo Spent time" + end);
+        return "Test transactionInfos result|" + result;
+    }
+
+    @RequestMapping(value="/busin/{id}")
+    @ResponseBody
+    public String getBusinessTypeInfo(Model model, @PathVariable int id) {
+        long start = System.currentTimeMillis();
+
+        BusinessTypeDto result = new BusinessTypeDto();
+        result.setId(1);
+        //DsTypeContextHolder.setContextType(DsTypeContextHolder.DEFAULT_SESSION_FACTORY);
+        result = businessTypeDao.get(1);
+        businessTypeDao.list(result);
+        return "Test businessTypeInfo result|" + result;
+    }
 }

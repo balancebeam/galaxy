@@ -39,11 +39,7 @@
     </bean>
 
     <bean id="dynamicDataSource" class="io.anyway.galaxy.console.dal.db.DynamicDataSource" destroy-method="close">
-        <property name="targetDataSources">
-            <map key-type="java.lang.String">
-
-            </map>
-        </property>
+        <property name="defaultDataSource" ref="dataSource"/>
     </bean>
 
 </beans>
