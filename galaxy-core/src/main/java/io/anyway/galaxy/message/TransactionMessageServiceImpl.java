@@ -150,7 +150,7 @@ public class TransactionMessageServiceImpl implements TransactionMessageService,
             if (validation(message, transactionInfo)) {
                 ServiceExecutePayload payload = parsePayload(transactionInfo);
                 //根据模块的ApplicationContext获取Bean对象
-                Object aopBean= SpringContextUtil.getBean(transactionInfo.getModuleId(),payload.getTarget());
+                Object aopBean= SpringContextUtil.getBean(transactionInfo.getModuleId(),payload.getTargetClass());
 
                 String methodName = null;
                 if (TransactionStatusEnum.CANCELLING.getCode() == message.getTxStatus()) {
@@ -184,14 +184,24 @@ public class TransactionMessageServiceImpl implements TransactionMessageService,
     }
 
     private ServiceExecutePayload parsePayload(TransactionInfo transactionInfo) {
-        String payload = transactionInfo.getContext();
+        String json = transactionInfo.getContext();
         //获取模块的名称
         String moduleId= transactionInfo.getModuleId();
         ClassLoader classLoader= SpringContextUtil.getClassLoader(moduleId);
         ParserConfig config= new ParserConfig();
         //指定类加载器
         config.setDefaultClassLoader(classLoader);
-        return JSON.parseObject(payload, (Type)ServiceExecutePayload.class, config, null, JSON.DEFAULT_PARSER_FEATURE, new Feature[0]);
+        ServiceExecutePayload payload= JSON.parseObject(json, ServiceExecutePayload.class, config, null, JSON.DEFAULT_PARSER_FEATURE, new Feature[0]);
+        final Object[] values= payload.getArgs();
+        int index=0 ;
+        for(Class<?> each: payload.getActualTypes()){
+            Object val= values[index];
+            if(val!= null) {
+                values[index] = JSON.parseObject(val.toString(), each, config, null, JSON.DEFAULT_PARSER_FEATURE, new Feature[0]);
+            }
+            index++;
+        }
+        return payload;
     }
 
     private TransactionStatusEnum getNextStatus(TransactionStatusEnum txStatus){

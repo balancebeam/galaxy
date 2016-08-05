@@ -62,10 +62,6 @@ public class SpringContextUtil implements ApplicationContextAware,ResourceLoader
      */
     public static <T> T getBean(String moduleId,Class<T> requiredType) throws BeansException {
         ApplicationContext ctx= getApplicationContext(moduleId);
-        Class<?>[] interfaces= requiredType.getInterfaces();
-        if(interfaces.length>0){
-            return (T)ctx.getBean(interfaces[0]);
-        }
         return ctx.getBean(requiredType);
     }
 

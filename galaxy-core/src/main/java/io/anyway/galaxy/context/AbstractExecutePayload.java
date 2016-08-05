@@ -7,9 +7,11 @@ public abstract class AbstractExecutePayload implements Cloneable{
 
     protected String bizType;
 
-    protected Class<?> target;
+    protected Class<?> targetClass;
 
     protected Class<?>[] types;
+
+    protected Class<?>[] actualTypes;
 
     protected Object[] args;
 
@@ -17,10 +19,10 @@ public abstract class AbstractExecutePayload implements Cloneable{
 
     public AbstractExecutePayload(){}
 
-    public AbstractExecutePayload(String bizType,String moduleId, Class<?> target, Class<?>[] types){
+    public AbstractExecutePayload(String bizType,String moduleId, Class<?> targetClass, Class<?>[] types){
         this.bizType= bizType;
         this.moduleId= moduleId;
-        this.target= target;
+        this.targetClass= targetClass;
         this.types= types;
     }
 
@@ -28,8 +30,8 @@ public abstract class AbstractExecutePayload implements Cloneable{
         return bizType;
     }
 
-    public Class<?> getTarget() {
-        return target;
+    public Class<?> getTargetClass() {
+        return targetClass;
     }
 
     public Class<?>[] getTypes(){
@@ -44,8 +46,8 @@ public abstract class AbstractExecutePayload implements Cloneable{
         this.bizType = bizType;
     }
 
-    public void setTarget(Class<?> target) {
-        this.target = target;
+    public void setTargetClass(Class<?> targetClass) {
+        this.targetClass = targetClass;
     }
 
     public void setTypes(Class<?>[] types) {
@@ -62,5 +64,13 @@ public abstract class AbstractExecutePayload implements Cloneable{
 
     public String getModuleId(){
         return moduleId;
+    }
+
+    public Class<?>[] getActualTypes() {
+        return actualTypes;
+    }
+
+    public void setActualTypes(Class<?>[] actualTypes) {
+        this.actualTypes = actualTypes;
     }
 }
