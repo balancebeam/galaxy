@@ -17,5 +17,6 @@ CREATE TABLE transaction_info
 );
 
 create index idx_tran_info_pid on transaction_info(parent_id);
+create index idx_tran_info_bType on transaction_info(business_type);
 
 commit;

@@ -3,6 +3,9 @@ package io.anyway.galaxy.console.dal.dao;
 import io.anyway.galaxy.console.dal.dto.BusinessTypeDto;
 import io.anyway.galaxy.console.dal.dto.DataSourceInfoDto;
 
+import java.util.List;
+
+
 /**
  * Created by xiong.j on 2016/8/1.
  */
@@ -20,7 +23,7 @@ public interface DataSourceInfoDao {
      * @param dto
      * @return
      */
-    DataSourceInfoDto list(DataSourceInfoDto dto);
+    List<DataSourceInfoDto> list(DataSourceInfoDto dto);
 
     /**
      * 获取数据源

@@ -18,14 +18,12 @@ public class DsTypeContextHolder {
     private static final ThreadLocal<Map<Object, Object>> contextHolder = new ThreadLocal<Map<Object, Object>>();
 
     public static void setDsType(long dsType) {
+        init();
         contextHolder.get().put(DS_TYPE, dsType);
     }
 
     public static Long getDsType() {
-        Map<Object, Object> map = contextHolder.get();
-        if (map == null) {
-            init();
-        }
+        init();
         if (contextHolder.get().containsKey(DS_TYPE)) {
             return (Long)contextHolder.get().get(DS_TYPE);
         }
@@ -33,14 +31,12 @@ public class DsTypeContextHolder {
     }
 
     public static void setContextType(String contextType) {
+        init();
         contextHolder.get().put(CONTEXT_TYPE, contextType);
     }
 
     public static String getContextType() {
-        Map<Object, Object> map = contextHolder.get();
-        if (map == null) {
-            init();
-        }
+        init();
         if (contextHolder.get().containsKey(CONTEXT_TYPE)) {
             return (String) contextHolder.get().get(CONTEXT_TYPE);
         }
@@ -52,7 +48,9 @@ public class DsTypeContextHolder {
     }
 
     private static void init(){
-        Map<Object, Object> map = new HashMap<Object, Object>(2);
-        contextHolder.set(map);
+        if (contextHolder.get() == null) {
+            Map<Object, Object> map = new HashMap<Object, Object>(2);
+            contextHolder.set(map);
+        }
     }
 }
