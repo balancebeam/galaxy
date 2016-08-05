@@ -74,7 +74,7 @@ public class DynamicDataSource extends AbstractRoutingDataSource implements Appl
 
     private DataSource getDruidDataSource(DataSourceInfoDto dto) {
         DruidDataSource druidDataSource = new DruidDataSource();
-        druidDataSource.setUrl(dto.getUrl());
+        druidDataSource.setUrl(dto.getDbUrl());
         druidDataSource.setUsername(dto.getUsername());
         druidDataSource.setPassword(getPassword(dto.getUsername(), dto.getPassword()));
         druidDataSource.setMaxActive(dto.getMaxActive());
