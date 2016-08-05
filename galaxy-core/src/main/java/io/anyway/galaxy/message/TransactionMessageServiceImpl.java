@@ -66,6 +66,9 @@ public class TransactionMessageServiceImpl implements TransactionMessageService,
         transactionInfo.setTxId(ctx.getTxId());
         transactionInfo.setTxStatus(getNextStatus(txStatus).getCode());
         transactionRepository.update(transactionInfo);
+        if (logger.isInfoEnabled()) {
+            logger.info("Update Action TX "+getNextStatus(txStatus)+", ctx: " + ctx);
+        }
     }
 
     @Transactional
@@ -79,26 +82,26 @@ public class TransactionMessageServiceImpl implements TransactionMessageService,
         if (message.getTxStatus() == TransactionStatusEnum.CONFIRMING.getCode()) {
             if (transactionInfo.getTxStatus() == TransactionStatusEnum.CONFIRMING.getCode()) {
                 if (logger.isInfoEnabled()) {
-                    logger.info("in confirming operation, ignored message: " + message);
+                    logger.info("In confirming operation, ignored message: " + message);
                 }
                 return false;
             }
             if (transactionInfo.getTxStatus() == TransactionStatusEnum.CONFIRMED.getCode()) {
                 if (logger.isInfoEnabled()) {
-                    logger.info("completed confirm operation, ignored message: " + message);
+                    logger.info("Completed confirm operation, ignored message: " + message);
                 }
                 return false;
             }
         } else {
             if (transactionInfo.getTxStatus() == TransactionStatusEnum.CANCELLING.getCode()) {
                 if (logger.isInfoEnabled()) {
-                    logger.info("in cancelling operation, ignored message: " + message);
+                    logger.info("In cancelling operation, ignored message: " + message);
                 }
                 return false;
             }
             if (transactionInfo.getTxStatus() == TransactionStatusEnum.CANCELLED.getCode()) {
                 if (logger.isInfoEnabled()) {
-                    logger.info("completed cancel operation, ignored message: " + message);
+                    logger.info("Completed cancel operation, ignored message: " + message);
                 }
                 return false;
             }
@@ -123,7 +126,7 @@ public class TransactionMessageServiceImpl implements TransactionMessageService,
             try {
                 service.handleMessage(message);
             } catch (Throwable e) {
-                logger.error(e);
+                logger.error("Execute Cancel or Confirm error",e);
             }
             }
         });
@@ -147,28 +150,28 @@ public class TransactionMessageServiceImpl implements TransactionMessageService,
             if (validation(message, transactionInfo)) {
                 ServiceExecutePayload payload = parsePayload(transactionInfo);
                 //根据模块的ApplicationContext获取Bean对象
-                Object bean= SpringContextUtil.getBean(transactionInfo.getModuleId(),payload.getTarget());
+                Object aopBean= SpringContextUtil.getBean(transactionInfo.getModuleId(),payload.getTargetClass());
 
                 String methodName = null;
                 if (TransactionStatusEnum.CANCELLING.getCode() == message.getTxStatus()) {
                     // 补偿
                     methodName = payload.getCancelMethod();
                     if (StringUtils.isEmpty(methodName)) {
-                        logger.error("miss cancel method, serviceExecutePayload: " + payload);
+                        logger.error("Miss Cancel method, serviceExecutePayload: " + payload);
                         return;
                     }
                 } else if (TransactionStatusEnum.CONFIRMING.getCode() == message.getTxStatus()) {
                     // 确认
                     methodName = payload.getConfirmMethod();
                     if (StringUtils.isEmpty(methodName)) {
-                        logger.error("miss confirm method, serviceExecutePayload: " + payload);
+                        logger.error("Miss Confirm method, serviceExecutePayload: " + payload);
                         return;
                     }
                 }
                 // 执行消息对应的操作
-                ProxyUtil.proxyMethod(bean, methodName, payload.getTypes(), payload.getArgs());
+                ProxyUtil.proxyMethod(aopBean,methodName, payload.getTypes(), payload.getArgs());
             } else {
-                logger.warn("validation error, txMsg=" + message + " txInfo=" + transactionInfo);
+                logger.warn("Validation error, txMsg=" + message + " txInfo=" + transactionInfo);
             }
         }finally {
             TXContextHolder.setTXContext(null);
@@ -181,14 +184,24 @@ public class TransactionMessageServiceImpl implements TransactionMessageService,
     }
 
     private ServiceExecutePayload parsePayload(TransactionInfo transactionInfo) {
-        String payload = transactionInfo.getContext();
+        String json = transactionInfo.getContext();
         //获取模块的名称
         String moduleId= transactionInfo.getModuleId();
         ClassLoader classLoader= SpringContextUtil.getClassLoader(moduleId);
         ParserConfig config= new ParserConfig();
         //指定类加载器
         config.setDefaultClassLoader(classLoader);
-        return JSON.parseObject(payload, (Type)ServiceExecutePayload.class, config, null, JSON.DEFAULT_PARSER_FEATURE, new Feature[0]);
+        ServiceExecutePayload payload= JSON.parseObject(json, ServiceExecutePayload.class, config, null, JSON.DEFAULT_PARSER_FEATURE, new Feature[0]);
+        final Object[] values= payload.getArgs();
+        int index=0 ;
+        for(Class<?> each: payload.getActualTypes()){
+            Object val= values[index];
+            if(val!= null) {
+                values[index] = JSON.parseObject(val.toString(), each, config, null, JSON.DEFAULT_PARSER_FEATURE, new Feature[0]);
+            }
+            index++;
+        }
+        return payload;
     }
 
     private TransactionStatusEnum getNextStatus(TransactionStatusEnum txStatus){

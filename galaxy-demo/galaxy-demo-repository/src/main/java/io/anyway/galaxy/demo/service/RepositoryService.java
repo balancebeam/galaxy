@@ -15,4 +15,6 @@ public interface RepositoryService {
      * @return
      */
     boolean decreaseRepository(TXContext ctx,long productId, long amount);
+
+    boolean increaseRepository(TXContext ctx,long productId,long amount);
 }

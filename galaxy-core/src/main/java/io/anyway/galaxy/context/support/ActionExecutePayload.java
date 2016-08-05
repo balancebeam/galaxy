@@ -57,7 +57,7 @@ public class ActionExecutePayload extends AbstractExecutePayload {
                 .append(",TxType=")
                 .append(getTxType())
                 .append(",class=")
-                .append(getTarget().getName())
+                .append(getTargetClass().getName())
                 .append(",actionMethod=")
                 .append(actionMethod)
                 .append(",inTypes=")
@@ -73,7 +73,7 @@ public class ActionExecutePayload extends AbstractExecutePayload {
         ActionExecutePayload newPayload= new ActionExecutePayload();
         newPayload.bizType= bizType;
         newPayload.moduleId= moduleId;
-        newPayload.target= target;
+        newPayload.targetClass= targetClass;
         newPayload.types= types;
         newPayload.txType = txType;
         newPayload.actionMethod= actionMethod;

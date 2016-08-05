@@ -43,7 +43,7 @@ public class PurchaseServiceImpl implements PurchaseService {
     @Override
     @Transactional
     @TXAction(value = TransactionTypeEnum.TC,bizType = "purchase")
-    public String purchase(SerialNumberGenerator generator, long userId, long productId, long amount)throws Exception{
+    public String purchase(SerialNumberGenerator generator, long userId, long productId, long amount){
 
         TXContext ctx= TXContextHolder.getTXContext();
 
@@ -62,12 +62,13 @@ public class PurchaseServiceImpl implements PurchaseService {
         if(result.getBody()){
             result= restOperations.exchange(orderURL, HttpMethod.POST,entity, Boolean.class);
             if(result.getBody()){
-                return "购买产品成功";
+                //return "购买产品成功";
+                throw new RuntimeException("测试回滚");
             }
-            throw new Exception("生成订单操作失败.");
+            throw new RuntimeException("生成订单操作失败.");
         }
         else{
-            throw new Exception("减库存操作失败.");
+            throw new RuntimeException("减库存操作失败.");
         }
     }
 

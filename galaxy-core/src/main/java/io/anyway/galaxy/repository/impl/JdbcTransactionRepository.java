@@ -239,7 +239,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			StringBuilder builder = new StringBuilder();
 			builder.append(
 					"SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, MODULE_ID, GMT_CREATE, GMT_MODIFIED"
-							+ "  FROM TRANSACTION_INFO WHERE TX_ID = ? FOR UPDATE NO WAIT");
+							+ "  FROM TRANSACTION_INFO WHERE TX_ID = ? FOR UPDATE NOWAIT");
 			stmt = conn.prepareStatement(builder.toString());
 			stmt.setLong(1, txId);
 

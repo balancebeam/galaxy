@@ -54,7 +54,7 @@ public class ServiceExecutePayload extends AbstractExecutePayload {
                 .append(",moduleId=")
                 .append(moduleId)
                 .append(",class=")
-                .append(getTarget().getName())
+                .append(getTargetClass().getName())
                 .append(",tryMethod=")
                 .append(tryMethod);
         if(!StringUtils.isEmpty(confirmMethod)){
@@ -78,7 +78,7 @@ public class ServiceExecutePayload extends AbstractExecutePayload {
         ServiceExecutePayload newPayload= new ServiceExecutePayload();
         newPayload.bizType= bizType;
         newPayload.moduleId= moduleId;
-        newPayload.target= target;
+        newPayload.targetClass= targetClass;
         newPayload.types= types;
         newPayload.tryMethod= tryMethod;
         newPayload.confirmMethod= confirmMethod;
