@@ -1,5 +1,7 @@
 package io.anyway.galaxy.console.dal.db;
 
+import io.anyway.galaxy.console.dal.dto.DataSourceInfoDto;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -11,21 +13,21 @@ public class DsTypeContextHolder {
     public final static String DEFAULT_SESSION_FACTORY = "default";
     public final static String DYNAMIC_SESSION_FACTORY = "dynamic";
 
-    private final static String DS_TYPE = "dsType";
+    private final static String DS_INFO = "dsInfo";
 
     private final static String CONTEXT_TYPE = "contextType";
 
     private static final ThreadLocal<Map<Object, Object>> contextHolder = new ThreadLocal<Map<Object, Object>>();
 
-    public static void setDsType(long dsType) {
+    public static void setDsInfo(DataSourceInfoDto dsInfo) {
         init();
-        contextHolder.get().put(DS_TYPE, dsType);
+        contextHolder.get().put(DS_INFO, dsInfo);
     }
 
-    public static Long getDsType() {
+    public static DataSourceInfoDto getDsInfo() {
         init();
-        if (contextHolder.get().containsKey(DS_TYPE)) {
-            return (Long)contextHolder.get().get(DS_TYPE);
+        if (contextHolder.get().containsKey(DS_INFO)) {
+            return (DataSourceInfoDto)contextHolder.get().get(DS_INFO);
         }
         return null;
     }

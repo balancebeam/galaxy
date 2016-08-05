@@ -51,5 +51,7 @@
 
     <import resource="appcontext-service-db.xml" />
     <import resource="appcontext-service-dao.xml" />
+    <import resource="appcontext-service-protocol.xml" />
+
 
 </beans>

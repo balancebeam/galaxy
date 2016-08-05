@@ -4,6 +4,7 @@ import io.anyway.galaxy.console.dal.dao.BusinessTypeDao;
 import io.anyway.galaxy.console.dal.dao.DataSourceInfoDao;
 import io.anyway.galaxy.console.dal.db.DsTypeContextHolder;
 import io.anyway.galaxy.console.dal.dto.BusinessTypeDto;
+import io.anyway.galaxy.console.dal.dto.DataSourceInfoDto;
 import io.anyway.galaxy.console.dal.dto.TransactionInfoDto;
 import io.anyway.galaxy.console.dal.rdao.TransactionInfoDao;
 import io.anyway.galaxy.console.domain.BusinessTypeInfo;
@@ -47,8 +48,10 @@ public class TestController {
 
         System.out.println("dataSourceInfoDao:" + dataSourceInfoDao.get(1));
 
+        DataSourceInfoDto dsInfo = dataSourceInfoDao.get(1);
         DsTypeContextHolder.setContextType(DsTypeContextHolder.DYNAMIC_SESSION_FACTORY);
-        DsTypeContextHolder.setDsType(1);
+
+        DsTypeContextHolder.setDsInfo(dsInfo);
 
         transactionInfoDto = transactionInfoDao.get(1);
         return "Test transactionInfoDao result|" + transactionInfoDto;

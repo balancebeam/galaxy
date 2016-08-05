@@ -42,19 +42,20 @@ public class DynamicDataSource extends AbstractRoutingDataSource implements Appl
 
     protected DataSource determineTargetDataSource() {
 
-        // 获取线程上下文所需使用的数据源ID
-        Long id = DsTypeContextHolder.getDsType();
+        // 获取线程上下文所需使用的数据源
+        DataSourceInfoDto dataSourceInfoDto = DsTypeContextHolder.getDsInfo();
 
-        if (id == null) return defaultDataSource;
+        if (dataSourceInfoDto == null) return defaultDataSource;
 
-        if (cacheDataSource.containsKey(id)) {
-            return cacheDataSource.get(id);
+        if (cacheDataSource.containsKey(dataSourceInfoDto.getId())) {
+            return cacheDataSource.get(dataSourceInfoDto.getId());
         } else {
             // 根据查询的数据源信息生成数据源
-            createDataSource(getDataSourceInfoDto(id));
+            //createDataSource(getDataSourceInfoDto(dataSourceInfoDto));
+            createDataSource(dataSourceInfoDto);
         }
 
-        return cacheDataSource.get(id);
+        return cacheDataSource.get(dataSourceInfoDto.getId());
     }
 
     public synchronized void createDataSource(DataSourceInfoDto dto) {
@@ -183,7 +184,7 @@ public class DynamicDataSource extends AbstractRoutingDataSource implements Appl
 
     @Override
     protected Object determineCurrentLookupKey() {
-        return DsTypeContextHolder.getDsType();
+        return DsTypeContextHolder.getDsInfo();
     }
 
     public void setDefaultDataSource(DataSource defaultDataSource) {

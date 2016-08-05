@@ -1,13 +1,17 @@
 package io.anyway.galaxy.console.service.impl;
 
 import com.alibaba.fastjson.JSON;
+import io.anyway.galaxy.console.common.DataSourceStatusEnum;
 import io.anyway.galaxy.console.dal.dao.BusinessTypeDao;
+import io.anyway.galaxy.console.dal.dao.DataSourceInfoDao;
 import io.anyway.galaxy.console.dal.db.DsTypeContextHolder;
 import io.anyway.galaxy.console.dal.dto.BusinessTypeDto;
+import io.anyway.galaxy.console.dal.dto.DataSourceInfoDto;
 import io.anyway.galaxy.console.dal.dto.TransactionInfoDto;
 import io.anyway.galaxy.console.dal.rdao.TransactionInfoDao;
 import io.anyway.galaxy.console.domain.BusinessTypeInfo;
 import io.anyway.galaxy.console.domain.TransactionInfo;
+import io.anyway.galaxy.console.protocol.HttpClientService;
 import io.anyway.galaxy.console.service.TransactionInfoService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -16,7 +20,9 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -37,6 +43,12 @@ public class TransactionInfoServiceImpl implements TransactionInfoService {
     @Autowired
     private TransactionInfoDao transactionInfoDao;
 
+    @Autowired
+    private DataSourceInfoDao dataSourceInfoDao;
+
+    @Autowired
+    private HttpClientService httpClientService;
+
     private static long WAIT_TIME = 30;
 
     public List<TransactionInfo> list(BusinessTypeInfo businessTypeInfo) {
@@ -47,12 +59,19 @@ public class TransactionInfoServiceImpl implements TransactionInfoService {
 
         if (businessTypeDto == null) return null;
 
-        // 根据业务状态对应的数据源获取事务信息
+        // 获取业务状态对应的数据源ID
         List<Future<TransactionInfoInner>> futureList = new ArrayList<Future<TransactionInfoInner>>();
         List<Long> dsIds = JSON.parseArray(businessTypeDto.getDsId(), Long.TYPE);
-        for (final Long dsId : dsIds) {
+
+        // 获取数据源信息列表
+        DataSourceInfoDto dataSourceInfoDto = new DataSourceInfoDto();
+        dataSourceInfoDto.setIds(dsIds);
+        List<DataSourceInfoDto> dataSourceInfoDtos = dataSourceInfoDao.list(dataSourceInfoDto);
+
+        // 根据数据源信息列表获取事务信息
+        for (final DataSourceInfoDto dsInfo : dataSourceInfoDtos) {
             Future<TransactionInfoInner> future = txMsgTaskExecutor.submit(
-                    new FindTransactionInfo(dsId, businessTypeDto));
+                    new FindTransactionInfo(dsInfo, businessTypeDto));
 
             futureList.add(future);
         }
@@ -83,39 +102,67 @@ public class TransactionInfoServiceImpl implements TransactionInfoService {
 
     private class FindTransactionInfo implements Callable<TransactionInfoInner>{
 
-        private long dsId;
+        private DataSourceInfoDto dataSourceInfoDto;
 
         private BusinessTypeDto businessTypeDto;
 
-        public FindTransactionInfo(long dsId, BusinessTypeDto businessTypeDto){
-            this.dsId = dsId;
+        public FindTransactionInfo(DataSourceInfoDto dsInfo, BusinessTypeDto businessTypeDto){
+            this.dataSourceInfoDto = dsInfo;
             this.businessTypeDto = businessTypeDto;
         }
 
         @Override
         public TransactionInfoInner call() throws Exception {
+            List<TransactionInfo> infos;
 
             TransactionInfoInner transactionInfoInner = new TransactionInfoInner();
             transactionInfoInner.setBusinessType(businessTypeDto.getName());
-            transactionInfoInner.setDsId(dsId);
+            transactionInfoInner.setDsId(dataSourceInfoDto.getId());
 
-            // 设置线程上下文,使用配置的数据源查询事务信息
-            DsTypeContextHolder.setContextType(DsTypeContextHolder.DYNAMIC_SESSION_FACTORY);
-            DsTypeContextHolder.setDsType(dsId);
-            TransactionInfoDto transactionInfoDto = new TransactionInfoDto();
-            transactionInfoDto.setBusinessType(businessTypeDto.getName());
-            List<TransactionInfoDto> dtos = transactionInfoDao.list(transactionInfoDto);
-
-            List<TransactionInfo> infos = new ArrayList<TransactionInfo>();
-            TransactionInfo transactionInfo;
-            for (TransactionInfoDto dto : dtos) {
-                transactionInfo =  new TransactionInfo();
-                BeanUtils.copyProperties(dto, transactionInfo);
-                infos.add(transactionInfo);
+            List<TransactionInfoDto> dtos = getTransactionInfo(dataSourceInfoDto);
+            if (dtos != null) {
+                infos = new ArrayList<TransactionInfo>();
+                TransactionInfo transactionInfo;
+                for (TransactionInfoDto dto : dtos) {
+                    transactionInfo =  new TransactionInfo();
+                    BeanUtils.copyProperties(dto, transactionInfo);
+                    infos.add(transactionInfo);
+                }
+                transactionInfoInner.setTransactionInfos(infos);
             }
-            transactionInfoInner.setTransactionInfos(infos);
             return transactionInfoInner;
         }
+
+        private List<TransactionInfoDto> getTransactionInfo(DataSourceInfoDto dataSourceInfoDto) throws Exception{
+            if (dataSourceInfoDto.getStatus() == DataSourceStatusEnum.DB.getCode()) {
+                return fromDb(dataSourceInfoDto);
+            } else {
+                return fromProtocol(dataSourceInfoDto);
+            }
+        }
+
+        private List<TransactionInfoDto> fromDb(DataSourceInfoDto dataSourceInfoDto) {
+            // 设置线程上下文,使用配置的数据源查询事务信息
+            DsTypeContextHolder.setContextType(DsTypeContextHolder.DYNAMIC_SESSION_FACTORY);
+            DsTypeContextHolder.setDsInfo(dataSourceInfoDto);
+            TransactionInfoDto transactionInfoDto = new TransactionInfoDto();
+            transactionInfoDto.setBusinessType(businessTypeDto.getName());
+            return transactionInfoDao.list(transactionInfoDto);
+        }
+
+        private List<TransactionInfoDto> fromProtocol(DataSourceInfoDto dataSourceInfoDto) throws Exception{
+            List<TransactionInfoDto> resultList = null;
+            // Http
+            String result = null;
+            if (dataSourceInfoDto.getStatus() == DataSourceStatusEnum.HTTP.getCode()) {
+                Map<String, String> params = new HashMap<String, String>();
+                // TODO 条件
+                result = httpClientService.doGet(dataSourceInfoDto.getUrl());
+            }
+            resultList = JSON.parseObject(result, List.class);
+            return resultList;
+        }
+
     }
 
     private class TransactionInfoInner{
@@ -125,6 +172,8 @@ public class TransactionInfoServiceImpl implements TransactionInfoService {
         private String businessType;
 
         private long dsId;
+
+        private String url;
 
         public List<TransactionInfo> getTransactionInfos() {
            return transactionInfos;
@@ -149,7 +198,15 @@ public class TransactionInfoServiceImpl implements TransactionInfoService {
         public void setDsId(long dsId) {
            this.dsId = dsId;
         }
-   }
+
+        public String getUrl() {
+            return url;
+        }
+
+        public void setUrl(String url) {
+            this.url = url;
+        }
+    }
 
     public static void main(String args[]){
         String list = JSON.toJSONString(new long[]{0, 1, 2});
