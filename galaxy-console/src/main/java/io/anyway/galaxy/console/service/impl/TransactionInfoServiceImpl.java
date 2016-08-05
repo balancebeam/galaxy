@@ -1,6 +1,8 @@
 package io.anyway.galaxy.console.service.impl;
 
 import com.alibaba.fastjson.JSON;
+import com.google.common.base.Strings;
+
 import io.anyway.galaxy.console.common.DataSourceStatusEnum;
 import io.anyway.galaxy.console.dal.dao.BusinessTypeDao;
 import io.anyway.galaxy.console.dal.dao.DataSourceInfoDao;
@@ -14,6 +16,7 @@ import io.anyway.galaxy.console.domain.TransactionInfo;
 import io.anyway.galaxy.console.protocol.HttpClientService;
 import io.anyway.galaxy.console.service.TransactionInfoService;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -76,10 +79,10 @@ public class TransactionInfoServiceImpl implements TransactionInfoService {
             futureList.add(future);
         }
 
-        return getResult(futureList);
+        return getResult(futureList, businessTypeDto);
     }
 
-    private List<TransactionInfo> getResult(List<Future<TransactionInfoInner>> futureList){
+    private List<TransactionInfo> getResult(List<Future<TransactionInfoInner>> futureList, BusinessTypeDto businessTypeDto){
         List<TransactionInfo> resultList = new ArrayList<TransactionInfo>();
         TransactionInfoInner transactionInfoInner = null;
         for (Future<TransactionInfoInner> future : futureList) {
@@ -90,10 +93,10 @@ public class TransactionInfoServiceImpl implements TransactionInfoService {
                 }
             } catch (Exception e) {
                 if (transactionInfoInner != null) {
-                    log.warn("Error, Get TransactionInfo from BusinessType=" + transactionInfoInner.getBusinessType()
+                    log.warn("Error, Get TransactionInfo from BusinessType=" + businessTypeDto.getName()
                             + ", dateSource id= " + transactionInfoInner.getDsId(), e);
                 } else {
-                    log.warn("Error, Get TransactionInfo from BusinessType=" + transactionInfoInner.getBusinessType(), e);
+                    log.warn("Error, Get TransactionInfo from BusinessType=" + businessTypeDto.getName(), e);
                 }
             }
         }
@@ -105,17 +108,19 @@ public class TransactionInfoServiceImpl implements TransactionInfoService {
         private DataSourceInfoDto dataSourceInfoDto;
 
         private BusinessTypeDto businessTypeDto;
+        
+        private TransactionInfoInner transactionInfoInner;
 
         public FindTransactionInfo(DataSourceInfoDto dsInfo, BusinessTypeDto businessTypeDto){
             this.dataSourceInfoDto = dsInfo;
             this.businessTypeDto = businessTypeDto;
+            transactionInfoInner = new TransactionInfoInner();
         }
 
         @Override
         public TransactionInfoInner call() throws Exception {
             List<TransactionInfo> infos;
 
-            TransactionInfoInner transactionInfoInner = new TransactionInfoInner();
             transactionInfoInner.setBusinessType(businessTypeDto.getName());
             transactionInfoInner.setDsId(dataSourceInfoDto.getId());
 
@@ -135,8 +140,10 @@ public class TransactionInfoServiceImpl implements TransactionInfoService {
 
         private List<TransactionInfoDto> getTransactionInfo(DataSourceInfoDto dataSourceInfoDto) throws Exception{
             if (dataSourceInfoDto.getStatus() == DataSourceStatusEnum.DB.getCode()) {
+            	transactionInfoInner.setUrl(Strings.isNullOrEmpty(dataSourceInfoDto.getDbUrl()) ? dataSourceInfoDto.getDbUrl():dataSourceInfoDto.getJndi());
                 return fromDb(dataSourceInfoDto);
             } else {
+            	transactionInfoInner.setUrl(dataSourceInfoDto.getUrl());
                 return fromProtocol(dataSourceInfoDto);
             }
         }

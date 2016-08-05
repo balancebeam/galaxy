@@ -8,18 +8,18 @@
     <result column="ds_id" property="dsId" />
     <result column="active_flag" property="activeFlag" />
     <result column="memo" property="memo" />
-    <result column="gmt_create" property="gmtCreate" />
+    <result column="gmt_created" property="gmtCreated" />
     <result column="gmt_modified" property="gmtModified" />
   </resultMap>
 
 
   <insert id="add" parameterType="io.anyway.galaxy.console.dal.dto.BusinessTypeDto" >
-    insert into business_type (name, ds_id, memo, gmt_create)
+    insert into business_type (name, ds_id, memo, gmt_created)
     values (#{name}, #{dsId}, #{memo}, current_timestamp(0)::timestamp without time zone)
   </insert>
 
   <select id="list" parameterType="io.anyway.galaxy.console.dal.dto.BusinessTypeDto" resultMap="businessTypeDto">
-    select id, name, ds_id, active_flag, memo, gmt_create, gmt_modified
+    select id, name, ds_id, active_flag, memo, gmt_created, gmt_modified
     from business_type
   </select>
 

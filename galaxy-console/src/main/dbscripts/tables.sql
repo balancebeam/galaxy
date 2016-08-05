@@ -14,7 +14,7 @@ CREATE TABLE datasource_info
   status smallint default 1,
   active_flag smallint default 1,
   memo character varying(512),
-  gmt_create timestamp,
+  gmt_created timestamp,
   gmt_modified timestamp,
   CONSTRAINT ds_info_pkey PRIMARY KEY (id)
 );

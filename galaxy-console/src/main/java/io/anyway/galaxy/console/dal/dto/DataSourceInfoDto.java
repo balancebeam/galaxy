@@ -27,7 +27,7 @@ public class DataSourceInfoDto {
     private int status;
     private int activeFlag;
     private String memo;
-    private Timestamp gmtCreate;
+    private Timestamp gmtCreated;
     private Timestamp gmtModified;
 
     // search param

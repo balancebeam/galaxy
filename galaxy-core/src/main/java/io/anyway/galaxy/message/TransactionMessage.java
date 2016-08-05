@@ -49,4 +49,13 @@ public class TransactionMessage implements Serializable{
         this.date = date;
     }
 
+    @Override
+    public String toString() {
+        return "TransactionMessage{" +
+                "txId=" + txId +
+                ", businessId='" + businessId + '\'' +
+                ", txStatus=" + txStatus +
+                ", date=" + date +
+                '}';
+    }
 }
