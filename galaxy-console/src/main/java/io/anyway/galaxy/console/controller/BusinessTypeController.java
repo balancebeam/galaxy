@@ -1,9 +1,6 @@
 package io.anyway.galaxy.console.controller;
 
-import io.anyway.galaxy.console.dal.dao.BusinessTypeDao;
-import io.anyway.galaxy.console.dal.dto.TransactionInfoDto;
 import io.anyway.galaxy.console.domain.BusinessTypeInfo;
-import io.anyway.galaxy.console.domain.TransactionInfo;
 import io.anyway.galaxy.console.service.BusinessTypeInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -26,21 +23,33 @@ public class BusinessTypeController {
     @Autowired
     private BusinessTypeInfoService businessTypeInfoService;
 
+    @RequestMapping(method = RequestMethod.PUT)
+    @ResponseBody
+    public int insertBusinessType(BusinessTypeInfo businessTypeInfo) {
+        return businessTypeInfoService.update(businessTypeInfo);
+    }
+
+    @RequestMapping(method = RequestMethod.POST)
+    @ResponseBody
+    public int updateBusinessType(BusinessTypeInfo businessTypeInfo) {
+        return businessTypeInfoService.update(businessTypeInfo);
+    }
+
     @RequestMapping(value="{id}", method = RequestMethod.GET)
     @ResponseBody
     public BusinessTypeInfo getBusinessType(Model model, @PathVariable long id) {
         return businessTypeInfoService.get(id);
     }
 
-    @RequestMapping(value="businessType/{id}", method = RequestMethod.POST)
-    @ResponseBody
-    public int updateBusinessType(BusinessTypeInfo businessTypeInfo) {
-        return businessTypeInfoService.update(businessTypeInfo);
-    }
-
-    @RequestMapping(method = RequestMethod.POST)
+    @RequestMapping(method = RequestMethod.GET)
     @ResponseBody
     public List<BusinessTypeInfo> listBusinessType(BusinessTypeInfo businessTypeInfo) {
         return businessTypeInfoService.list(businessTypeInfo);
+    }
+
+    @RequestMapping(value="{id}", method = RequestMethod.DELETE)
+    @ResponseBody
+    public BusinessTypeInfo delBusinessType(Model model, @PathVariable long id) {
+        return businessTypeInfoService.get(id);
     }
 }

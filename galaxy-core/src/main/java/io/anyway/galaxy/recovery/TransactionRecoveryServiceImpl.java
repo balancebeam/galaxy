@@ -6,21 +6,21 @@ import io.anyway.galaxy.domain.TransactionInfo;
 import io.anyway.galaxy.message.TransactionMessage;
 import io.anyway.galaxy.message.TransactionMessageService;
 import io.anyway.galaxy.repository.TransactionRepository;
-import io.anyway.galaxy.spring.DataSourceAdaptor;
 import io.anyway.galaxy.util.DateUtil;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
-import java.sql.Connection;
 import java.sql.Date;
 import java.util.List;
+
+import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 /**
  * Created by xiong.j on 2016/7/25.
  */
 @Slf4j
-@Component
+@Service
 public class TransactionRecoveryServiceImpl implements TransactionRecoveryService {
 
     @Autowired

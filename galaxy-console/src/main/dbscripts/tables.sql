@@ -5,14 +5,16 @@ CREATE TABLE datasource_info
   name character varying(64),
   driver_class character varying(64),
   jndi character varying(64),
-  url character varying(256),
+  db_url character varying(256),
   username character varying(64),
   password character varying(64),
   max_active smallint default 10,
   initial_size smallint default 1,
+  url character varying(256),
+  status smallint default 1,
   active_flag smallint default 1,
   memo character varying(512),
-  gmt_create timestamp,
+  gmt_created timestamp,
   gmt_modified timestamp,
   CONSTRAINT ds_info_pkey PRIMARY KEY (id)
 );

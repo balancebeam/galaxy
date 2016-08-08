@@ -17,11 +17,13 @@ public class DataSourceInfo {
     private String name;
     private String driverClass;
     private String jndi;
-    private String url;
+    private String dbUrl;
     private String username;
     private String password;
     private int maxActive;
     private int initialSize;
+    private String url;
+    private int status;
     private int activeFlag;
     private String memo;
     private Timestamp gmtCreate;

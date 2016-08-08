@@ -37,7 +37,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
 			StringBuilder builder = new StringBuilder();
 			builder.append("INSERT INTO TRANSACTION_INFO " + "(TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE"
-					+ ", TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, MODULE_ID, GMT_CREATE" + ", GMT_MODIFIED)"
+					+ ", TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, MODULE_ID, GMT_CREATED" + ", GMT_MODIFIED)"
 					+ " VALUES(?,?,?,?,?" + ",?,?,?,?,?," + getDateSql(conn) + ", " + getDateSql(conn) + ")");
 
 			stmt = conn.prepareStatement(builder.toString());
@@ -160,8 +160,8 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
 			StringBuilder builder = new StringBuilder();
 			builder.append(
-					"SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, MODULE_ID, GMT_CREATE, GMT_MODIFIED"
-							+ " FROM TCC_TRANSACTION WHERE GMT_MODIFIED < ? AND TX_STATUS ");
+					"SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, MODULE_ID, GMT_CREATED, GMT_MODIFIED"
+							+ " FROM TRANSACTION_INFO WHERE GMT_MODIFIED > ? AND TX_STATUS ");
 
 			if (txStatus.length > 1) {
 				builder.append(" IN (");
@@ -172,6 +172,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 						builder.append(",").append(txStatus[i]);
 					}
 				}
+				builder.append(")");
 			}
 
 			stmt = conn.prepareStatement(builder.toString());
@@ -206,7 +207,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
 			StringBuilder builder = new StringBuilder();
 			builder.append(
-					"SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, MODULE_ID, GMT_CREATE, GMT_MODIFIED"
+					"SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, MODULE_ID, GMT_CREATED, GMT_MODIFIED"
 							+ "  FROM TRANSACTION_INFO WHERE TX_ID = ?");
 
 			stmt = conn.prepareStatement(builder.toString());
@@ -238,7 +239,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
 			StringBuilder builder = new StringBuilder();
 			builder.append(
-					"SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, MODULE_ID, GMT_CREATE, GMT_MODIFIED"
+					"SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, MODULE_ID, GMT_CREATED, GMT_MODIFIED"
 							+ "  FROM TRANSACTION_INFO WHERE TX_ID = ? FOR UPDATE NOWAIT");
 			stmt = conn.prepareStatement(builder.toString());
 			stmt.setLong(1, txId);
@@ -318,7 +319,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
 			StringBuilder builder = new StringBuilder();
 			builder.append(
-					"SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, MODULE_ID, GMT_CREATE, GMT_MODIFIED")
+					"SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, MODULE_ID, GMT_CREATED, GMT_MODIFIED")
 					.append("  FROM TRANSACTION_INFO WHERE GMT_MODIFIED > ?");
 
 			stmt = conn.prepareStatement(builder.toString());
