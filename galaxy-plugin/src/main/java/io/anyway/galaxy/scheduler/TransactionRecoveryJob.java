@@ -44,7 +44,9 @@ public class TransactionRecoveryJob extends AbstractBatchThroughputDataFlowElast
     }
 
     public TransactionRecoveryJob() {
-        this.transactionRecoveryService = SpringContextUtil.getBean(Constants.DEFAULT_MODULE_ID, TransactionRecoveryService.class);
+    	if (this.transactionRecoveryService == null) {
+    		this.transactionRecoveryService = SpringContextUtil.getBean(Constants.DEFAULT_MODULE_ID, TransactionRecoveryService.class);
+    	}
     }
 
     @Override
