@@ -2,7 +2,6 @@ package io.anyway.galaxy.console.service.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.base.Strings;
-
 import io.anyway.galaxy.console.common.DataSourceStatusEnum;
 import io.anyway.galaxy.console.dal.dao.BusinessTypeDao;
 import io.anyway.galaxy.console.dal.dao.DataSourceInfoDao;
@@ -11,12 +10,10 @@ import io.anyway.galaxy.console.dal.dto.BusinessTypeDto;
 import io.anyway.galaxy.console.dal.dto.DataSourceInfoDto;
 import io.anyway.galaxy.console.dal.dto.TransactionInfoDto;
 import io.anyway.galaxy.console.dal.rdao.TransactionInfoDao;
-import io.anyway.galaxy.console.domain.BusinessTypeInfo;
 import io.anyway.galaxy.console.domain.TransactionInfo;
 import io.anyway.galaxy.console.protocol.HttpClientService;
 import io.anyway.galaxy.console.service.TransactionInfoService;
 import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -54,11 +51,15 @@ public class TransactionInfoServiceImpl implements TransactionInfoService {
 
     private static long WAIT_TIME = 30;
 
-    public List<TransactionInfo> list(BusinessTypeInfo businessTypeInfo) {
-        final BusinessTypeDto businessTypeDto;
+    public List<TransactionInfo> list(final TransactionInfo transactionInfo) {
+        BusinessTypeDto businessTypeDto;
 
         // 获取业务状态详情
-        businessTypeDto = businessTypeDao.get(businessTypeInfo.getId());
+        if (transactionInfo.getBusinessTypeId() > 0L) {
+            businessTypeDto = businessTypeDao.get(transactionInfo.getBusinessTypeId());
+        } else {
+            businessTypeDto = businessTypeDao.getByName(transactionInfo.getBusinessType());
+        }
 
         if (businessTypeDto == null) return null;
 
@@ -74,7 +75,7 @@ public class TransactionInfoServiceImpl implements TransactionInfoService {
         // 根据数据源信息列表获取事务信息
         for (final DataSourceInfoDto dsInfo : dataSourceInfoDtos) {
             Future<TransactionInfoInner> future = txMsgTaskExecutor.submit(
-                    new FindTransactionInfo(dsInfo, businessTypeDto));
+                    new FindTransactionInfo(dsInfo, transactionInfo));
 
             futureList.add(future);
         }
@@ -107,13 +108,13 @@ public class TransactionInfoServiceImpl implements TransactionInfoService {
 
         private DataSourceInfoDto dataSourceInfoDto;
 
-        private BusinessTypeDto businessTypeDto;
+        private TransactionInfo transactionInfo;
         
         private TransactionInfoInner transactionInfoInner;
 
-        public FindTransactionInfo(DataSourceInfoDto dsInfo, BusinessTypeDto businessTypeDto){
+        public FindTransactionInfo(DataSourceInfoDto dsInfo, TransactionInfo transactionInfo){
             this.dataSourceInfoDto = dsInfo;
-            this.businessTypeDto = businessTypeDto;
+            this.transactionInfo = transactionInfo;
             transactionInfoInner = new TransactionInfoInner();
         }
 
@@ -121,7 +122,7 @@ public class TransactionInfoServiceImpl implements TransactionInfoService {
         public TransactionInfoInner call() throws Exception {
             List<TransactionInfo> infos;
 
-            transactionInfoInner.setBusinessType(businessTypeDto.getName());
+            transactionInfoInner.setBusinessType(transactionInfo.getBusinessType());
             transactionInfoInner.setDsId(dataSourceInfoDto.getId());
 
             List<TransactionInfoDto> dtos = getTransactionInfo(dataSourceInfoDto);
@@ -153,7 +154,7 @@ public class TransactionInfoServiceImpl implements TransactionInfoService {
             DsTypeContextHolder.setContextType(DsTypeContextHolder.DYNAMIC_SESSION_FACTORY);
             DsTypeContextHolder.setDsInfo(dataSourceInfoDto);
             TransactionInfoDto transactionInfoDto = new TransactionInfoDto();
-            transactionInfoDto.setBusinessType(businessTypeDto.getName());
+            BeanUtils.copyProperties(transactionInfo, transactionInfoDto);
             return transactionInfoDao.list(transactionInfoDto);
         }
 
@@ -163,8 +164,31 @@ public class TransactionInfoServiceImpl implements TransactionInfoService {
             String result = null;
             if (dataSourceInfoDto.getStatus() == DataSourceStatusEnum.HTTP.getCode()) {
                 Map<String, String> params = new HashMap<String, String>();
-                // TODO 条件
-                result = httpClientService.doGet(dataSourceInfoDto.getUrl());
+                if (transactionInfo.getTxId() > 0) {
+                    params.put("txId", String.valueOf(transactionInfo.getTxId()));
+                }
+                if (transactionInfo.getParentId() > 0) {
+                    params.put("parentId", String.valueOf(transactionInfo.getParentId()));
+                }
+                if (!Strings.isNullOrEmpty(transactionInfo.getModuleId())) {
+                    params.put("moduleId", transactionInfo.getModuleId());
+                }
+                if (!Strings.isNullOrEmpty(transactionInfo.getBusinessId())) {
+                    params.put("businessId", transactionInfo.getBusinessId());
+                }
+                if (!Strings.isNullOrEmpty(transactionInfo.getBusinessType())) {
+                    params.put("businessType", transactionInfo.getBusinessType());
+                }
+                if (transactionInfo.getTxType() > -1) {
+                    params.put("txType", String.valueOf(transactionInfo.getTxType()));
+                }
+                if (transactionInfo.getTxStatus() > -1) {
+                    params.put("txStatus", String.valueOf(transactionInfo.getTxStatus()));
+                }
+                if (transactionInfo.getGmtCreated() != null) {
+                    params.put("gmtCreated", String.valueOf(transactionInfo.getGmtCreated()));
+                }
+                result = httpClientService.doGet(dataSourceInfoDto.getUrl(), params);
             }
             resultList = JSON.parseObject(result, List.class);
             return resultList;

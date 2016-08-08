@@ -37,6 +37,14 @@ public interface BusinessTypeDao {
      */
     BusinessTypeDto get(long id);
 
+
+    /**
+     * 获取分布式事务业务类型与数据源
+     * @param name
+     * @return
+     */
+    BusinessTypeDto getByName(String name);
+
     /**
      * 删除分布式事务业务类型
      * @param id

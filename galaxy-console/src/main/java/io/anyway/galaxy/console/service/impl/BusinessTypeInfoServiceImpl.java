@@ -62,7 +62,6 @@ public class BusinessTypeInfoServiceImpl implements BusinessTypeInfoService {
 
     @Override
     public int del(long id) {
-
-        return 0;
+        return businessTypeDao.del(id);
     }
 }

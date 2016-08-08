@@ -5,6 +5,7 @@
   <resultMap type="io.anyway.galaxy.console.dal.dto.TransactionInfoDto" id="transactionInfoDto">
     <id column="tx_id" property="txId" />
     <result column="parent_id" property="parentId" />
+    <result column="module_id" property="moduleId" />
     <result column="business_id" property="businessId" />
     <result column="business_type" property="businessType" />
     <result column="tx_type" property="txType" />
@@ -19,6 +20,32 @@
   <select id="list" parameterType="io.anyway.galaxy.console.dal.dto.TransactionInfoDto" resultMap="transactionInfoDto">
     select tx_id, parent_id, business_id, business_type, tx_type, tx_status, context, payload, retried_count, gmt_created, gmt_modified
     from transaction_info
+    <where>
+      <if test="txId > 0">
+        and tx_id = #{txId}
+      </if>
+      <if test="parentId > 0">
+        and parent_id = #{parentId}
+      </if>
+      <if test="moduleId != null">
+        and module_id = #{moduleId}
+      </if>
+      <if test="businessId != null">
+        and business_id = #{businessId}
+      </if>
+      <if test="businessType != null">
+        and business_type = #{businessType}
+      </if>
+      <if test="txType != -1">
+        and tx_type = #{txType}
+      </if>
+      <if test="txStatus != -1">
+        and tx_status = #{txStatus}
+      </if>
+      <if test="gmtCreated != null">
+        and gmt_created > #{gmtCreated}
+      </if>
+    </where>
   </select>
 
   <select id="get" parameterType="long" resultMap="transactionInfoDto">

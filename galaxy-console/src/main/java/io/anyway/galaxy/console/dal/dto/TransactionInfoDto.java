@@ -15,11 +15,13 @@ import java.sql.Timestamp;
 @ToString
 public class TransactionInfoDto {
 
-    private long txId;
+    private long txId = -0L;
 
-    private long parentId;
+    private long parentId = -0L;
 
     private String businessId;
+
+    private String moduleId;
 
     private String businessType;
 

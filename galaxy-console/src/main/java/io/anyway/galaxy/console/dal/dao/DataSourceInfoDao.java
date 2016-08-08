@@ -19,6 +19,13 @@ public interface DataSourceInfoDao {
     int add(DataSourceInfoDto dto);
 
     /**
+     * 修改数据源
+     * @param dto
+     * @return
+     */
+    int update(DataSourceInfoDto dto);
+
+    /**
      * 获取数据源列表
      * @param dto
      * @return

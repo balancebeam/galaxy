@@ -66,7 +66,11 @@ public class TestController {
         BusinessTypeInfo businessTypeInfo = new BusinessTypeInfo();
         businessTypeInfo.setId(1);
         businessTypeInfo.setName("test");
-        List<TransactionInfo> result = transactionInfoService.list(businessTypeInfo);
+
+        TransactionInfo transactionInfo = new TransactionInfo();
+        transactionInfo.setBusinessType(businessTypeInfo.getName());
+        List<TransactionInfo> result = transactionInfoService.list(transactionInfo);
+
         long end = System.currentTimeMillis() - start;
         System.out.println("@@@@TestController.getTransactionInfo Spent time" + end);
         return "Test transactionInfos result|" + result;

@@ -36,6 +36,7 @@
         <!-- 打开PSCache，并且指定每个连接上PSCache的大小 -->
         <property name="poolPreparedStatements" value="true" />
         <property name="maxPoolPreparedStatementPerConnectionSize" value="50" />
+        <property name="filters" value="stat" />
     </bean>
 
     <bean id="dynamicDataSource" class="io.anyway.galaxy.console.dal.db.DynamicDataSource" destroy-method="close">

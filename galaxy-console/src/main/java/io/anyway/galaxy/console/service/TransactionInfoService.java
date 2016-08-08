@@ -10,6 +10,6 @@ import java.util.List;
  */
 public interface TransactionInfoService {
 
-    List<TransactionInfo> list(BusinessTypeInfo businessTypeInfo);
+    List<TransactionInfo> list(TransactionInfo transactionInfo);
 
 }
