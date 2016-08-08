@@ -5,10 +5,12 @@ package io.anyway.galaxy.common;
  */
 public interface Constants {
 
-    public static final String KAFKA = "kafka";
+    String KAFKA = "kafka";
 
-    public static final String ORACLE = "oracle";
+    String ORACLE = "oracle";
 
-    public static final String POSTGRESQL = "PostgreSQL";
+    String POSTGRESQL = "PostgreSQL";
+
+    String DEFAULT_MODULE_ID = "webapplication";
 
 }

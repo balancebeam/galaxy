@@ -161,7 +161,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			StringBuilder builder = new StringBuilder();
 			builder.append(
 					"SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, MODULE_ID, GMT_CREATED, GMT_MODIFIED"
-							+ " FROM TRANSACTION_INFO WHERE GMT_MODIFIED < ? AND TX_STATUS ");
+							+ " FROM TRANSACTION_INFO WHERE GMT_MODIFIED > ? AND TX_STATUS ");
 
 			if (txStatus.length > 1) {
 				builder.append(" IN (");
