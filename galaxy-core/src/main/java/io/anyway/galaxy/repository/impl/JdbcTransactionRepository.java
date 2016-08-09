@@ -161,7 +161,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			StringBuilder builder = new StringBuilder();
 			builder.append(
 					"SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, MODULE_ID, GMT_CREATED, GMT_MODIFIED"
-							+ " FROM TRANSACTION_INFO WHERE GMT_MODIFIED > ? AND TX_STATUS ");
+							+ " FROM TRANSACTION_INFO WHERE GMT_CREATED > ? AND GMT_MODIFIED < " + getDateAddSql(conn, 10) + "AND TX_STATUS ");
 
 			if (txStatus.length > 1) {
 				builder.append(" IN (");
@@ -191,6 +191,88 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			releaseConnection(conn);
 		}
 
+		return transactionInfos;
+	}
+
+	@Override
+	protected List<TransactionInfo> doFind(TransactionInfo transactionInfo) {
+		Connection conn= DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
+
+		PreparedStatement stmt = null;
+
+		List<TransactionInfo> transactionInfos = new ArrayList<TransactionInfo>();
+
+		try {
+
+			StringBuilder builder = new StringBuilder();
+			builder.append(" SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, MODULE_ID, GMT_CREATED, GMT_MODIFIED"
+					     + " FROM TRANSACTION_INFO WHERE 1=1");
+			if (transactionInfo.getTxId() > 0L) {
+				builder.append("AND TX_ID = ? ");
+			}
+			if (transactionInfo.getParentId() > 0L) {
+				builder.append("AND PARENT_ID = ? ");
+			}
+			if (!Strings.isNullOrEmpty(transactionInfo.getModuleId())) {
+				builder.append("MODULE_ID = ? ");
+			}
+			if (!Strings.isNullOrEmpty(transactionInfo.getBusinessId())) {
+				builder.append("BUSINESS_ID = ? ");
+			}
+			if (!Strings.isNullOrEmpty(transactionInfo.getBusinessType())) {
+				builder.append("BUSINESS_TYPE = ? ");
+			}
+			if (transactionInfo.getTxType() > -1L) {
+				builder.append("TX_TYPE = ? ");
+			}
+			if (transactionInfo.getTxStatus() > -1L) {
+				builder.append("TX_STATUS = ? ");
+			}
+			if (transactionInfo.getGmtCreated() != null) {
+				builder.append("GMT_CREATED = ? ");
+			}
+
+			stmt = conn.prepareStatement(builder.toString());
+
+			int condition = 0;
+
+			if (transactionInfo.getTxId() > 0L) {
+				stmt.setLong(++condition, transactionInfo.getTxId());
+			}
+			if (transactionInfo.getParentId() > 0L) {
+				stmt.setLong(++condition, transactionInfo.getParentId());
+			}
+			if (!Strings.isNullOrEmpty(transactionInfo.getModuleId())) {
+				stmt.setString(++condition, transactionInfo.getModuleId());
+			}
+			if (!Strings.isNullOrEmpty(transactionInfo.getBusinessId())) {
+				stmt.setString(++condition, transactionInfo.getBusinessId());
+			}
+			if (!Strings.isNullOrEmpty(transactionInfo.getBusinessType())) {
+				stmt.setString(++condition, transactionInfo.getBusinessType());
+			}
+			if (transactionInfo.getTxType() > -1L) {
+				stmt.setInt(++condition, transactionInfo.getTxType());
+			}
+			if (transactionInfo.getTxStatus() > -1L) {
+				stmt.setInt(++condition, transactionInfo.getTxStatus());
+			}
+			if (transactionInfo.getGmtCreated() != null) {
+				stmt.setDate(++condition, transactionInfo.getGmtCreated());
+			}
+
+			ResultSet resultSet = stmt.executeQuery();
+
+			while (resultSet.next()) {
+				transactionInfos.add(resultSet2Bean(resultSet));
+			}
+
+		} catch (Throwable e) {
+			throw new DistributedTransactionException(e);
+		} finally {
+			closeStatement(stmt);
+			releaseConnection(conn);
+		}
 		return transactionInfos;
 	}
 
@@ -297,6 +379,16 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			return ORACLE_DATE_SQL;
 		} else if (databaseName.equals(Constants.POSTGRESQL.toLowerCase())){
 			return PG_DATE_SQL;
+		}
+		throw new Exception("Not support database : " + databaseName);
+	}
+
+	private String getDateAddSql(Connection conn, int second) throws Throwable{
+		String databaseName = getDatabaseName(conn).toLowerCase();
+		if (databaseName.equals(Constants.ORACLE.toLowerCase())) {
+			return "(sysdate - " + second + "/(24*60*60))";
+		} else if (databaseName.equals(Constants.POSTGRESQL.toLowerCase())){
+			return "(now() - interval '"+ second +"sec')";
 		}
 		throw new Exception("Not support database : " + databaseName);
 	}

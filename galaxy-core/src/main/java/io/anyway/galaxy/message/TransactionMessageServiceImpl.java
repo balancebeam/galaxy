@@ -147,31 +147,38 @@ public class TransactionMessageServiceImpl implements TransactionMessageService,
                 logger.warn("Lock failed, txId = " + message.getTxId());
                 throw new DistributedTransactionException(e);
             }
-            if (validation(message, transactionInfo)) {
-                ServiceExecutePayload payload = parsePayload(transactionInfo);
-                //根据模块的ApplicationContext获取Bean对象
-                Object aopBean= SpringContextUtil.getBean(transactionInfo.getModuleId(),payload.getTargetClass());
+            try {
+                if (validation(message, transactionInfo)) {
+                    ServiceExecutePayload payload = parsePayload(transactionInfo);
+                    //根据模块的ApplicationContext获取Bean对象
+                    Object aopBean= SpringContextUtil.getBean(transactionInfo.getModuleId(),payload.getTargetClass());
 
-                String methodName = null;
-                if (TransactionStatusEnum.CANCELLING.getCode() == message.getTxStatus()) {
-                    // 补偿
-                    methodName = payload.getCancelMethod();
-                    if (StringUtils.isEmpty(methodName)) {
-                        logger.error("Miss Cancel method, serviceExecutePayload: " + payload);
-                        return;
+                    String methodName = null;
+                    if (TransactionStatusEnum.CANCELLING.getCode() == message.getTxStatus()) {
+                        // 补偿
+                        methodName = payload.getCancelMethod();
+                        if (StringUtils.isEmpty(methodName)) {
+                            logger.error("Miss Cancel method, serviceExecutePayload: " + payload);
+                            return;
+                        }
+                    } else if (TransactionStatusEnum.CONFIRMING.getCode() == message.getTxStatus()) {
+                        // 确认
+                        methodName = payload.getConfirmMethod();
+                        if (StringUtils.isEmpty(methodName)) {
+                            logger.error("Miss Confirm method, serviceExecutePayload: " + payload);
+                            return;
+                        }
                     }
-                } else if (TransactionStatusEnum.CONFIRMING.getCode() == message.getTxStatus()) {
-                    // 确认
-                    methodName = payload.getConfirmMethod();
-                    if (StringUtils.isEmpty(methodName)) {
-                        logger.error("Miss Confirm method, serviceExecutePayload: " + payload);
-                        return;
-                    }
+                    // 执行消息对应的操作
+                    ProxyUtil.proxyMethod(aopBean,methodName, payload.getTypes(), payload.getArgs());
+                } else {
+                    logger.warn("Validation error, txMsg=" + message + " txInfo=" + transactionInfo);
                 }
-                // 执行消息对应的操作
-                ProxyUtil.proxyMethod(aopBean,methodName, payload.getTypes(), payload.getArgs());
-            } else {
-                logger.warn("Validation error, txMsg=" + message + " txInfo=" + transactionInfo);
+            } catch (Exception e){
+                TransactionInfo updInfo = new TransactionInfo();
+                updInfo.setTxId(transactionInfo.getTxId());
+                updInfo.setRetried_count(transactionInfo.getRetried_count() + 1);
+                transactionRepository.update(updInfo);
             }
         }finally {
             TXContextHolder.setTXContext(null);

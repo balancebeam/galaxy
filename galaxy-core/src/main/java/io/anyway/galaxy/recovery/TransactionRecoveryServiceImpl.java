@@ -14,6 +14,7 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 /**
@@ -29,6 +30,9 @@ public class TransactionRecoveryServiceImpl implements TransactionRecoveryServic
     @Autowired
     private TransactionMessageService transactionMessageService;
 
+    @Value("${recovery.retry.waitTime}")
+    private static long waitTime = 10 * 1000;
+
     @Override
     public List<TransactionInfo> fetchData(List<Integer> shardingItem) {
         // 30天前
@@ -40,6 +44,12 @@ public class TransactionRecoveryServiceImpl implements TransactionRecoveryServic
     public int execute(List<TransactionInfo> transactionInfos) {
         int successCount = 0;
         for(TransactionInfo info : transactionInfos) {
+
+            // 未到重试时间不重试
+            if (info.getGmtModified().getTime() + info.getRetried_count() * waitTime  > System.currentTimeMillis()) {
+                continue;
+            }
+
             if(TransactionStatusEnum.BEGIN.getCode() == info.getTxStatus()){
                 // TODO BEGIN状态需要回查是否Try成功，后续优化
                 try {
@@ -55,7 +65,7 @@ public class TransactionRecoveryServiceImpl implements TransactionRecoveryServic
                         transactionMessageService.handleMessage(transInfo2Msg(info));
                         successCount++;
                     } catch (Throwable e) {
-                        log.warn("Process cancel error, TransactionInfo=", info);
+                        log.warn("Process cancel error, TransactionInfo=", info.toString());
                     }
                 }
 

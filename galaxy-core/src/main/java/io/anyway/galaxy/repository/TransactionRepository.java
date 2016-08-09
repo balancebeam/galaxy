@@ -22,7 +22,7 @@ public interface TransactionRepository {
 
     TransactionInfo lockById(long txId);
 
-    List<TransactionInfo> findSince(java.sql.Date date, int txStatus);
+    List<TransactionInfo> find(TransactionInfo transactionInfo);
 
     List<TransactionInfo> findSince(java.sql.Date date, Integer[] txStatus);
     

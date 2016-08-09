@@ -43,14 +43,13 @@ public class TransactionRecoveryJob extends AbstractBatchThroughputDataFlowElast
         new JobScheduler(regCenter, jobConfiguration).init();
     }
 
-    public TransactionRecoveryJob() {
-    	if (this.transactionRecoveryService == null) {
-    		this.transactionRecoveryService = SpringContextUtil.getBean(Constants.DEFAULT_MODULE_ID, TransactionRecoveryService.class);
-    	}
-    }
-
     @Override
     public List<TransactionInfo> fetchData(JobExecutionMultipleShardingContext shardingContext) {
+
+        if (this.transactionRecoveryService == null) {
+            this.transactionRecoveryService = SpringContextUtil.getBean(Constants.DEFAULT_MODULE_ID, TransactionRecoveryService.class);
+        }
+
         List<Integer> shardingItems = new ArrayList<Integer>(shardingContext.getShardingItems().size());
         // 每个分片对应一个状态
         for (int sharding : shardingContext.getShardingItems()) {
@@ -64,7 +63,8 @@ public class TransactionRecoveryJob extends AbstractBatchThroughputDataFlowElast
 
     @Override
     public boolean isStreamingProcess() {
-        return true;
+        // TODO
+        return false;
     }
 
     @Override

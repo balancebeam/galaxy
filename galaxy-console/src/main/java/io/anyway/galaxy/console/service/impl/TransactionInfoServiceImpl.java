@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 public class TransactionInfoServiceImpl implements TransactionInfoService {
 
     @Autowired
-    private ThreadPoolTaskExecutor txMsgTaskExecutor;
+    private ThreadPoolTaskExecutor multTaskExecutor;
 
     @Autowired
     private BusinessTypeDao businessTypeDao;
@@ -74,7 +74,7 @@ public class TransactionInfoServiceImpl implements TransactionInfoService {
 
         // 根据数据源信息列表获取事务信息
         for (final DataSourceInfoDto dsInfo : dataSourceInfoDtos) {
-            Future<TransactionInfoInner> future = txMsgTaskExecutor.submit(
+            Future<TransactionInfoInner> future = multTaskExecutor.submit(
                     new FindTransactionInfo(dsInfo, transactionInfo));
 
             futureList.add(future);

@@ -148,5 +148,22 @@ public class TransactionInfo {
     public void setModuleId(String moduleId) {
         this.moduleId = moduleId;
     }
-    
+
+    @Override
+    public String toString() {
+        return "TransactionInfo{" +
+                "txId=" + txId +
+                ", parentId=" + parentId +
+                ", businessId='" + businessId + '\'' +
+                ", businessType='" + businessType + '\'' +
+                ", moduleId='" + moduleId + '\'' +
+                ", txStatus=" + txStatus +
+                ", txType=" + txType +
+                ", context='" + context + '\'' +
+                ", payload='" + payload + '\'' +
+                ", retried_count=" + retried_count +
+                ", gmtCreated=" + gmtCreated +
+                ", gmtModified=" + gmtModified +
+                '}';
+    }
 }
