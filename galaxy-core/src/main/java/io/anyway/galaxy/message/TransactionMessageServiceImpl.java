@@ -1,26 +1,9 @@
 package io.anyway.galaxy.message;
 
-import java.lang.reflect.Type;
-import java.sql.Connection;
-
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.parser.Feature;
 import com.alibaba.fastjson.parser.ParserConfig;
-import io.anyway.galaxy.spring.SpringContextUtil;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.jdbc.datasource.DataSourceUtils;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
-
-import com.alibaba.fastjson.JSON;
-
+import io.anyway.galaxy.common.Constants;
 import io.anyway.galaxy.common.TransactionStatusEnum;
 import io.anyway.galaxy.context.TXContext;
 import io.anyway.galaxy.context.TXContextHolder;
@@ -30,14 +13,25 @@ import io.anyway.galaxy.domain.TransactionInfo;
 import io.anyway.galaxy.exception.DistributedTransactionException;
 import io.anyway.galaxy.message.producer.MessageProducer;
 import io.anyway.galaxy.repository.TransactionRepository;
-import io.anyway.galaxy.spring.DataSourceAdaptor;
+import io.anyway.galaxy.spring.SpringContextUtil;
 import io.anyway.galaxy.util.ProxyUtil;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+
+import java.sql.Date;
 
 /**
  * Created by xiong.j on 2016/7/28.
  */
 @Component
-public class TransactionMessageServiceImpl implements TransactionMessageService, ApplicationContextAware {
+public class TransactionMessageServiceImpl implements TransactionMessageService {
 
     private final static Log logger = LogFactory.getLog(io.anyway.galaxy.message.TransactionMessageService.class);
 
@@ -47,10 +41,11 @@ public class TransactionMessageServiceImpl implements TransactionMessageService,
     @Autowired
     private MessageProducer<TransactionMessage> messageProducer;
 
-    private ApplicationContext applicationContext;
-
     @Autowired
     private ThreadPoolTaskExecutor txMsgTaskExecutor;
+
+    @Value("recovery.retry.times")
+    private int retryTimes = 3;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void sendMessage(final TXContext ctx, TransactionStatusEnum txStatus) throws Throwable {
@@ -122,7 +117,7 @@ public class TransactionMessageServiceImpl implements TransactionMessageService,
         txMsgTaskExecutor.execute(new Runnable() {
             @Override
             public void run() {
-            TransactionMessageService service = applicationContext.getBean(TransactionMessageService.class);
+            TransactionMessageService service = SpringContextUtil.getBean(Constants.DEFAULT_MODULE_ID, TransactionMessageService.class);
             try {
                 service.handleMessage(message);
             } catch (Throwable e) {
@@ -151,7 +146,7 @@ public class TransactionMessageServiceImpl implements TransactionMessageService,
                 if (validation(message, transactionInfo)) {
                     ServiceExecutePayload payload = parsePayload(transactionInfo);
                     //根据模块的ApplicationContext获取Bean对象
-                    Object aopBean= SpringContextUtil.getBean(transactionInfo.getModuleId(),payload.getTargetClass());
+                    Object aopBean= SpringContextUtil.getBean(transactionInfo.getModuleId(), payload.getTargetClass());
 
                     String methodName = null;
                     if (TransactionStatusEnum.CANCELLING.getCode() == message.getTxStatus()) {
@@ -177,17 +172,13 @@ public class TransactionMessageServiceImpl implements TransactionMessageService,
             } catch (Exception e){
                 TransactionInfo updInfo = new TransactionInfo();
                 updInfo.setTxId(transactionInfo.getTxId());
-                updInfo.setRetried_count(transactionInfo.getRetried_count() + 1);
+                updInfo.setRetried_count(transactionInfo.getRetried_count() - 1);
+                updInfo.setNextRetryTime(getNextRetryTime(updInfo));
                 transactionRepository.update(updInfo);
             }
-        }finally {
+        } finally {
             TXContextHolder.setTXContext(null);
         }
-    }
-
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
     }
 
     private ServiceExecutePayload parsePayload(TransactionInfo transactionInfo) {
@@ -240,5 +231,11 @@ public class TransactionMessageServiceImpl implements TransactionMessageService,
         return true;
     }
 
+    private Date getNextRetryTime(TransactionInfo txInfo){
+        // TODO 重试次数间隔
+        return new Date(System.currentTimeMillis()
+                + Math.round(Math.pow(9, retryTimes - txInfo.getRetried_count()))
+                * 1000);
+    }
 
 }

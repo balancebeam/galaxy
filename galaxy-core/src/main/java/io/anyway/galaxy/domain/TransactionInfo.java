@@ -29,7 +29,7 @@ public class TransactionInfo {
 
     private String context;
 
-    private String payload;
+    private Date nextRetryTime;
 
     private int retried_count = -1;
 
@@ -93,12 +93,12 @@ public class TransactionInfo {
         this.context = context;
     }
 
-    public String getPayload() {
-        return payload;
+    public Date getNextRetryTime() {
+        return nextRetryTime;
     }
 
-    public void setPayload(String payload) {
-        this.payload = payload;
+    public void setNextRetryTime(Date nextRetryTime) {
+        this.nextRetryTime = nextRetryTime;
     }
 
     public int getRetried_count() {
@@ -160,10 +160,11 @@ public class TransactionInfo {
                 ", txStatus=" + txStatus +
                 ", txType=" + txType +
                 ", context='" + context + '\'' +
-                ", payload='" + payload + '\'' +
+                ", nextRetryTime=" + nextRetryTime +
                 ", retried_count=" + retried_count +
                 ", gmtCreated=" + gmtCreated +
                 ", gmtModified=" + gmtModified +
                 '}';
     }
+
 }

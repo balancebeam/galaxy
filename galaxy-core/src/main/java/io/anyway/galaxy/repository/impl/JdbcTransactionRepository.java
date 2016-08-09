@@ -24,6 +24,8 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
 	private static final String ORACLE_DATE_SQL = "sysdate";
 
+	private static final String SELECT_DQL = "SELECT TX_ID, PARENT_ID, MODULE_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, RETRIED_COUNT, NEXT_RETRY_TIME, GMT_CREATED, GMT_MODIFIED";
+
 	@Autowired
 	private DataSourceAdaptor dataSourceAdaptor;
 
@@ -37,7 +39,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
 			StringBuilder builder = new StringBuilder();
 			builder.append("INSERT INTO TRANSACTION_INFO " + "(TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE"
-					+ ", TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, MODULE_ID, GMT_CREATED" + ", GMT_MODIFIED)"
+					+ ", TX_STATUS, CONTEXT, RETRIED_COUNT, MODULE_ID, GMT_CREATED" + ", GMT_MODIFIED)"
 					+ " VALUES(?,?,?,?,?" + ",?,?,?,?,?," + getDateSql(conn) + ", " + getDateSql(conn) + ")");
 
 			stmt = conn.prepareStatement(builder.toString());
@@ -49,9 +51,8 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			stmt.setInt(5, transactionInfo.getTxType());
 			stmt.setInt(6, transactionInfo.getTxStatus());
 			stmt.setString(7, transactionInfo.getContext());
-			stmt.setString(8, transactionInfo.getPayload());
-			stmt.setInt(9, transactionInfo.getRetried_count());
-			stmt.setString(10,transactionInfo.getModuleId());
+			stmt.setInt(8, transactionInfo.getRetried_count());
+			stmt.setString(9,transactionInfo.getModuleId());
 
 			return stmt.executeUpdate();
 
@@ -81,12 +82,13 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			if (!Strings.isNullOrEmpty(transactionInfo.getContext())) {
 				builder.append("CONTEXT = ?, ");
 			}
-			if (!Strings.isNullOrEmpty(transactionInfo.getPayload())) {
-				builder.append("PAYLOAD = ?, ");
+			if (transactionInfo.getNextRetryTime() != null) {
+				builder.append("NEXT_RETRY_TIME = ?, ");
 			}
 			if (transactionInfo.getRetried_count() != -1) {
 				builder.append("RETRIED_COUNT = ?, ");
 			}
+
 			builder.append("GMT_MODIFIED = " + getDateSql(conn) + " WHERE TX_ID = ?");
 
 			stmt = conn.prepareStatement(builder.toString());
@@ -102,8 +104,8 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			if (!Strings.isNullOrEmpty(transactionInfo.getContext())) {
 				stmt.setString(++condition, transactionInfo.getContext());
 			}
-			if (!Strings.isNullOrEmpty(transactionInfo.getPayload())) {
-				stmt.setString(++condition, transactionInfo.getPayload());
+			if (transactionInfo.getNextRetryTime() != null) {
+				stmt.setDate(++condition, transactionInfo.getNextRetryTime());
 			}
 			if (transactionInfo.getRetried_count() != -1) {
 				stmt.setInt(++condition, transactionInfo.getRetried_count());
@@ -159,9 +161,10 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 		try {
 
 			StringBuilder builder = new StringBuilder();
-			builder.append(
-					"SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, MODULE_ID, GMT_CREATED, GMT_MODIFIED"
-							+ " FROM TRANSACTION_INFO WHERE GMT_CREATED > ? AND GMT_MODIFIED < " + getDateAddSql(conn, 10) + "AND TX_STATUS ");
+			builder.append(SELECT_DQL + " FROM TRANSACTION_INFO WHERE GMT_CREATED > ? AND ")
+					.append("(CASE WHEN NEXT_RETRY_TIME IS NOT NULL THEN NEXT_RETRY_TIME ELSE GMT_MODIFIED END) < ")
+					.append(getDateSubtSecSql(conn, 10)).append(" AND TX_STATUS ")
+					.append(getLimitSql(conn, 1000));
 
 			if (txStatus.length > 1) {
 				builder.append(" IN (");
@@ -205,8 +208,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 		try {
 
 			StringBuilder builder = new StringBuilder();
-			builder.append(" SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, MODULE_ID, GMT_CREATED, GMT_MODIFIED"
-					     + " FROM TRANSACTION_INFO WHERE 1=1");
+			builder.append(SELECT_DQL + " FROM TRANSACTION_INFO WHERE 1=1");
 			if (transactionInfo.getTxId() > 0L) {
 				builder.append("AND TX_ID = ? ");
 			}
@@ -214,22 +216,22 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 				builder.append("AND PARENT_ID = ? ");
 			}
 			if (!Strings.isNullOrEmpty(transactionInfo.getModuleId())) {
-				builder.append("MODULE_ID = ? ");
+				builder.append("AND MODULE_ID = ? ");
 			}
 			if (!Strings.isNullOrEmpty(transactionInfo.getBusinessId())) {
-				builder.append("BUSINESS_ID = ? ");
+				builder.append("AND BUSINESS_ID = ? ");
 			}
 			if (!Strings.isNullOrEmpty(transactionInfo.getBusinessType())) {
-				builder.append("BUSINESS_TYPE = ? ");
+				builder.append("AND BUSINESS_TYPE = ? ");
 			}
 			if (transactionInfo.getTxType() > -1L) {
-				builder.append("TX_TYPE = ? ");
+				builder.append("AND TX_TYPE = ? ");
 			}
 			if (transactionInfo.getTxStatus() > -1L) {
-				builder.append("TX_STATUS = ? ");
+				builder.append("AND TX_STATUS = ? ");
 			}
 			if (transactionInfo.getGmtCreated() != null) {
-				builder.append("GMT_CREATED = ? ");
+				builder.append("AND GMT_CREATED = ? ");
 			}
 
 			stmt = conn.prepareStatement(builder.toString());
@@ -288,9 +290,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 		try {
 
 			StringBuilder builder = new StringBuilder();
-			builder.append(
-					"SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, MODULE_ID, GMT_CREATED, GMT_MODIFIED"
-							+ "  FROM TRANSACTION_INFO WHERE TX_ID = ?");
+			builder.append(SELECT_DQL + "  FROM TRANSACTION_INFO WHERE TX_ID = ?");
 
 			stmt = conn.prepareStatement(builder.toString());
 			stmt.setLong(1, txId);
@@ -320,9 +320,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 		try {
 
 			StringBuilder builder = new StringBuilder();
-			builder.append(
-					"SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, MODULE_ID, GMT_CREATED, GMT_MODIFIED"
-							+ "  FROM TRANSACTION_INFO WHERE TX_ID = ? FOR UPDATE NOWAIT");
+			builder.append(SELECT_DQL + "  FROM TRANSACTION_INFO WHERE TX_ID = ? FOR UPDATE NOWAIT");
 			stmt = conn.prepareStatement(builder.toString());
 			stmt.setLong(1, txId);
 
@@ -346,14 +344,14 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
 		transactionInfo.setTxId(resultSet.getLong(1));
 		transactionInfo.setParentId(resultSet.getLong(2));
-		transactionInfo.setBusinessId(resultSet.getString(3));
-		transactionInfo.setBusinessType(resultSet.getString(4));
-		transactionInfo.setTxType(resultSet.getInt(5));
-		transactionInfo.setTxStatus(resultSet.getInt(6));
-		transactionInfo.setContext(resultSet.getString(7));
-		transactionInfo.setPayload(resultSet.getString(8));
+		transactionInfo.setModuleId(resultSet.getString(3));
+		transactionInfo.setBusinessId(resultSet.getString(4));
+		transactionInfo.setBusinessType(resultSet.getString(5));
+		transactionInfo.setTxType(resultSet.getInt(6));
+		transactionInfo.setTxStatus(resultSet.getInt(7));
+		transactionInfo.setContext(resultSet.getString(8));
 		transactionInfo.setRetried_count(resultSet.getInt(9));
-		transactionInfo.setModuleId(resultSet.getString(10));
+		transactionInfo.setNextRetryTime(new Date(resultSet.getTimestamp(10).getTime()));
 		transactionInfo.setGmtCreated(new Date(resultSet.getTimestamp(11).getTime()));
 		transactionInfo.setGmtModified(new Date(resultSet.getTimestamp(12).getTime()));
 
@@ -383,12 +381,22 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 		throw new Exception("Not support database : " + databaseName);
 	}
 
-	private String getDateAddSql(Connection conn, int second) throws Throwable{
+	private String getDateSubtSecSql(Connection conn, int second) throws Throwable{
 		String databaseName = getDatabaseName(conn).toLowerCase();
 		if (databaseName.equals(Constants.ORACLE.toLowerCase())) {
 			return "(sysdate - " + second + "/(24*60*60))";
 		} else if (databaseName.equals(Constants.POSTGRESQL.toLowerCase())){
 			return "(now() - interval '"+ second +"sec')";
+		}
+		throw new Exception("Not support database : " + databaseName);
+	}
+
+	private String getLimitSql(Connection conn, int num) throws Throwable{
+		String databaseName = getDatabaseName(conn).toLowerCase();
+		if (databaseName.equals(Constants.ORACLE.toLowerCase())) {
+			return " LIMIT " + num;
+		} else if (databaseName.equals(Constants.POSTGRESQL.toLowerCase())){
+			return " ROWNUM <= " + num;
 		}
 		throw new Exception("Not support database : " + databaseName);
 	}
@@ -410,9 +418,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 		try {
 
 			StringBuilder builder = new StringBuilder();
-			builder.append(
-					"SELECT TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, PAYLOAD, RETRIED_COUNT, MODULE_ID, GMT_CREATED, GMT_MODIFIED")
-					.append("  FROM TRANSACTION_INFO WHERE GMT_MODIFIED > ?");
+			builder.append(SELECT_DQL + " FROM TRANSACTION_INFO WHERE GMT_MODIFIED > ?");
 
 			stmt = conn.prepareStatement(builder.toString());
 

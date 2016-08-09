@@ -63,8 +63,7 @@ public class TransactionRecoveryJob extends AbstractBatchThroughputDataFlowElast
 
     @Override
     public boolean isStreamingProcess() {
-        // TODO
-        return false;
+        return true;
     }
 
     @Override
