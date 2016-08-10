@@ -15,8 +15,7 @@ import io.anyway.galaxy.message.producer.MessageProducer;
 import io.anyway.galaxy.repository.TransactionRepository;
 import io.anyway.galaxy.spring.SpringContextUtil;
 import io.anyway.galaxy.util.ProxyUtil;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -26,14 +25,15 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.sql.Date;
+import java.sql.SQLException;
+import java.util.List;
 
 /**
  * Created by xiong.j on 2016/7/28.
  */
 @Component
+@Slf4j
 public class TransactionMessageServiceImpl implements TransactionMessageService {
-
-    private final static Log logger = LogFactory.getLog(io.anyway.galaxy.message.TransactionMessageService.class);
 
     @Autowired
     private TransactionRepository transactionRepository;
@@ -51,7 +51,7 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
     public void sendMessage(final TXContext ctx, TransactionStatusEnum txStatus) throws Throwable {
         //先发送消息,如果发送失败会抛出Runtime异常
         TransactionMessage message = new TransactionMessage();
-        message.setTxId(ctx.getTxId());
+        message.setParentId(ctx.getParentId());
         message.setBusinessId(ctx.getSerialNumber());
         message.setTxStatus(txStatus.getCode());
         messageProducer.sendMessage(message);
@@ -59,58 +59,47 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
         //发消息成功后更改TX的状态
         TransactionInfo transactionInfo = new TransactionInfo();
         transactionInfo.setTxId(ctx.getTxId());
-        transactionInfo.setTxStatus(getNextStatus(txStatus).getCode());
+        transactionInfo.setTxStatus(TransactionStatusEnum.getNextStatus(txStatus).getCode());
         transactionRepository.update(transactionInfo);
-        if (logger.isInfoEnabled()) {
-            logger.info("Update Action TX "+getNextStatus(txStatus)+", ctx: " + ctx);
-        }
+        log.info("Update Action TX "+ TransactionStatusEnum.getMemo(transactionInfo.getTxStatus()) +", ctx: " + ctx);
     }
 
     @Transactional
-    public boolean isValidMessage(TransactionMessage message) {
-        TransactionInfo transactionInfo = transactionRepository.directFindById(message.getTxId());
-        if (transactionInfo == null) {
-            logger.warn("Haven't transaction record, message: " + message);
+    public boolean isValidMessage(TransactionMessage message) throws Throwable {
+        TransactionInfo transactionInfo = new TransactionInfo();
+        transactionInfo.setParentId(message.getParentId());
+        transactionInfo.setParentId(0L);
+
+        if (message.getTxStatus() == TransactionStatusEnum.CANCELLING.getCode()) {
+            transactionInfo.setTxStatus(TransactionStatusEnum.CANCELLING.getCode());
+            return validAndSaveMessage(transactionInfo, message);
+        } else if (message.getTxStatus() == TransactionStatusEnum.CONFIRMING.getCode()) {
+            transactionInfo.setTxStatus(TransactionStatusEnum.CONFIRMING.getCode());
+            return validAndSaveMessage(transactionInfo, message);
+        } else {
+            log.warn("Incorrect status, message:" + message);
             return false;
         }
+    }
 
-        if (message.getTxStatus() == TransactionStatusEnum.CONFIRMING.getCode()) {
-            if (transactionInfo.getTxStatus() == TransactionStatusEnum.CONFIRMING.getCode()) {
-                if (logger.isInfoEnabled()) {
-                    logger.info("In confirming operation, ignored message: " + message);
-                }
-                return false;
-            }
-            if (transactionInfo.getTxStatus() == TransactionStatusEnum.CONFIRMED.getCode()) {
-                if (logger.isInfoEnabled()) {
-                    logger.info("Completed confirm operation, ignored message: " + message);
-                }
-                return false;
-            }
+    private boolean validAndSaveMessage(TransactionInfo transactionInfo, TransactionMessage message) throws Throwable {
+        if (transactionRepository.find(transactionInfo).size() > 0) {
+            log.info("Has main transaction record, ignored message: " + message + ", status=" + TransactionStatusEnum.getMemo(message.getTxStatus()));
+            return false;
         } else {
-            if (transactionInfo.getTxStatus() == TransactionStatusEnum.CANCELLING.getCode()) {
-                if (logger.isInfoEnabled()) {
-                    logger.info("In cancelling operation, ignored message: " + message);
+            try {
+                transactionRepository.create(transactionInfo);
+            } catch (SQLException e) {
+                if (e.getSQLState().equals(Constants.KEY_23505)) {
+                    log.info("Has main transaction record, ignored message: " + message + ", status=" + TransactionStatusEnum.getMemo(message.getTxStatus()));
+                    return false;
+                } else {
+                    throw e;
                 }
-                return false;
             }
-            if (transactionInfo.getTxStatus() == TransactionStatusEnum.CANCELLED.getCode()) {
-                if (logger.isInfoEnabled()) {
-                    logger.info("Completed cancel operation, ignored message: " + message);
-                }
-                return false;
-            }
+            log.info("Valid message and saved to db: " + message + ", status=" + TransactionStatusEnum.getMemo(message.getTxStatus()));
+            return true;
         }
-
-        TransactionInfo newTransactionInfo = new TransactionInfo();
-        newTransactionInfo.setTxStatus(message.getTxStatus());
-        newTransactionInfo.setTxId(message.getTxId());
-        //newTransactionInfo.setGmtModified(new Date(new java.util.Date().getTime()));
-        transactionRepository.update(newTransactionInfo);
-        if (logger.isInfoEnabled()) {
-            logger.info("Valid message and saved to db: " + message + ", status=" + TransactionStatusEnum.getMemo(message.getTxStatus()));
-        }
-        return true;
     }
 
     public void asyncHandleMessage(final TransactionMessage message) {
@@ -121,7 +110,7 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
             try {
                 service.handleMessage(message);
             } catch (Throwable e) {
-                logger.error("Execute Cancel or Confirm error",e);
+                log.error("Execute Cancel or Confirm error",e);
             }
             }
         });
@@ -135,46 +124,64 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
             //设置到上下文中
             TXContextHolder.setTXContext(ctx);
 
-            TransactionInfo transactionInfo;
-            try {
-                transactionInfo = transactionRepository.lockById(message.getTxId());
-            } catch (Exception e) {
-                logger.warn("Lock failed, txId = " + message.getTxId());
-                throw new DistributedTransactionException(e);
-            }
-            try {
-                if (validation(message, transactionInfo)) {
-                    ServiceExecutePayload payload = parsePayload(transactionInfo);
-                    //根据模块的ApplicationContext获取Bean对象
-                    Object aopBean= SpringContextUtil.getBean(transactionInfo.getModuleId(), payload.getTargetClass());
+            List<TransactionInfo> infos;
 
-                    String methodName = null;
-                    if (TransactionStatusEnum.CANCELLING.getCode() == message.getTxStatus()) {
-                        // 补偿
-                        methodName = payload.getCancelMethod();
-                        if (StringUtils.isEmpty(methodName)) {
-                            logger.error("Miss Cancel method, serviceExecutePayload: " + payload);
-                            return;
-                        }
-                    } else if (TransactionStatusEnum.CONFIRMING.getCode() == message.getTxStatus()) {
-                        // 确认
-                        methodName = payload.getConfirmMethod();
-                        if (StringUtils.isEmpty(methodName)) {
-                            logger.error("Miss Confirm method, serviceExecutePayload: " + payload);
-                            return;
-                        }
-                    }
-                    // 执行消息对应的操作
-                    ProxyUtil.proxyMethod(aopBean,methodName, payload.getTypes(), payload.getArgs());
-                } else {
-                    logger.warn("Validation error, txMsg=" + message + " txInfo=" + transactionInfo);
+            if (message.getParentId() > -1L) {
+                // 定时任务调用
+                TransactionInfo lockInfo = new TransactionInfo();
+                lockInfo.setParentId(message.getParentId());
+                lockInfo.setTxId(message.getTxId());
+                try {
+                    infos = transactionRepository.lock(lockInfo);
+                } catch (Exception e) {
+                    throw new DistributedTransactionException("Lock failed, parentId = " + message.getParentId() + ", txId = " + lockInfo.getTxId(), e);
                 }
-            } catch (Exception e){
-                TransactionInfo updInfo = new TransactionInfo();
-                updInfo.setTxId(transactionInfo.getTxId());
-                updInfo.setRetried_count(transactionInfo.getRetried_count() - 1);
-                updInfo.setNextRetryTime(getNextRetryTime(updInfo));
-                transactionRepository.update(updInfo);
+            } else {
+                // 消息调用
+                List<String> modules = SpringContextUtil.getModules();
+                try {
+                    infos = transactionRepository.lockByModules(message.getParentId(), SpringContextUtil.getModules());
+                } catch (Exception e) {
+                    throw new DistributedTransactionException("Lock failed, parentId = " + message.getParentId() + ", modules = " + modules, e);
+                }
+            }
+
+            if (infos == null) return;
+            for (TransactionInfo info : infos) {
+                try {
+                    if (validation(message, info)) {
+                        ServiceExecutePayload payload = parsePayload(info);
+                        //根据模块的ApplicationContext获取Bean对象
+                        Object aopBean= SpringContextUtil.getBean(info.getModuleId(), payload.getTargetClass());
+
+                        String methodName = null;
+                        if (TransactionStatusEnum.CANCELLING.getCode() == message.getTxStatus()) {
+                            // 补偿
+                            methodName = payload.getCancelMethod();
+                            if (StringUtils.isEmpty(methodName)) {
+                                log.error("Miss Cancel method, serviceExecutePayload: " + payload);
+                                return;
+                            }
+                        } else if (TransactionStatusEnum.CONFIRMING.getCode() == message.getTxStatus()) {
+                            // 确认
+                            methodName = payload.getConfirmMethod();
+                            if (StringUtils.isEmpty(methodName)) {
+                                log.error("Miss Confirm method, serviceExecutePayload: " + payload);
+                                return;
+                            }
+                        }
+                        // 执行消息对应的操作
+                        ProxyUtil.proxyMethod(aopBean,methodName, payload.getTypes(), payload.getArgs());
+                    } else {
+                        log.warn("Validation error, txMsg=" + message + " txInfo=" + info);
+                    }
+                } catch (Exception e){
+                    TransactionInfo updInfo = new TransactionInfo();
+                    updInfo.setTxId(info.getTxId());
+                    updInfo.setRetried_count(info.getRetried_count() - 1);
+                    updInfo.setNextRetryTime(getNextRetryTime(updInfo));
+                    transactionRepository.update(updInfo);
+                }
             }
         } finally {
             TXContextHolder.setTXContext(null);
@@ -200,17 +207,6 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
             index++;
         }
         return payload;
-    }
-
-    private TransactionStatusEnum getNextStatus(TransactionStatusEnum txStatus){
-        switch(txStatus){
-            case CANCELLING:
-                return TransactionStatusEnum.CANCELLED;
-            case CONFIRMING:
-                return TransactionStatusEnum.CONFIRMED;
-            default:
-                return null;
-        }
     }
 
     private boolean validation(TransactionMessage message, TransactionInfo txInfo) {

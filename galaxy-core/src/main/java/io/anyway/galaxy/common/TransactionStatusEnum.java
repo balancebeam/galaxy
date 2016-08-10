@@ -17,7 +17,9 @@ public enum TransactionStatusEnum {
 
     CONFIRMING(5, "确认中"),
 
-    CONFIRMED(6, "确认完成");
+    CONFIRMED(6, "确认完成"),
+
+    RECEIVE_CANCEL(7, "接收到回滚指令");
 
     private int    code;
 
@@ -47,5 +49,26 @@ public enum TransactionStatusEnum {
     		}
     	}
     	return "unknow";
+    }
+
+    public static TransactionStatusEnum getNextStatus(TransactionStatusEnum txStatus){
+        switch(txStatus){
+            case CANCELLING:
+                return TransactionStatusEnum.CANCELLED;
+            case CONFIRMING:
+                return TransactionStatusEnum.CONFIRMED;
+            default:
+                return null;
+        }
+    }
+
+    public static TransactionStatusEnum getEnum(int code) {
+        for (TransactionStatusEnum item : values()) {
+            //不区分大小写
+            if (code == item.getCode()) {
+                return item;
+            }
+        }
+        return null;
     }
 }

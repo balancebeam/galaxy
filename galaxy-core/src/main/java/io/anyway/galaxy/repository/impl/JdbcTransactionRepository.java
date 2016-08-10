@@ -2,6 +2,7 @@ package io.anyway.galaxy.repository.impl;
 
 import com.google.common.base.Strings;
 import io.anyway.galaxy.common.Constants;
+import io.anyway.galaxy.common.TransactionStatusEnum;
 import io.anyway.galaxy.domain.TransactionInfo;
 import io.anyway.galaxy.exception.DistributedTransactionException;
 import io.anyway.galaxy.spring.DataSourceAdaptor;
@@ -29,7 +30,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 	@Autowired
 	private DataSourceAdaptor dataSourceAdaptor;
 
-	protected int doCreate(TransactionInfo transactionInfo) {
+	protected int doCreate(TransactionInfo transactionInfo) throws SQLException  {
 
 		Connection conn= DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
 
@@ -89,7 +90,11 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 				builder.append("RETRIED_COUNT = ?, ");
 			}
 
-			builder.append("GMT_MODIFIED = " + getDateSql(conn) + " WHERE TX_ID = ?");
+			builder.append("GMT_MODIFIED = " + getDateSql(conn));
+			builder.append(" WHERE TX_ID = ? ");
+			if (transactionInfo.getParentId() > -1L) {
+				builder.append(" AND PARENT_ID = ? ");
+			}
 
 			stmt = conn.prepareStatement(builder.toString());
 
@@ -113,6 +118,9 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
 			stmt.setLong(++condition, transactionInfo.getTxId());
 
+			if (transactionInfo.getParentId() > -1L) {
+				stmt.setLong(++condition, transactionInfo.getParentId());
+			}
 			int result = stmt.executeUpdate();
 
 			return result;
@@ -166,7 +174,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 					.append(getDateSubtSecSql(conn, 10)).append(" AND TX_STATUS ")
 					.append(getLimitSql(conn, 1000));
 
-			if (txStatus.length > 1) {
+			if (txStatus.length > 0) {
 				builder.append(" IN (");
 				for (int i = 0; i < txStatus.length; i++) {
 					if (i == 0) {
@@ -198,7 +206,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 	}
 
 	@Override
-	protected List<TransactionInfo> doFind(TransactionInfo transactionInfo) {
+	protected List<TransactionInfo> doFind(TransactionInfo transactionInfo, boolean isLock) {
 		Connection conn= DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
 
 		PreparedStatement stmt = null;
@@ -233,7 +241,9 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			if (transactionInfo.getGmtCreated() != null) {
 				builder.append("AND GMT_CREATED = ? ");
 			}
-
+			if (isLock) {
+				builder.append(" FOR UPDATE NOWAIT");
+			}
 			stmt = conn.prepareStatement(builder.toString());
 
 			int condition = 0;
@@ -309,26 +319,42 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 		return transactionInfo;
 	}
 
-	protected TransactionInfo doLockById(long txId) {
+	protected List<TransactionInfo> doLockByModules(long parentId, List<String> modules) {
 
 		Connection conn= DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
 
-		TransactionInfo transactionInfo = null;
+		List<TransactionInfo> transactionInfos = new ArrayList<TransactionInfo>();
 
 		PreparedStatement stmt = null;
 
 		try {
-
 			StringBuilder builder = new StringBuilder();
-			builder.append(SELECT_DQL + "  FROM TRANSACTION_INFO WHERE TX_ID = ? FOR UPDATE NOWAIT");
+			builder.append(SELECT_DQL + "  FROM TRANSACTION_INFO WHERE PARENT_ID = ? AND TX_ID <> 0 AND MODULE_ID ");
+
+			if (modules.size() > 0) {
+				builder.append(" IN (");
+				for (int i = 0; i < modules.size(); i++) {
+					if (i == 0) {
+						builder.append(modules.get(i));
+					} else {
+						builder.append(",").append(modules.get(i));
+					}
+				}
+				builder.append(")");
+			}
+			builder.append(" TX_STATUS NOT IN(").append(TransactionStatusEnum.CANCELLED).append(", ")
+					.append(TransactionStatusEnum.CONFIRMED)
+					.append(")");
+			builder.append(" FOR UPDATE NOWAIT");
+
 			stmt = conn.prepareStatement(builder.toString());
-			stmt.setLong(1, txId);
+			stmt.setLong(1, parentId);
 
 			ResultSet resultSet = stmt.executeQuery();
-
 			while (resultSet.next()) {
-				transactionInfo = resultSet2Bean(resultSet);
+				transactionInfos.add(resultSet2Bean(resultSet));
 			}
+
 		} catch (Throwable e) {
 			throw new DistributedTransactionException(e);
 		} finally {
@@ -336,7 +362,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			releaseConnection(conn);
 		}
 
-		return transactionInfo;
+		return transactionInfos;
 	}
 
 	private TransactionInfo resultSet2Bean(ResultSet resultSet) throws Throwable {

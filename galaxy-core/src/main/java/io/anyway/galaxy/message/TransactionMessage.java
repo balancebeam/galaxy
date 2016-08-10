@@ -9,7 +9,9 @@ import java.sql.Date;
 
 public class TransactionMessage implements Serializable{
 
-    private long txId;
+    private long txId = -1L;
+
+    private long parentId = -1L;
 
     private String businessId;
 
@@ -23,6 +25,14 @@ public class TransactionMessage implements Serializable{
 
     public void setTxId(long txId) {
         this.txId = txId;
+    }
+
+    public long getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(long parentId) {
+        this.parentId = parentId;
     }
 
     public String getBusinessId() {
@@ -53,6 +63,7 @@ public class TransactionMessage implements Serializable{
     public String toString() {
         return "TransactionMessage{" +
                 "txId=" + txId +
+                ", parentId=" + parentId +
                 ", businessId='" + businessId + '\'' +
                 ", txStatus=" + txStatus +
                 ", date=" + date +

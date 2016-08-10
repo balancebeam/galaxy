@@ -13,9 +13,9 @@ public class TransactionInfo {
 
     private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 
-    private long txId;
+    private long txId = -1L;
 
-    private long parentId;
+    private long parentId = -1L;
 
     private String businessId;
 

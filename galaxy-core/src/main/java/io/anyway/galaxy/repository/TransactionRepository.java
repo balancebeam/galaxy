@@ -3,6 +3,7 @@ package io.anyway.galaxy.repository;
 import io.anyway.galaxy.domain.TransactionInfo;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -10,7 +11,7 @@ import java.util.List;
  */
 public interface TransactionRepository {
 
-    int create(TransactionInfo transactionInfo);
+    int create(TransactionInfo transactionInfo) throws SQLException;
 
     int update(TransactionInfo transactionInfo);
 
@@ -20,7 +21,9 @@ public interface TransactionRepository {
 
     TransactionInfo directFindById(long txId);
 
-    TransactionInfo lockById(long txId);
+    List<TransactionInfo> lockByModules(long parentId, List<String> modules);
+
+    List<TransactionInfo> lock(TransactionInfo transactionInfo);
 
     List<TransactionInfo> find(TransactionInfo transactionInfo);
 

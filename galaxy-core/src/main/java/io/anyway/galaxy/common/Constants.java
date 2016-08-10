@@ -13,4 +13,8 @@ public interface Constants {
 
     String DEFAULT_MODULE_ID = "webapplication";
 
+    String KEY_23505 = "23505";
+
+    long MAIN_ID = 0L;
+
 }

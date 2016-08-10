@@ -11,6 +11,7 @@ import io.anyway.galaxy.message.TransactionMessageService;
 import io.anyway.galaxy.repository.TransactionIdGenerator;
 import io.anyway.galaxy.repository.TransactionRepository;
 import io.anyway.galaxy.spring.DataSourceAdaptor;
+import org.postgresql.util.PSQLException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Component;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 
 /**
  * Created by yangzz on 16/7/21.
@@ -37,6 +39,7 @@ public class ActionIntercepterSupport implements ActionIntercepter{
         TransactionInfo transactionInfo = new TransactionInfo();
 
         transactionInfo.setTxId(TransactionIdGenerator.next());
+        transactionInfo.setParentId(transactionInfo.getTxId());
         transactionInfo.setContext(JSON.toJSONString(bean));
         transactionInfo.setBusinessId(serialNumber); //业务流水号
         transactionInfo.setBusinessType(bean.getBizType()); //业务类型
@@ -44,8 +47,23 @@ public class ActionIntercepterSupport implements ActionIntercepter{
         transactionInfo.setTxType(bean.getTxType().getCode()); //TC | TCC
         transactionInfo.setTxStatus(TransactionStatusEnum.BEGIN.getCode()); //begin状态
 
-        transactionRepository.create(transactionInfo);
+        int i = 2;
+        while(i > 0) {
+            try {
+                transactionRepository.create(transactionInfo);
+            } catch (SQLException e) {
+                if (e.getSQLState().equals("23505")) {
+                    transactionInfo.setTxId(TransactionIdGenerator.next());
+                    transactionRepository.create(transactionInfo);
+                } else {
+                    throw e;
+                }
+            }
+            i--;
+        }
+
         TXContextSupport ctx= new TXContextSupport();
+        ctx.setParentId(transactionInfo.getParentId());
         ctx.setTxId(transactionInfo.getTxId());
         ctx.setSerialNumber(serialNumber);
         return ctx;
