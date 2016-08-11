@@ -117,7 +117,7 @@
             		var table = $('<table id="mytable" cellspacing="0">');
             		table.append($('<tr><th>事务ID</th><th>状态</th><th>事务类型</th><th>重试次数</th><th>创建时间</th><th>修改时间</th><th>操作</th></tr>'));
                     for(var i=0;i<res.length;i++){                         
-                    	table.append($('<tr><td>'+res[i].txId+'</td><td>'+res[i].strTXStatus+'</td><td>'+res[i].strTXType+'</td><td>'+res[i].retried_count+'</td><td>'+res[i].strGmtCreated+'</td><td>'+res[i].strGmtModified+'</td><td><a href=# onclick="restart('+res[i].txId+')">重启</a></td></tr>'))
+                    	table.append($('<tr><td>'+res[i].txId+'</td><td>'+res[i].strTXStatus+'</td><td>'+res[i].strTXType+'</td><td>'+res[i].retriedCount+'</td><td>'+res[i].strGmtCreated+'</td><td>'+res[i].strGmtModified+'</td><td><a href=# onclick="restart('+res[i].txId+')">重启</a></td></tr>'))
                     }
                     c.append(table)
                     

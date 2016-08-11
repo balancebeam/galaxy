@@ -14,11 +14,26 @@ public class TXContextSupport implements TXContext{
 
     private String serialNumber;
 
+    private String businessType;
+
     public TXContextSupport(){}
 
-    public TXContextSupport(long txId,String serialNumber){
+    public TXContextSupport(long parentId, String serialNumber){
+        this.parentId = parentId;
+        this.serialNumber = serialNumber;
+    }
+
+    public TXContextSupport(long parentId, long txId,String serialNumber){
+        this.parentId = parentId;
         this.txId= txId;
         this.serialNumber = serialNumber;
+    }
+
+    public TXContextSupport(long parentId, long txId,String serialNumber, String businessType){
+        this.parentId = parentId;
+        this.txId= txId;
+        this.serialNumber = serialNumber;
+        this.businessType = businessType;
     }
 
     @Override
@@ -48,12 +63,21 @@ public class TXContextSupport implements TXContext{
         this.serialNumber = serialNumber;
     }
 
+    public String getBusinessType() {
+        return businessType;
+    }
+
+    public void setBusinessType(String businessType) {
+        this.businessType = businessType;
+    }
+
     @Override
     public String toString() {
-        return "TXContext{" +
+        return "TXContextSupport{" +
                 "parentId=" + parentId +
                 ", txId=" + txId +
                 ", serialNumber='" + serialNumber + '\'' +
+                ", businessType='" + businessType + '\'' +
                 '}';
     }
 }

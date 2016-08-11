@@ -30,9 +30,9 @@ public class OrderRest {
     @RequestMapping(method = RequestMethod.POST)
     @ResponseBody
     public boolean purchase(@RequestBody Map<String,Object> params)throws Exception {
-        long txId= Long.parseLong(params.get("txId").toString());
+        long parentId= Long.parseLong(params.get("parentId").toString());
     	String serialNumber= (String)params.get("serialNumber");
-    	TXContext tx= new TXContextSupport(txId,serialNumber);
+    	TXContext tx= new TXContextSupport(parentId, serialNumber);
 
         long orderId= nextval();
         long productId= Long.parseLong(params.get("productId").toString());

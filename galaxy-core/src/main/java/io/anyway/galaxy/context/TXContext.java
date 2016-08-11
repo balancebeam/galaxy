@@ -15,5 +15,11 @@ public interface TXContext extends SerialNumberGenerator {
      * @return
      */
     long getTxId();
+
+    /**
+     * 获取业务类型
+     * @return
+     */
+    String getBusinessType();
 }
 

@@ -52,7 +52,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			stmt.setInt(5, transactionInfo.getTxType());
 			stmt.setInt(6, transactionInfo.getTxStatus());
 			stmt.setString(7, transactionInfo.getContext());
-			stmt.setInt(8, transactionInfo.getRetried_count());
+			stmt.setString(8, transactionInfo.getRetriedCount());
 			stmt.setString(9,transactionInfo.getModuleId());
 
 			return stmt.executeUpdate();
@@ -86,7 +86,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			if (transactionInfo.getNextRetryTime() != null) {
 				builder.append("NEXT_RETRY_TIME = ?, ");
 			}
-			if (transactionInfo.getRetried_count() != -1) {
+			if (!Strings.isNullOrEmpty(transactionInfo.getRetriedCount())) {
 				builder.append("RETRIED_COUNT = ?, ");
 			}
 
@@ -112,8 +112,8 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			if (transactionInfo.getNextRetryTime() != null) {
 				stmt.setDate(++condition, transactionInfo.getNextRetryTime());
 			}
-			if (transactionInfo.getRetried_count() != -1) {
-				stmt.setInt(++condition, transactionInfo.getRetried_count());
+			if (!Strings.isNullOrEmpty(transactionInfo.getRetriedCount())) {
+				stmt.setString(++condition, transactionInfo.getRetriedCount());
 			}
 
 			stmt.setLong(++condition, transactionInfo.getTxId());
@@ -186,6 +186,8 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 				builder.append(")");
 			}
 
+			builder.append("ORDER BY PARENT_ID, TX_ID");
+
 			stmt = conn.prepareStatement(builder.toString());
 
 			stmt.setDate(1, date);
@@ -217,10 +219,10 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
 			StringBuilder builder = new StringBuilder();
 			builder.append(SELECT_DQL + " FROM TRANSACTION_INFO WHERE 1=1");
-			if (transactionInfo.getTxId() > 0L) {
+			if (transactionInfo.getTxId() > -1L) {
 				builder.append("AND TX_ID = ? ");
 			}
-			if (transactionInfo.getParentId() > 0L) {
+			if (transactionInfo.getParentId() > -1L) {
 				builder.append("AND PARENT_ID = ? ");
 			}
 			if (!Strings.isNullOrEmpty(transactionInfo.getModuleId())) {
@@ -232,10 +234,10 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			if (!Strings.isNullOrEmpty(transactionInfo.getBusinessType())) {
 				builder.append("AND BUSINESS_TYPE = ? ");
 			}
-			if (transactionInfo.getTxType() > -1L) {
+			if (transactionInfo.getTxType() > -1) {
 				builder.append("AND TX_TYPE = ? ");
 			}
-			if (transactionInfo.getTxStatus() > -1L) {
+			if (transactionInfo.getTxStatus() > -1) {
 				builder.append("AND TX_STATUS = ? ");
 			}
 			if (transactionInfo.getGmtCreated() != null) {
@@ -248,10 +250,10 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
 			int condition = 0;
 
-			if (transactionInfo.getTxId() > 0L) {
+			if (transactionInfo.getTxId() > -1L) {
 				stmt.setLong(++condition, transactionInfo.getTxId());
 			}
-			if (transactionInfo.getParentId() > 0L) {
+			if (transactionInfo.getParentId() > -1L) {
 				stmt.setLong(++condition, transactionInfo.getParentId());
 			}
 			if (!Strings.isNullOrEmpty(transactionInfo.getModuleId())) {
@@ -263,10 +265,10 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			if (!Strings.isNullOrEmpty(transactionInfo.getBusinessType())) {
 				stmt.setString(++condition, transactionInfo.getBusinessType());
 			}
-			if (transactionInfo.getTxType() > -1L) {
+			if (transactionInfo.getTxType() > -1) {
 				stmt.setInt(++condition, transactionInfo.getTxType());
 			}
-			if (transactionInfo.getTxStatus() > -1L) {
+			if (transactionInfo.getTxStatus() > -1) {
 				stmt.setInt(++condition, transactionInfo.getTxStatus());
 			}
 			if (transactionInfo.getGmtCreated() != null) {
@@ -376,7 +378,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 		transactionInfo.setTxType(resultSet.getInt(6));
 		transactionInfo.setTxStatus(resultSet.getInt(7));
 		transactionInfo.setContext(resultSet.getString(8));
-		transactionInfo.setRetried_count(resultSet.getInt(9));
+		transactionInfo.setRetriedCount(resultSet.getString(9));
 		transactionInfo.setNextRetryTime(new Date(resultSet.getTimestamp(10).getTime()));
 		transactionInfo.setGmtCreated(new Date(resultSet.getTimestamp(11).getTime()));
 		transactionInfo.setGmtModified(new Date(resultSet.getTimestamp(12).getTime()));

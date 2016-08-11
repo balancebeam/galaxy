@@ -15,9 +15,9 @@ import java.sql.Timestamp;
 @ToString
 public class TransactionInfoDto {
 
-    private long txId = -0L;
+    private long txId = -1L;
 
-    private long parentId = -0L;
+    private long parentId = -1L;
 
     private String businessId;
 

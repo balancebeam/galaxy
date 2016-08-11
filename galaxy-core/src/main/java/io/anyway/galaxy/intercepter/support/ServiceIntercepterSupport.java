@@ -33,7 +33,7 @@ public class ServiceIntercepterSupport implements ServiceIntercepter {
     public void tryService(TXContext ctx,ServiceExecutePayload bean) throws Throwable{
         TransactionInfo transactionInfo = new TransactionInfo();
         transactionInfo.setParentId(ctx.getTxId());
-        transactionInfo.setTxId(Constants.MAIN_ID);
+        transactionInfo.setTxId(Constants.TX_MAIN_ID);
 
         if (transactionRepository.find(transactionInfo).size() > 0) {
 //            log.warn("Received cancel command from main transaction unit, interrupt current transaction!");
@@ -48,7 +48,7 @@ public class ServiceIntercepterSupport implements ServiceIntercepter {
         transactionInfo.setTxId(TransactionIdGenerator.next());
         transactionInfo.setContext(JSON.toJSONString(bean));
         transactionInfo.setBusinessId(ctx.getSerialNumber());
-        transactionInfo.setBusinessType(bean.getBizType());
+        transactionInfo.setBusinessType(ctx.getBusinessType());
         transactionInfo.setModuleId(bean.getModuleId());
         transactionInfo.setTxStatus(TransactionStatusEnum.TRIED.getCode());
 

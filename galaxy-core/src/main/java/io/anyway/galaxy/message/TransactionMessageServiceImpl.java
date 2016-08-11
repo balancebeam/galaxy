@@ -9,6 +9,7 @@ import io.anyway.galaxy.context.TXContext;
 import io.anyway.galaxy.context.TXContextHolder;
 import io.anyway.galaxy.context.support.ServiceExecutePayload;
 import io.anyway.galaxy.context.support.TXContextSupport;
+import io.anyway.galaxy.domain.RetryCount;
 import io.anyway.galaxy.domain.TransactionInfo;
 import io.anyway.galaxy.exception.DistributedTransactionException;
 import io.anyway.galaxy.message.producer.MessageProducer;
@@ -44,18 +45,27 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
     @Autowired
     private ThreadPoolTaskExecutor txMsgTaskExecutor;
 
-    @Value("recovery.retry.times")
-    private int retryTimes = 3;
-
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void sendMessage(final TXContext ctx, TransactionStatusEnum txStatus) throws Throwable {
-        //先发送消息,如果发送失败会抛出Runtime异常
-        TransactionMessage message = new TransactionMessage();
-        message.setParentId(ctx.getParentId());
-        message.setBusinessId(ctx.getSerialNumber());
-        message.setTxStatus(txStatus.getCode());
-        messageProducer.sendMessage(message);
-
+        try {
+            //先发送消息,如果发送失败会抛出Runtime异常
+            TransactionMessage message = new TransactionMessage();
+            message.setParentId(ctx.getTxId());
+            message.setBusinessId(ctx.getSerialNumber());
+            message.setBusinessType(ctx.getBusinessType());
+            message.setTxStatus(txStatus.getCode());
+            messageProducer.sendMessage(message);
+        } catch (Exception e){
+            TransactionInfo updInfo = new TransactionInfo();
+            updInfo.setTxId(ctx.getTxId());
+            updInfo.setParentId(ctx.getParentId());
+            TransactionInfo info = transactionRepository.find(updInfo).get(0);
+            RetryCount retryCount = JSON.parseObject(info.getRetriedCount(), RetryCount.class);
+            updInfo.setRetriedCount(retryCount.getNextRetryTimes(retryCount, info.getTxStatus()));
+            updInfo.setNextRetryTime(getNextRetryTime(retryCount, updInfo));
+            transactionRepository.update(updInfo);
+            log.warn("Send transaction message failed, update retry count, TransactionInfo=" + info);
+        }
         //发消息成功后更改TX的状态
         TransactionInfo transactionInfo = new TransactionInfo();
         transactionInfo.setTxId(ctx.getTxId());
@@ -68,7 +78,6 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
     public boolean isValidMessage(TransactionMessage message) throws Throwable {
         TransactionInfo transactionInfo = new TransactionInfo();
         transactionInfo.setParentId(message.getParentId());
-        transactionInfo.setParentId(0L);
 
         if (message.getTxStatus() == TransactionStatusEnum.CANCELLING.getCode()) {
             transactionInfo.setTxStatus(TransactionStatusEnum.CANCELLING.getCode());
@@ -120,7 +129,7 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
     public void handleMessage(TransactionMessage message) throws Throwable {
         try {
             //从消息中获取事务的标识和业务序列号
-            TXContext ctx= new TXContextSupport(message.getTxId(), message.getBusinessId());
+            TXContextSupport ctx = new TXContextSupport(message.getParentId(), message.getTxId(), message.getBusinessId(), message.getBusinessType());
             //设置到上下文中
             TXContextHolder.setTXContext(ctx);
 
@@ -148,6 +157,7 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
 
             if (infos == null) return;
             for (TransactionInfo info : infos) {
+                ctx.setTxId(info.getTxId());
                 try {
                     if (validation(message, info)) {
                         ServiceExecutePayload payload = parsePayload(info);
@@ -178,9 +188,11 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
                 } catch (Exception e){
                     TransactionInfo updInfo = new TransactionInfo();
                     updInfo.setTxId(info.getTxId());
-                    updInfo.setRetried_count(info.getRetried_count() - 1);
-                    updInfo.setNextRetryTime(getNextRetryTime(updInfo));
+                    RetryCount retryCount = JSON.parseObject(info.getRetriedCount(), RetryCount.class);
+                    updInfo.setRetriedCount(retryCount.getNextRetryTimes(retryCount, info.getTxStatus()));
+                    updInfo.setNextRetryTime(getNextRetryTime(retryCount, updInfo));
                     transactionRepository.update(updInfo);
+                    log.warn("Process failed, update retry count, TransactionInfo=" + info);
                 }
             }
         } finally {
@@ -227,10 +239,12 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
         return true;
     }
 
-    private Date getNextRetryTime(TransactionInfo txInfo){
+    private Date getNextRetryTime(RetryCount retryCount, TransactionInfo txInfo){
         // TODO 重试次数间隔
         return new Date(System.currentTimeMillis()
-                + Math.round(Math.pow(9, retryTimes - txInfo.getRetried_count()))
+                + Math.round(Math.pow(9,
+                        retryCount.getDefaultRetryTimes(retryCount, txInfo.getTxStatus())
+                                - retryCount.getCurrentRetryTimes(retryCount, txInfo.getTxStatus())))
                 * 1000);
     }
 

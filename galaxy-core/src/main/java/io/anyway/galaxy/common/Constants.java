@@ -15,6 +15,8 @@ public interface Constants {
 
     String KEY_23505 = "23505";
 
-    long MAIN_ID = 0L;
+    long TX_ROOT_ID = 0L;
+
+    long TX_MAIN_ID = 1L;
 
 }

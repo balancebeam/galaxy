@@ -9,7 +9,7 @@ CREATE TABLE transaction_info
   tx_type smallint,
   tx_status smallint,
   context text,
-  retried_count smallint default 0,
+  retried_count character varying(128),
   next_retry_time timestamp without time zone,
   gmt_created timestamp without time zone,
   gmt_modified timestamp without time zone,

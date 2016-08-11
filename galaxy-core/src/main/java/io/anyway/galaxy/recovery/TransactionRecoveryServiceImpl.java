@@ -2,6 +2,7 @@ package io.anyway.galaxy.recovery;
 
 import io.anyway.galaxy.common.Constants;
 import io.anyway.galaxy.common.TransactionStatusEnum;
+import io.anyway.galaxy.common.TransactionTypeEnum;
 import io.anyway.galaxy.context.support.TXContextSupport;
 import io.anyway.galaxy.domain.TransactionInfo;
 import io.anyway.galaxy.message.TransactionMessage;
@@ -40,9 +41,9 @@ public class TransactionRecoveryServiceImpl implements TransactionRecoveryServic
     @Override
     public List<TransactionInfo> fetchData(List<Integer> shardingItem) {
         // 30天前
-        Date searchDate = DateUtil.getPrevDate(30);
+        Date searchDate = DateUtil.getPrevDate(day);
 
-        // parentId 升序，txId降序
+        // parentId 升序，txId升序
         return transactionRepository.findSince(searchDate, shardingItem.toArray(new Integer[shardingItem.size()]));
     }
 
@@ -53,29 +54,50 @@ public class TransactionRecoveryServiceImpl implements TransactionRecoveryServic
         for(TransactionInfo info : transactionInfos) {
 
             // 未到重试时间不重试
-            if (info.getGmtModified().getTime() + info.getRetried_count() * waitTime  > System.currentTimeMillis()) {
-                continue;
-            }
+//            if (info.getGmtModified().getTime() + info.getRetriedCount() * waitTime  > System.currentTimeMillis()) {
+//                continue;
+//            }
 
-            if(TransactionStatusEnum.BEGIN.getCode() == info.getTxStatus()){
-                // TODO BEGIN状态需要回查是否Try成功，后续优化
-                try {
-                    transactionMessageService.sendMessage(new TXContextSupport(info.getTxId(), info.getBusinessId())
-                            , TransactionStatusEnum.CANCELLING);
-                    successCount++;
-                } catch (Throwable throwable) {
-                    log.warn("Send cancel message error, TransactionInfo=", info);
+            if (info.getParentId() == -1L) {
+                if(TransactionStatusEnum.BEGIN.getCode() == info.getTxStatus()) {
+                    // TODO BEGIN状态需要回查是否Try成功，后续优化
+                    try {
+                        transactionMessageService.sendMessage(
+                                new TXContextSupport(info.getParentId(), info.getTxId(), info.getBusinessId(), info.getBusinessType())
+                                , TransactionStatusEnum.CANCELLING);
+                        successCount++;
+                        log.debug("Send cancel message success, TransactionInfo=", info);
+                    } catch (Throwable throwable) {
+                        log.warn("Send cancel message error, TransactionInfo=", info);
+                    }
+                } else if (TransactionStatusEnum.TRIED.getCode() == info.getTxStatus() && TransactionTypeEnum.TCC.getCode() == info.getTxType()){
+                    try {
+                        transactionMessageService.sendMessage(
+                                new TXContextSupport(info.getParentId(), info.getTxId(), info.getBusinessId(), info.getBusinessType())
+                                , TransactionStatusEnum.CONFIRMING);
+                        successCount++;
+                        log.debug("Send confirm message success, TransactionInfo=", info);
+                    } catch (Throwable throwable) {
+                        log.warn("Send confirm message error, TransactionInfo=", info);
+                    }
+                } else {
+                    log.debug("Needn't process, sk");
                 }
             } else {
-                if (parentId != info.getParentId() && info.getTxId() == Constants.MAIN_ID) {
+                if (parentId != info.getParentId() && info.getTxId() == Constants.TX_MAIN_ID) {
                     // 更新每个事务单元的主事务状态
                     TransactionInfo updInfo = new TransactionInfo();
                     updInfo.setParentId(info.getParentId());
-                    updInfo.setTxId(Constants.MAIN_ID);
-                    updInfo.setTxStatus(TransactionStatusEnum.getNextStatus(
+                    updInfo.setTxId(Constants.TX_MAIN_ID);
+                    try {
+                        updInfo.setTxStatus(TransactionStatusEnum.getNextStatus(
                                 TransactionStatusEnum.getEnum(info.getTxStatus())
                             ).getCode());
-                    transactionRepository.update(updInfo);
+                        transactionRepository.update(updInfo);
+                        log.debug("Update main transaction status success, TransactionInfo=", info);
+                    } catch (Throwable e) {
+                        log.warn("Update main transaction status error, TransactionInfo=", info.toString());
+                    }
                     parentId = info.getParentId();
                     continue;
                 }
@@ -84,8 +106,9 @@ public class TransactionRecoveryServiceImpl implements TransactionRecoveryServic
                     try {
                         transactionMessageService.handleMessage(transInfo2Msg(info));
                         successCount++;
+                        log.debug("Process cancelling message success, TransactionInfo=", info);
                     } catch (Throwable e) {
-                        log.warn("Process cancel error, TransactionInfo=", info.toString());
+                        log.warn("Process cancelling error, TransactionInfo=", info.toString());
                     }
                 }
 
@@ -93,6 +116,7 @@ public class TransactionRecoveryServiceImpl implements TransactionRecoveryServic
                     try {
                         transactionMessageService.handleMessage(transInfo2Msg(info));
                         successCount++;
+                        log.debug("Process confirming message success, TransactionInfo=", info);
                     } catch (Throwable e) {
                         log.warn("Process confirm error, TransactionInfo=", info);
                     }

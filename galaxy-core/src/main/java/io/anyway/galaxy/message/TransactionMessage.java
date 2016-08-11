@@ -15,6 +15,8 @@ public class TransactionMessage implements Serializable{
 
     private String businessId;
 
+    private String businessType;
+
     private int txStatus = -1;
 
     private Date date= new Date(new java.util.Date().getTime());
@@ -43,6 +45,14 @@ public class TransactionMessage implements Serializable{
         this.businessId = businessId;
     }
 
+    public String getBusinessType() {
+        return businessType;
+    }
+
+    public void setBusinessType(String businessType) {
+        this.businessType = businessType;
+    }
+
     public int getTxStatus() {
         return txStatus;
     }
@@ -65,6 +75,7 @@ public class TransactionMessage implements Serializable{
                 "txId=" + txId +
                 ", parentId=" + parentId +
                 ", businessId='" + businessId + '\'' +
+                ", businessType='" + businessType + '\'' +
                 ", txStatus=" + txStatus +
                 ", date=" + date +
                 '}';

@@ -2,9 +2,7 @@ package io.anyway.galaxy.infoBoard;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.Connection;
 import java.sql.Date;
-import java.sql.SQLException;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -35,7 +33,7 @@ public class StartServlet extends HttpServlet {
 
 		if(info != null){
 			info.setGmtModified(new Date(System.currentTimeMillis()));
-			info.setRetried_count(0);
+			info.setRetriedCount(0);
 			transactionRepository.update(info);
 		}
 

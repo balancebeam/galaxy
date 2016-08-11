@@ -31,7 +31,7 @@ public class TransactionInfo {
 
     private Date nextRetryTime;
 
-    private int retried_count = -1;
+    private String retriedCount;
 
     private Date gmtCreated;
 
@@ -101,12 +101,12 @@ public class TransactionInfo {
         this.nextRetryTime = nextRetryTime;
     }
 
-    public int getRetried_count() {
-        return retried_count;
+    public String getRetriedCount() {
+        return retriedCount;
     }
 
-    public void setRetried_count(int retried_count) {
-        this.retried_count = retried_count;
+    public void setRetriedCount(String retriedCount) {
+        this.retriedCount = retriedCount;
     }
 
     public Date getGmtCreated() {
@@ -161,10 +161,9 @@ public class TransactionInfo {
                 ", txType=" + txType +
                 ", context='" + context + '\'' +
                 ", nextRetryTime=" + nextRetryTime +
-                ", retried_count=" + retried_count +
+                ", retriedCount='" + retriedCount + '\'' +
                 ", gmtCreated=" + gmtCreated +
                 ", gmtModified=" + gmtModified +
                 '}';
     }
-
 }
