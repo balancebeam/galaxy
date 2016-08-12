@@ -2,9 +2,7 @@ package io.anyway.galaxy.domain;
 
 import com.alibaba.fastjson.JSON;
 import io.anyway.galaxy.common.TransactionStatusEnum;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 /**
  * Created by xiong.j on 2016/8/11.
@@ -12,35 +10,36 @@ import lombok.ToString;
 @Setter
 @Getter
 @ToString
+@RequiredArgsConstructor
 public class RetryCount {
 
     // default tried retry count
-    private int dMsg;
+    private final int dMsg;
 
     // current tried retry count
     private int msg;
 
     // default cancel retry count
-    private int dCancel;
+    private final int dCancel;
 
     // current cancel retry count
     private int cancel;
 
     // default confirm retry count
-    private int dConfirm;
+    private final int dConfirm;
 
     // current cancel retry count
     private int confirm;
 
-    public static void main(String args[]){
-        RetryCount r = new RetryCount();
-        r.setCancel(999);
-        r.setConfirm(999);
-        r.setMsg(999);
-        r.setDCancel(999);
-        r.setDConfirm(999);
-        r.setDMsg(999);
-        System.out.println(JSON.toJSONString(r));
+    /**
+     * 创建一个实例
+     * @param dMsg
+     * @param dCancel
+     * @param dConfirm
+     * @return
+     */
+    public static RetryCount CreateRetryCount(int dMsg, int dCancel, int dConfirm) {
+        return new RetryCount(dMsg, dCancel, dConfirm);
     }
 
     /**
@@ -95,5 +94,13 @@ public class RetryCount {
             retryCount.setMsg(retryCount.getConfirm() - 1);
         }
         return JSON.toJSONString(retryCount);
+    }
+
+    public static void main(String args[]){
+        RetryCount r = new RetryCount(999, 999, 999);
+        r.setCancel(999);
+        r.setConfirm(999);
+        r.setMsg(999);
+        System.out.println(JSON.toJSONString(r));
     }
 }

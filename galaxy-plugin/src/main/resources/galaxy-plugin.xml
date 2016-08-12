@@ -29,7 +29,7 @@
     </bean>
 
     <bean id="transactionRecoveryJobConfig" class="com.dangdang.ddframe.job.api.JobConfiguration">
-        <constructor-arg name="jobName" value="transactionRecoveryJob" />
+        <constructor-arg name="jobName" value="${sar.name}TxRecoveryJob" />
         <constructor-arg name="jobClass" value="io.anyway.galaxy.scheduler.TransactionRecoveryJob" />
         <constructor-arg name="shardingTotalCount" value="${transactionRecoveryJob.shardingTotalCount}" />
         <constructor-arg name="cron" value="${transactionRecoveryJob.cron}" />

@@ -27,7 +27,7 @@ public interface TransactionRepository {
 
     List<TransactionInfo> find(TransactionInfo transactionInfo);
 
-    List<TransactionInfo> findSince(java.sql.Date date, Integer[] txStatus);
+    List<TransactionInfo> findSince(java.sql.Date date, Integer[] txStatus, String moduleId);
     
     List<TransactionInfo> listSince(java.sql.Date date);
 }

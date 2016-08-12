@@ -89,9 +89,12 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			if (!Strings.isNullOrEmpty(transactionInfo.getRetriedCount())) {
 				builder.append("RETRIED_COUNT = ?, ");
 			}
-
 			builder.append("GMT_MODIFIED = " + getDateSql(conn));
-			builder.append(" WHERE TX_ID = ? ");
+
+			builder.append(" WHERE 1=1");
+			if (transactionInfo.getTxId() > -1L) {
+				builder.append(" AND TX_ID = ? ");
+			}
 			if (transactionInfo.getParentId() > -1L) {
 				builder.append(" AND PARENT_ID = ? ");
 			}
@@ -115,9 +118,9 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			if (!Strings.isNullOrEmpty(transactionInfo.getRetriedCount())) {
 				stmt.setString(++condition, transactionInfo.getRetriedCount());
 			}
-
-			stmt.setLong(++condition, transactionInfo.getTxId());
-
+			if (transactionInfo.getTxId() > -1L) {
+				stmt.setLong(++condition, transactionInfo.getTxId());
+			}
 			if (transactionInfo.getParentId() > -1L) {
 				stmt.setLong(++condition, transactionInfo.getParentId());
 			}
@@ -158,7 +161,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 	}
 
 	@Override
-	protected List<TransactionInfo> doFindSince(Date date, Integer[] txStatus) {
+	protected List<TransactionInfo> doFindSince(Date date, Integer[] txStatus, String moduleId) {
 
 		Connection conn= DataSourceUtils.getConnection(dataSourceAdaptor.getDataSource());
 
@@ -174,7 +177,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 					.append(getDateSubtSecSql(conn, 10)).append(" AND TX_STATUS ")
 					.append(getLimitSql(conn, 1000));
 
-			if (txStatus.length > 0) {
+			if (txStatus.length > 1) {
 				builder.append(" IN (");
 				for (int i = 0; i < txStatus.length; i++) {
 					if (i == 0) {
@@ -184,16 +187,18 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 					}
 				}
 				builder.append(")");
+			} else {
+				builder.append(" = " + txStatus[0]);
 			}
+			builder.append(" AND MODULE_ID = ? ");
 
-			builder.append("ORDER BY PARENT_ID, TX_ID");
+			builder.append(" ORDER BY PARENT_ID, TX_ID");
 
 			stmt = conn.prepareStatement(builder.toString());
-
 			stmt.setDate(1, date);
+			stmt.setString(2, moduleId);
 
 			ResultSet resultSet = stmt.executeQuery();
-
 			while (resultSet.next()) {
 				transactionInfos.add(resultSet2Bean(resultSet));
 			}

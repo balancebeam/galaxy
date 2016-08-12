@@ -5,6 +5,7 @@ import com.alibaba.fastjson.parser.Feature;
 import com.alibaba.fastjson.parser.ParserConfig;
 import io.anyway.galaxy.common.Constants;
 import io.anyway.galaxy.common.TransactionStatusEnum;
+import io.anyway.galaxy.common.TransactionTypeEnum;
 import io.anyway.galaxy.context.TXContext;
 import io.anyway.galaxy.context.TXContextHolder;
 import io.anyway.galaxy.context.support.ServiceExecutePayload;
@@ -27,6 +28,7 @@ import org.springframework.util.StringUtils;
 
 import java.sql.Date;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -45,6 +47,9 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
     @Autowired
     private ThreadPoolTaskExecutor txMsgTaskExecutor;
 
+    @Autowired
+    private SpringContextUtil springContextUtil;
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void sendMessage(final TXContext ctx, TransactionStatusEnum txStatus) throws Throwable {
         try {
@@ -56,15 +61,12 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
             message.setTxStatus(txStatus.getCode());
             messageProducer.sendMessage(message);
         } catch (Exception e){
-            TransactionInfo updInfo = new TransactionInfo();
-            updInfo.setTxId(ctx.getTxId());
-            updInfo.setParentId(ctx.getParentId());
-            TransactionInfo info = transactionRepository.find(updInfo).get(0);
-            RetryCount retryCount = JSON.parseObject(info.getRetriedCount(), RetryCount.class);
-            updInfo.setRetriedCount(retryCount.getNextRetryTimes(retryCount, info.getTxStatus()));
-            updInfo.setNextRetryTime(getNextRetryTime(retryCount, updInfo));
-            transactionRepository.update(updInfo);
-            log.warn("Send transaction message failed, update retry count, TransactionInfo=" + info);
+            // 更新重试信息
+            TransactionInfo info = new TransactionInfo();
+            info.setTxId(ctx.getTxId());
+            info.setParentId(ctx.getParentId());
+            updateRetryCount(transactionRepository.find(info).get(0));
+            log.warn("Process failed, update retry count, TransactionInfo=" + info);
         }
         //发消息成功后更改TX的状态
         TransactionInfo transactionInfo = new TransactionInfo();
@@ -74,7 +76,63 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
         log.info("Update Action TX "+ TransactionStatusEnum.getMemo(transactionInfo.getTxStatus()) +", ctx: " + ctx);
     }
 
-    @Transactional
+    public boolean isValidMessage(TransactionMessage message) throws Throwable {
+
+        //对需处理的数据加锁
+        List<TransactionInfo> infos = lockRecord(message);
+
+        if (infos == null || infos.size() == 0) {
+            log.warn("Haven't transaction record, message: " + message);
+            return false;
+        }
+
+        TransactionInfo updInfo;
+        int successCount = 0;
+        for (TransactionInfo info : infos) {
+            if (message.getTxStatus() == TransactionStatusEnum.CONFIRMING.getCode()) {
+                if (info.getTxType() != TransactionTypeEnum.TCC.getCode()) {
+                    log.warn("Not TCC type transaction, can't process confirm action, message: " + message);
+                    return false;
+                }
+                if (info.getTxStatus() == TransactionStatusEnum.CONFIRMING.getCode()) {
+                    log.warn("In confirming operation, ignored message: " + message);
+                    return false;
+                }
+                if (info.getTxStatus() == TransactionStatusEnum.CONFIRMED.getCode()) {
+                    log.warn("Completed confirm operation, ignored message: " + message);
+                    return false;
+                }
+            } else {
+                if (info.getTxStatus() == TransactionStatusEnum.CANCELLING.getCode()) {
+                    log.warn("In cancelling operation, ignored message: " + message);
+                    return false;
+                }
+                if (info.getTxStatus() == TransactionStatusEnum.CANCELLED.getCode()) {
+                    log.warn("Completed cancel operation, ignored message: " + message);
+                    return false;
+                }
+            }
+
+            if (info.getParentId() == Constants.TX_ROOT_ID) continue;
+
+            updInfo = new TransactionInfo();
+            updInfo.setParentId(info.getParentId());
+            updInfo.setTxId(info.getTxId());
+            updInfo.setTxStatus(TransactionStatusEnum.getNextStatusCode(info.getTxStatus()));
+            if (updInfo.getTxStatus() == TransactionStatusEnum.UNKNOWN.getCode()) {
+                log.warn("Incorrect status, message:" + message);
+                return false;
+            }
+            transactionRepository.update(updInfo);
+            successCount ++;
+            log.info("Valid message and saved to db: " + message + ", status=" + TransactionStatusEnum.getMemo(message.getTxStatus()));
+        }
+
+        return successCount > 0;
+    }
+
+    // TODO 对于因子事务单元超时引起的事务状态不一致情况，由管控平台统一检查处理?
+    /*@Transactional
     public boolean isValidMessage(TransactionMessage message) throws Throwable {
         TransactionInfo transactionInfo = new TransactionInfo();
         transactionInfo.setParentId(message.getParentId());
@@ -109,7 +167,7 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
             log.info("Valid message and saved to db: " + message + ", status=" + TransactionStatusEnum.getMemo(message.getTxStatus()));
             return true;
         }
-    }
+    }*/
 
     public void asyncHandleMessage(final TransactionMessage message) {
         txMsgTaskExecutor.execute(new Runnable() {
@@ -132,30 +190,10 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
             TXContextSupport ctx = new TXContextSupport(message.getParentId(), message.getTxId(), message.getBusinessId(), message.getBusinessType());
             //设置到上下文中
             TXContextHolder.setTXContext(ctx);
+            //对需处理的数据加锁
+            List<TransactionInfo> infos = lockRecord(message);
 
-            List<TransactionInfo> infos;
-
-            if (message.getParentId() > -1L) {
-                // 定时任务调用
-                TransactionInfo lockInfo = new TransactionInfo();
-                lockInfo.setParentId(message.getParentId());
-                lockInfo.setTxId(message.getTxId());
-                try {
-                    infos = transactionRepository.lock(lockInfo);
-                } catch (Exception e) {
-                    throw new DistributedTransactionException("Lock failed, parentId = " + message.getParentId() + ", txId = " + lockInfo.getTxId(), e);
-                }
-            } else {
-                // 消息调用
-                List<String> modules = SpringContextUtil.getModules();
-                try {
-                    infos = transactionRepository.lockByModules(message.getParentId(), SpringContextUtil.getModules());
-                } catch (Exception e) {
-                    throw new DistributedTransactionException("Lock failed, parentId = " + message.getParentId() + ", modules = " + modules, e);
-                }
-            }
-
-            if (infos == null) return;
+            if (infos == null || infos.size() == 0) return;
             for (TransactionInfo info : infos) {
                 ctx.setTxId(info.getTxId());
                 try {
@@ -186,18 +224,58 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
                         log.warn("Validation error, txMsg=" + message + " txInfo=" + info);
                     }
                 } catch (Exception e){
-                    TransactionInfo updInfo = new TransactionInfo();
-                    updInfo.setTxId(info.getTxId());
-                    RetryCount retryCount = JSON.parseObject(info.getRetriedCount(), RetryCount.class);
-                    updInfo.setRetriedCount(retryCount.getNextRetryTimes(retryCount, info.getTxStatus()));
-                    updInfo.setNextRetryTime(getNextRetryTime(retryCount, updInfo));
-                    transactionRepository.update(updInfo);
+                    // 更新重试信息
+                    updateRetryCount(info);
                     log.warn("Process failed, update retry count, TransactionInfo=" + info);
                 }
             }
         } finally {
             TXContextHolder.setTXContext(null);
         }
+    }
+
+    private List<TransactionInfo> lockRecord(TransactionMessage message) throws Throwable{
+        List<TransactionInfo> infos;
+
+        if (message.getParentId() > -1L) {
+            // 定时任务调用
+            TransactionInfo lockInfo = new TransactionInfo();
+            lockInfo.setParentId(message.getParentId());
+            lockInfo.setTxId(message.getTxId());
+            try {
+                infos = transactionRepository.lock(lockInfo);
+            } catch (Exception e) {
+                throw new DistributedTransactionException("Lock failed, parentId = " + message.getParentId() + ", txId = " + lockInfo.getTxId(), e);
+            }
+        } else {
+            // 消息调用
+            List<String> modules;
+            if (springContextUtil.getModuleId().equals(Constants.DEFAULT_MODULE_ID)) {
+                // 部署在容器中
+                modules = SpringContextUtil.getModules();
+            } else {
+                // 随组件部署
+                modules = new ArrayList<String>(1);
+                modules.add(springContextUtil.getModuleId());
+            }
+            try {
+                infos = transactionRepository.lockByModules(message.getParentId(), modules);
+            } catch (Exception e) {
+                throw new DistributedTransactionException("Lock failed, parentId = " + message.getParentId() + ", modules = " + modules, e);
+            }
+        }
+        return infos;
+    }
+
+    private void updateRetryCount(TransactionInfo info){
+        TransactionInfo updInfo = new TransactionInfo();
+        updInfo.setParentId(info.getParentId());
+        updInfo.setTxId(info.getTxId());
+        RetryCount retryCount = JSON.parseObject(info.getRetriedCount(), RetryCount.class);
+        updInfo.setRetriedCount(retryCount.getNextRetryTimes(retryCount, info.getTxStatus()));
+        updInfo.setNextRetryTime(getNextRetryTime(retryCount, updInfo));
+
+        transactionRepository.update(updInfo);
     }
 
     private ServiceExecutePayload parsePayload(TransactionInfo transactionInfo) {

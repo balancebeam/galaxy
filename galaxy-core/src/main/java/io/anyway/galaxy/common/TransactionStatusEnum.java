@@ -7,6 +7,8 @@ package io.anyway.galaxy.common;
 public enum TransactionStatusEnum {
     //SUCCESS(0, "正常完成"),
 
+    UNKNOWN(-1, "错误状态"),
+
     BEGIN(1, "事务开始"),
 
     TRIED(2, "尝试完成"),
@@ -54,11 +56,32 @@ public enum TransactionStatusEnum {
     public static TransactionStatusEnum getNextStatus(TransactionStatusEnum txStatus){
         switch(txStatus){
             case CANCELLING:
-                return TransactionStatusEnum.CANCELLED;
+                return CANCELLED;
             case CONFIRMING:
-                return TransactionStatusEnum.CONFIRMED;
+                return CONFIRMED;
             default:
-                return null;
+                return UNKNOWN;
+        }
+    }
+
+    public static int getNextStatusCode(TransactionStatusEnum txStatus){
+        switch(txStatus){
+            case CANCELLING:
+                return CANCELLED.getCode();
+            case CONFIRMING:
+                return CONFIRMED.getCode();
+            default:
+                return UNKNOWN.getCode();
+        }
+    }
+
+    public static int getNextStatusCode(int txStatus){
+        if (CANCELLING.getCode() == txStatus) {
+            return CANCELLED.getCode();
+        } else if (CONFIRMING.getCode() == txStatus) {
+            return CONFIRMED.getCode();
+        } else {
+            return UNKNOWN.getCode();
         }
     }
 
@@ -69,6 +92,6 @@ public enum TransactionStatusEnum {
                 return item;
             }
         }
-        return null;
+        return UNKNOWN;
     }
 }

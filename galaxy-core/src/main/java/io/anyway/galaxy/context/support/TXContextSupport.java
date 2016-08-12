@@ -16,6 +16,8 @@ public class TXContextSupport implements TXContext{
 
     private String businessType;
 
+    private int txType;
+
     public TXContextSupport(){}
 
     public TXContextSupport(long parentId, String serialNumber){
@@ -71,6 +73,14 @@ public class TXContextSupport implements TXContext{
         this.businessType = businessType;
     }
 
+    public int getTxType() {
+        return txType;
+    }
+
+    public void setTxType(int txType) {
+        this.txType = txType;
+    }
+
     @Override
     public String toString() {
         return "TXContextSupport{" +
@@ -78,6 +88,7 @@ public class TXContextSupport implements TXContext{
                 ", txId=" + txId +
                 ", serialNumber='" + serialNumber + '\'' +
                 ", businessType='" + businessType + '\'' +
+                ", txType=" + txType +
                 '}';
     }
 }

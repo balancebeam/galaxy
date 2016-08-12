@@ -33,7 +33,6 @@ public class StartServlet extends HttpServlet {
 
 		if(info != null){
 			info.setGmtModified(new Date(System.currentTimeMillis()));
-			info.setRetriedCount(0);
 			transactionRepository.update(info);
 		}
 

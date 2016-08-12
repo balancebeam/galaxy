@@ -111,9 +111,9 @@ public abstract class CacheableTransactionRepository implements TransactionRepos
     }
 
     @Override
-    public List<TransactionInfo> findSince(java.sql.Date date, Integer[] txStatus) {
+    public List<TransactionInfo> findSince(java.sql.Date date, Integer[] txStatus, String moduleId) {
 
-        List<TransactionInfo> transactionInfos = doFindSince(date, txStatus);
+        List<TransactionInfo> transactionInfos = doFindSince(date, txStatus, moduleId);
 
         return transactionInfos;
     }
@@ -150,5 +150,5 @@ public abstract class CacheableTransactionRepository implements TransactionRepos
 
     protected abstract TransactionInfo doFindById(long txId);
 
-    protected abstract List<TransactionInfo> doFindSince(java.sql.Date date, Integer[] txStatus);
+    protected abstract List<TransactionInfo> doFindSince(java.sql.Date date, Integer[] txStatus, String moduleId);
 }
