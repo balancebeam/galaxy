@@ -157,8 +157,8 @@ public class TXAspectProcessor implements Ordered,ResourceLoaderAware,Applicatio
 
             //绑定到ThreadLocal中
             TXContextHolder.setTXContext(ctx);
-            //设置在Action操作里
-            TXContextHolder.setAction(true);
+//            //设置在Action操作里
+//            TXContextHolder.setAction(true);
 
             //获取外层业务开启事务的对应的数据库连接
             ConnectionHolder conHolder = (ConnectionHolder) TransactionSynchronizationManager.getResource(dataSourceAdaptor.getDataSource());
@@ -215,10 +215,6 @@ public class TXAspectProcessor implements Ordered,ResourceLoaderAware,Applicatio
 
     @Around("pointcutTXTry()")
     public Object doTXTry(ProceedingJoinPoint pjp) throws Throwable {
-        //如果调用关系在Action内不需要执行切面动作
-        if(TXContextHolder.isAction()){
-            return pjp.proceed();
-        }
         //先验证事务
         assertTransactional();
         TXContext ctx= TXContextHolder.getTXContext();
@@ -277,10 +273,6 @@ public class TXAspectProcessor implements Ordered,ResourceLoaderAware,Applicatio
 
     @Around("pointcutTXConfirm()")
     public Object doTXConfirm(ProceedingJoinPoint pjp) throws Throwable {
-        //如果调用关系在Action内不需要执行切面动作
-        if(TXContextHolder.isAction()){
-            return pjp.proceed();
-        }
         //先验证事务
         assertTransactional();
         TXContext ctx= TXContextHolder.getTXContext();
@@ -311,10 +303,6 @@ public class TXAspectProcessor implements Ordered,ResourceLoaderAware,Applicatio
 
     @Around("pointcutTXCancel()")
     public Object doTXCancel(ProceedingJoinPoint pjp) throws Throwable {
-        //如果调用关系在Action内不需要执行切面动作
-        if(TXContextHolder.isAction()){
-            return pjp.proceed();
-        }
         //先验证事务
         assertTransactional();
         TXContext ctx= TXContextHolder.getTXContext();
