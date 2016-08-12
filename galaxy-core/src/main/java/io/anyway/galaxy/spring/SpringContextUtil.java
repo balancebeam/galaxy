@@ -13,6 +13,9 @@ import org.springframework.context.ResourceLoaderAware;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -145,6 +148,17 @@ public class SpringContextUtil implements ApplicationContextAware,ResourceLoader
         return "webapplication";
     }
 
+    /**
+     * 获取容器中管理的所有模块标识
+     * @return
+     */
+    public static List<String> getModules(){
+        List<String> modules = new ArrayList<String>();
+        for (String key : moduleContexts.keySet()) {
+            modules.add(key);
+        }
+        return modules;
+    }
 
     public void setModuleId(String moduleId){
         this.moduleId= moduleId;

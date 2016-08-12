@@ -3,10 +3,12 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
        xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:aop="http://www.springframework.org/schema/aop"
        xsi:schemaLocation="
 	     http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
 	     http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd
-		 http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-3.2.xsd">
+		 http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-3.2.xsd
+		 http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd">
 
     <description>Spring公共配置</description>
 
@@ -58,6 +60,13 @@
         </property>
     </bean>
 
+    <!-- 以下的配置需要在各模块中配置一遍 -->
+    <!-- 扫描模块内容的Action和Service -->
+    <aop:aspectj-autoproxy/>
+    <bean id="springContextUtil" class="io.anyway.galaxy.spring.SpringContextUtil" scope="singleton" >
+        <!-- 指定模块的唯一标识 -->
+        <property name="moduleId" value="${sar.name}"></property>
+    </bean>
     <import resource="classpath:galaxy-transaction.xml"/>
     <import resource="classpath:galaxy-plugin.xml"/>
     <import resource="appcontext-service-db.xml" />

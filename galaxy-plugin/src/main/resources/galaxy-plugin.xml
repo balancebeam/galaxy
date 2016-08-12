@@ -3,7 +3,8 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
                         http://www.springframework.org/schema/beans/spring-beans.xsd
-                        ">
+                        "
+       default-autowire="byName" default-lazy-init="false">
 
     <bean id="galaxy.plugin.propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
         <property name="order" value="2" />
@@ -28,7 +29,7 @@
     </bean>
 
     <bean id="transactionRecoveryJobConfig" class="com.dangdang.ddframe.job.api.JobConfiguration">
-        <constructor-arg name="jobName" value="transactionRecoveryJob" />
+        <constructor-arg name="jobName" value="${sar.name}TxRecoveryJob" />
         <constructor-arg name="jobClass" value="io.anyway.galaxy.scheduler.TransactionRecoveryJob" />
         <constructor-arg name="shardingTotalCount" value="${transactionRecoveryJob.shardingTotalCount}" />
         <constructor-arg name="cron" value="${transactionRecoveryJob.cron}" />
@@ -36,7 +37,7 @@
     </bean>
 
 	<bean id="transactionRecoveryJob" class="io.anyway.galaxy.scheduler.TransactionRecoveryJob" init-method="init" />
-    
+
     <!-- <bean id="transactionRecoveryJob" class="com.dangdang.ddframe.job.spring.schedule.SpringJobScheduler" init-method="init">
         <constructor-arg ref="regCenter" />
         <constructor-arg>

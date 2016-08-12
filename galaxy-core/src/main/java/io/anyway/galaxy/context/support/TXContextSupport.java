@@ -8,22 +8,49 @@ import io.anyway.galaxy.context.TXContext;
  */
 public class TXContextSupport implements TXContext{
 
+    private long parentId;
+
     private long txId;
 
     private String serialNumber;
 
+    private String businessType;
+
+    private int txType;
+
     public TXContextSupport(){}
 
-    public TXContextSupport(long txId,String serialNumber){
+    public TXContextSupport(long parentId, String serialNumber){
+        this.parentId = parentId;
+        this.serialNumber = serialNumber;
+    }
+
+    public TXContextSupport(long parentId, long txId,String serialNumber){
+        this.parentId = parentId;
         this.txId= txId;
         this.serialNumber = serialNumber;
+    }
+
+    public TXContextSupport(long parentId, long txId,String serialNumber, String businessType){
+        this.parentId = parentId;
+        this.txId= txId;
+        this.serialNumber = serialNumber;
+        this.businessType = businessType;
+    }
+
+    @Override
+    public long getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(long parentId) {
+        this.parentId = parentId;
     }
 
     @Override
     public long getTxId() {
         return txId;
     }
-
 
     public void setTxId(long txId){
         this.txId= txId;
@@ -38,9 +65,30 @@ public class TXContextSupport implements TXContext{
         this.serialNumber = serialNumber;
     }
 
+    public String getBusinessType() {
+        return businessType;
+    }
+
+    public void setBusinessType(String businessType) {
+        this.businessType = businessType;
+    }
+
+    public int getTxType() {
+        return txType;
+    }
+
+    public void setTxType(int txType) {
+        this.txType = txType;
+    }
 
     @Override
     public String toString() {
-        return "{txId="+txId+",serialNumber="+serialNumber+"}";
+        return "TXContextSupport{" +
+                "parentId=" + parentId +
+                ", txId=" + txId +
+                ", serialNumber='" + serialNumber + '\'' +
+                ", businessType='" + businessType + '\'' +
+                ", txType=" + txType +
+                '}';
     }
 }

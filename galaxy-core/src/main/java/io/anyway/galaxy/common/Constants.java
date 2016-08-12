@@ -13,4 +13,10 @@ public interface Constants {
 
     String DEFAULT_MODULE_ID = "webapplication";
 
+    String KEY_23505 = "23505";
+
+    long TX_ROOT_ID = 0L;
+
+    long TX_MAIN_ID = 1L;
+
 }

@@ -13,9 +13,9 @@ public class TransactionInfo {
 
     private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 
-    private long txId;
+    private long txId = -1L;
 
-    private long parentId;
+    private long parentId = -1L;
 
     private String businessId;
 
@@ -29,9 +29,9 @@ public class TransactionInfo {
 
     private String context;
 
-    private String payload;
+    private Date nextRetryTime;
 
-    private int retried_count = -1;
+    private String retriedCount;
 
     private Date gmtCreated;
 
@@ -93,20 +93,20 @@ public class TransactionInfo {
         this.context = context;
     }
 
-    public String getPayload() {
-        return payload;
+    public Date getNextRetryTime() {
+        return nextRetryTime;
     }
 
-    public void setPayload(String payload) {
-        this.payload = payload;
+    public void setNextRetryTime(Date nextRetryTime) {
+        this.nextRetryTime = nextRetryTime;
     }
 
-    public int getRetried_count() {
-        return retried_count;
+    public String getRetriedCount() {
+        return retriedCount;
     }
 
-    public void setRetried_count(int retried_count) {
-        this.retried_count = retried_count;
+    public void setRetriedCount(String retriedCount) {
+        this.retriedCount = retriedCount;
     }
 
     public Date getGmtCreated() {
@@ -148,5 +148,22 @@ public class TransactionInfo {
     public void setModuleId(String moduleId) {
         this.moduleId = moduleId;
     }
-    
+
+    @Override
+    public String toString() {
+        return "TransactionInfo{" +
+                "txId=" + txId +
+                ", parentId=" + parentId +
+                ", businessId='" + businessId + '\'' +
+                ", businessType='" + businessType + '\'' +
+                ", moduleId='" + moduleId + '\'' +
+                ", txStatus=" + txStatus +
+                ", txType=" + txType +
+                ", context='" + context + '\'' +
+                ", nextRetryTime=" + nextRetryTime +
+                ", retriedCount='" + retriedCount + '\'' +
+                ", gmtCreated=" + gmtCreated +
+                ", gmtModified=" + gmtModified +
+                '}';
+    }
 }

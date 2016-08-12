@@ -6,7 +6,7 @@ import com.google.common.cache.CacheBuilder;
 import io.anyway.galaxy.domain.TransactionInfo;
 import io.anyway.galaxy.repository.TransactionRepository;
 
-import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -21,7 +21,7 @@ public abstract class CacheableTransactionRepository implements TransactionRepos
     private Cache<Long, TransactionInfo> transactionInfoCache;
 
     @Override
-    public int create(TransactionInfo transactionInfo) {
+    public int create(TransactionInfo transactionInfo) throws SQLException  {
         int result = doCreate(transactionInfo);
         if (result > 0) {
             putToCache(transactionInfo);
@@ -65,14 +65,14 @@ public abstract class CacheableTransactionRepository implements TransactionRepos
     }
 
     @Override
-    public TransactionInfo lockById(long txId) {
-        TransactionInfo transactionInfo = doLockById(txId);
+    public List<TransactionInfo> lockByModules(long parentId, List<String> modules) {
+        List<TransactionInfo> transactionInfos = doLockByModules(parentId, modules);
 
-        if (transactionInfo != null) {
-            putToCache(transactionInfo);
-        }
+//        for (TransactionInfo transactionInfo : transactionInfos) {
+//            putToCache(transactionInfo);
+//        }
 
-        return transactionInfo;
+        return transactionInfos;
     }
 
     @Override
@@ -87,9 +87,9 @@ public abstract class CacheableTransactionRepository implements TransactionRepos
     }
 
     @Override
-    public List<TransactionInfo> findSince(java.sql.Date date, int txStatus) {
+    public List<TransactionInfo> lock(TransactionInfo transactionInfo) {
 
-        List<TransactionInfo> transactionInfos = doFindSince(date, new Integer[]{txStatus});
+        List<TransactionInfo> transactionInfos = doFind(transactionInfo, true);
 
 //        for (TransactionInfo transactionInfo : transactionInfos) {
 //            putToCache(transactionInfo);
@@ -99,9 +99,21 @@ public abstract class CacheableTransactionRepository implements TransactionRepos
     }
 
     @Override
-    public List<TransactionInfo> findSince(java.sql.Date date, Integer[] txStatus) {
+    public List<TransactionInfo> find(TransactionInfo transactionInfo) {
 
-        List<TransactionInfo> transactionInfos = doFindSince(date, txStatus);
+        List<TransactionInfo> transactionInfos = doFind(transactionInfo, false);
+
+//        for (TransactionInfo transactionInfo : transactionInfos) {
+//            putToCache(transactionInfo);
+//        }
+
+        return transactionInfos;
+    }
+
+    @Override
+    public List<TransactionInfo> findSince(java.sql.Date date, Integer[] txStatus, String moduleId) {
+
+        List<TransactionInfo> transactionInfos = doFindSince(date, txStatus, moduleId);
 
         return transactionInfos;
     }
@@ -126,15 +138,17 @@ public abstract class CacheableTransactionRepository implements TransactionRepos
         this.expireDuration = durationInSeconds;
     }
 
-    protected abstract int doCreate( TransactionInfo transactionInfo);
+    protected abstract int doCreate( TransactionInfo transactionInfo) throws SQLException;
 
     protected abstract int doUpdate(TransactionInfo transactionInfo);
 
     protected abstract int doDelete(TransactionInfo transactionInfo);
 
-    protected abstract TransactionInfo doLockById( long txId);
+    protected abstract List<TransactionInfo> doLockByModules(long parentId, List<String> modules);
+
+    protected abstract List<TransactionInfo> doFind(TransactionInfo transactionInfo, boolean isLock);
 
     protected abstract TransactionInfo doFindById(long txId);
 
-    protected abstract List<TransactionInfo> doFindSince(java.sql.Date date, Integer[] txStatus);
+    protected abstract List<TransactionInfo> doFindSince(java.sql.Date date, Integer[] txStatus, String moduleId);
 }
