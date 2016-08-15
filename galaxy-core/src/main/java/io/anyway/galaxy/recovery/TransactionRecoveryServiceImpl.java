@@ -39,10 +39,10 @@ public class TransactionRecoveryServiceImpl implements TransactionRecoveryServic
     @Autowired
     private SpringContextUtil springContextUtil;
 
-    @Value("recovery.retry.interval")
+    @Value("${recovery.retry.interval}")
     private static long interval = 10 * 1000;
 
-    @Value("recovery.start.day")
+    @Value("${recovery.start.day}")
     private static int day = 7;
 
     @Override

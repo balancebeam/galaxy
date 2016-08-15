@@ -197,6 +197,11 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
             for (TransactionInfo info : infos) {
                 ctx.setTxId(info.getTxId());
                 try {
+                    if (info.getParentId() == Constants.TX_ROOT_ID) {
+                        // 主事务不参与回滚确认操作
+                        log.debug("Root transaction record, ignored in this version.");
+                        continue;
+                    }
                     if (validation(message, info)) {
                         ServiceExecutePayload payload = parsePayload(info);
                         //根据模块的ApplicationContext获取Bean对象
