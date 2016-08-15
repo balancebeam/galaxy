@@ -173,8 +173,10 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
 			StringBuilder builder = new StringBuilder();
 			builder.append(SELECT_DQL + " FROM TRANSACTION_INFO WHERE GMT_CREATED > ? AND ")
-					.append("(CASE WHEN NEXT_RETRY_TIME IS NOT NULL THEN NEXT_RETRY_TIME ELSE GMT_MODIFIED END) < ")
-					.append(getDateSubtSecSql(conn, 10)).append(" AND TX_STATUS ")
+					.append("(CASE WHEN NEXT_RETRY_TIME IS NOT NULL THEN NEXT_RETRY_TIME ELSE GMT_MODIFIED END) <= NOW() ")
+					/*.append("(CASE WHEN NEXT_RETRY_TIME IS NOT NULL THEN NEXT_RETRY_TIME ELSE GMT_MODIFIED END) < ")
+					.append(getDateSubtSecSql(conn, 10))*/
+					.append(" AND TX_STATUS ")
 					.append(getLimitSql(conn, 1000));
 
 			if (txStatus.length > 1) {
@@ -187,8 +189,6 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 					}
 				}
 				builder.append(")");
-			} else {
-				builder.append(" = " + txStatus[0]);
 			}
 			builder.append(" AND MODULE_ID = ? ");
 

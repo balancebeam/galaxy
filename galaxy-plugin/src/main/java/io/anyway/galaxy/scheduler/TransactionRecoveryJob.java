@@ -53,7 +53,7 @@ public class TransactionRecoveryJob extends AbstractBatchThroughputDataFlowElast
         List<Integer> shardingItems = new ArrayList<Integer>(shardingContext.getShardingItems().size());
         // 每个分片对应一个状态
         for (int sharding : shardingContext.getShardingItems()) {
-            if (sharding > 2) {
+            if (sharding >= statusMap.size()) {
                 break;
             }
             shardingItems.add(statusMap.get(sharding));
@@ -74,8 +74,9 @@ public class TransactionRecoveryJob extends AbstractBatchThroughputDataFlowElast
     private static Map<Integer, Integer> initStatus() {
         statusMap = new HashMap<Integer, Integer>();
         statusMap.put(0, TransactionStatusEnum.BEGIN.getCode());
-        statusMap.put(1, TransactionStatusEnum.CANCELLING.getCode());
-        statusMap.put(2, TransactionStatusEnum.CONFIRMING.getCode());
+        statusMap.put(1, TransactionStatusEnum.TRIED.getCode());
+        statusMap.put(2, TransactionStatusEnum.CANCELLING.getCode());
+        statusMap.put(3, TransactionStatusEnum.CONFIRMING.getCode());
         return statusMap;
     }
 
