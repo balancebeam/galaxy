@@ -41,7 +41,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			StringBuilder builder = new StringBuilder();
 			builder.append("INSERT INTO TRANSACTION_INFO " + "(TX_ID, PARENT_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE"
 					+ ", TX_STATUS, CONTEXT, RETRIED_COUNT, MODULE_ID, GMT_CREATED" + ", GMT_MODIFIED)"
-					+ " VALUES(?,?,?,?,?" + ",?,?,?,?,?," + getDateSql(conn) + ", " + getDateSql(conn) + ")");
+					+ " VALUES(?,?,?,?,?" + ",?,?,?,?," + getDateSql(conn) + ", " + getDateSql(conn) + ")");
 
 			stmt = conn.prepareStatement(builder.toString());
 
@@ -176,8 +176,8 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 					.append("(CASE WHEN NEXT_RETRY_TIME IS NOT NULL THEN NEXT_RETRY_TIME ELSE GMT_MODIFIED END) <= NOW() ")
 					/*.append("(CASE WHEN NEXT_RETRY_TIME IS NOT NULL THEN NEXT_RETRY_TIME ELSE GMT_MODIFIED END) < ")
 					.append(getDateSubtSecSql(conn, 10))*/
-					.append(" AND TX_STATUS ")
-					.append(getLimitSql(conn, 1000));
+					.append(" AND TX_STATUS ");
+					/*.append(getLimitSql(conn, 1000))*/
 
 			if (txStatus.length > 1) {
 				builder.append(" IN (");
@@ -189,7 +189,11 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 					}
 				}
 				builder.append(")");
+			} else if (txStatus.length == 1) {
+				builder.append(" = ");
+				builder.append(txStatus[0]);
 			}
+
 			builder.append(" AND MODULE_ID = ? ");
 
 			builder.append(" ORDER BY PARENT_ID, TX_ID");
@@ -338,19 +342,21 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			StringBuilder builder = new StringBuilder();
 			builder.append(SELECT_DQL + "  FROM TRANSACTION_INFO WHERE PARENT_ID = ? AND TX_ID <> 0 AND MODULE_ID ");
 
-			if (modules.size() > 0) {
+			if (modules.size() > 1) {
 				builder.append(" IN (");
 				for (int i = 0; i < modules.size(); i++) {
 					if (i == 0) {
-						builder.append(modules.get(i));
+						builder.append("'" + modules.get(i) + "'");
 					} else {
-						builder.append(",").append(modules.get(i));
+						builder.append(",").append("'" + modules.get(i) + "'");
 					}
 				}
 				builder.append(")");
+			} else if (modules.size() == 1) {
+				builder.append(" = '" + modules.get(0) + "'");
 			}
-			builder.append(" TX_STATUS NOT IN(").append(TransactionStatusEnum.CANCELLED).append(", ")
-					.append(TransactionStatusEnum.CONFIRMED)
+			builder.append(" AND TX_STATUS NOT IN(").append(TransactionStatusEnum.CANCELLED.getCode()).append(", ")
+					.append(TransactionStatusEnum.CONFIRMED.getCode())
 					.append(")");
 			builder.append(" FOR UPDATE NOWAIT");
 
@@ -384,9 +390,15 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 		transactionInfo.setTxStatus(resultSet.getInt(7));
 		transactionInfo.setContext(resultSet.getString(8));
 		transactionInfo.setRetriedCount(resultSet.getString(9));
-		transactionInfo.setNextRetryTime(new Date(resultSet.getTimestamp(10).getTime()));
-		transactionInfo.setGmtCreated(new Date(resultSet.getTimestamp(11).getTime()));
-		transactionInfo.setGmtModified(new Date(resultSet.getTimestamp(12).getTime()));
+		if (resultSet.getTimestamp(10) != null) {
+			transactionInfo.setNextRetryTime(new Date(resultSet.getTimestamp(10).getTime()));
+		}
+		if (resultSet.getTimestamp(11) != null) {
+			transactionInfo.setGmtCreated(new Date(resultSet.getTimestamp(11).getTime()));
+		}
+		if (resultSet.getTimestamp(12) != null) {
+			transactionInfo.setGmtModified(new Date(resultSet.getTimestamp(12).getTime()));
+		}
 
 		return transactionInfo;
 	}
@@ -427,9 +439,9 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 	private String getLimitSql(Connection conn, int num) throws Throwable{
 		String databaseName = getDatabaseName(conn).toLowerCase();
 		if (databaseName.equals(Constants.ORACLE.toLowerCase())) {
-			return " LIMIT " + num;
-		} else if (databaseName.equals(Constants.POSTGRESQL.toLowerCase())){
 			return " ROWNUM <= " + num;
+		} else if (databaseName.equals(Constants.POSTGRESQL.toLowerCase())){
+			return " LIMIT " + num;
 		}
 		throw new Exception("Not support database : " + databaseName);
 	}

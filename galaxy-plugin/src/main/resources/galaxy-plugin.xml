@@ -29,7 +29,7 @@
     </bean>
 
     <bean id="transactionRecoveryJobConfig" class="com.dangdang.ddframe.job.api.JobConfiguration">
-        <constructor-arg name="jobName" value="${sar.name}TxRecoveryJob" />
+        <constructor-arg name="jobName" value="${sar.name}-TxRecoveryJob" />
         <constructor-arg name="jobClass" value="io.anyway.galaxy.scheduler.TransactionRecoveryJob" />
         <constructor-arg name="shardingTotalCount" value="${transactionRecoveryJob.shardingTotalCount}" />
         <constructor-arg name="cron" value="${transactionRecoveryJob.cron}" />
@@ -38,18 +38,18 @@
 
 	<bean id="transactionRecoveryJob" class="io.anyway.galaxy.scheduler.TransactionRecoveryJob" init-method="init" />
 
-    <!-- <bean id="transactionRecoveryJob" class="com.dangdang.ddframe.job.spring.schedule.SpringJobScheduler" init-method="init">
+    <!--<bean id="transactionRecoveryJob" class="com.dangdang.ddframe.job.spring.schedule.SpringJobScheduler" init-method="init">
         <constructor-arg ref="regCenter" />
         <constructor-arg>
             <bean class="com.dangdang.ddframe.job.api.JobConfiguration">
-                <constructor-arg name="jobName" value="transactionRecoveryJob" />
+                <constructor-arg name="jobName" value="${sar.name}-TxRecoveryJob" />
                 <constructor-arg name="jobClass" value="io.anyway.galaxy.scheduler.TransactionRecoveryJob" />
                 <constructor-arg name="shardingTotalCount" value="${transactionRecoveryJob.shardingTotalCount}" />
                 <constructor-arg name="cron" value="${transactionRecoveryJob.cron}" />
                 <property name="description" value="${transactionRecoveryJob.description}" />
             </bean>
         </constructor-arg>
-    </bean> -->
+    </bean>-->
 
     <!--<job:bean id="transactionRecoveryJob" class="io.anyway.galaxy.scheduler.TransactionRecoveryJob"
               regCenter="regCenter"

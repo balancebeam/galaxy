@@ -24,7 +24,6 @@ import com.dangdang.ddframe.reg.base.CoordinatorRegistryCenter;
 /**
  * Created by xiong.j on 2016/7/29.
  */
-@Component
 public class TransactionRecoveryJob extends AbstractBatchThroughputDataFlowElasticJob<TransactionInfo> {
 
     private static Map<Integer, Integer> statusMap = initStatus();
@@ -37,7 +36,10 @@ public class TransactionRecoveryJob extends AbstractBatchThroughputDataFlowElast
     private JobConfiguration jobConfiguration;
 
     @Autowired
-    private TransactionRecoveryService transactionRecoveryService;
+    private static SpringContextUtil springContextUtil;
+
+    @Autowired
+    private static TransactionRecoveryService transactionRecoveryService;
 
     public void init(){
         new JobScheduler(regCenter, jobConfiguration).init();
@@ -47,7 +49,7 @@ public class TransactionRecoveryJob extends AbstractBatchThroughputDataFlowElast
     public List<TransactionInfo> fetchData(JobExecutionMultipleShardingContext shardingContext) {
 
         if (this.transactionRecoveryService == null) {
-            this.transactionRecoveryService = SpringContextUtil.getBean(Constants.DEFAULT_MODULE_ID, TransactionRecoveryService.class);
+            this.transactionRecoveryService = SpringContextUtil.getBean(springContextUtil.getModuleId(), TransactionRecoveryService.class);
         }
 
         List<Integer> shardingItems = new ArrayList<Integer>(shardingContext.getShardingItems().size());
@@ -81,4 +83,19 @@ public class TransactionRecoveryJob extends AbstractBatchThroughputDataFlowElast
     }
 
 
+    public void setRegCenter(CoordinatorRegistryCenter regCenter) {
+        this.regCenter = regCenter;
+    }
+
+    public void setJobConfiguration(JobConfiguration jobConfiguration) {
+        this.jobConfiguration = jobConfiguration;
+    }
+
+    public void setSpringContextUtil(SpringContextUtil springContextUtil) {
+        this.springContextUtil = springContextUtil;
+    }
+
+    public void setTransactionRecoveryService(TransactionRecoveryService transactionRecoveryService) {
+        this.transactionRecoveryService = transactionRecoveryService;
+    }
 }

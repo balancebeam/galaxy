@@ -8,9 +8,9 @@ import io.anyway.galaxy.context.TXContext;
  */
 public class TXContextSupport implements TXContext{
 
-    private long parentId;
+    private long parentId = -1L;
 
-    private long txId;
+    private long txId = -1L;
 
     private String serialNumber;
 
@@ -29,6 +29,13 @@ public class TXContextSupport implements TXContext{
         this.parentId = parentId;
         this.txId= txId;
         this.serialNumber = serialNumber;
+    }
+
+    public TXContextSupport(long parentId, String serialNumber, String businessType){
+        this.parentId = parentId;
+        this.txId= txId;
+        this.serialNumber = serialNumber;
+        this.businessType = businessType;
     }
 
     public TXContextSupport(long parentId, long txId,String serialNumber, String businessType){

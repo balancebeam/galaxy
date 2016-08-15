@@ -27,9 +27,12 @@ public class RepositoryRest {
     @RequestMapping(method = RequestMethod.POST)
     @ResponseBody
     public boolean purchase(@RequestBody  Map<String,Object> params)throws Exception {
-    	long parentId= Long.parseLong(params.get("parentId").toString());
+        long txId= Long.parseLong(params.get("txId").toString());
+        int txType = (Integer)(params.get("txType"));
+        String businessType = (String)params.get("businessType");
     	String serialNumber= (String)params.get("serialNumber");
-    	TXContext tx= new TXContextSupport(parentId,serialNumber);
+    	TXContext tx= new TXContextSupport(txId, serialNumber, businessType);
+
         long productId= Long.parseLong(params.get("productId").toString());
         long amount= Long.parseLong(params.get("amount").toString());
     	return repositoryService.decreaseRepository(tx,productId,amount);
