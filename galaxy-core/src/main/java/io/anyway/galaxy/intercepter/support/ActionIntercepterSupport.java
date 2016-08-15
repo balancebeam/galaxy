@@ -38,13 +38,13 @@ public class ActionIntercepterSupport implements ActionIntercepter{
     @Autowired
     private TransactionMessageService transactionMessageService;
 
-    @Value("tx.default.msg.retry.times")
+    @Value("${tx.default.msg.retry.times}")
     private int defaultMsgRetryTimes;
 
-    @Value("tx.default.cancel.retry.times")
+    @Value("${tx.default.cancel.retry.times}")
     private int defaultCancelRetryTimes;
 
-    @Value("tx.default.confirm.retry.times")
+    @Value("${tx.default.confirm.retry.times}")
     private int defaultConfirmRetryTimes;
 
     @Override
