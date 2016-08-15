@@ -118,7 +118,7 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
             updInfo = new TransactionInfo();
             updInfo.setParentId(info.getParentId());
             updInfo.setTxId(info.getTxId());
-            updInfo.setTxStatus(TransactionStatusEnum.getNextStatusCode(info.getTxStatus()));
+            updInfo.setTxStatus(TransactionStatusEnum.getNextStatusCode(message.getTxStatus()));
             if (updInfo.getTxStatus() == TransactionStatusEnum.UNKNOWN.getCode()) {
                 log.warn("Incorrect status, message:" + message);
                 return false;
@@ -173,7 +173,7 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
         txMsgTaskExecutor.execute(new Runnable() {
             @Override
             public void run() {
-            TransactionMessageService service = SpringContextUtil.getBean(Constants.DEFAULT_MODULE_ID, TransactionMessageService.class);
+            TransactionMessageService service = SpringContextUtil.getBean(springContextUtil.getModuleId(), TransactionMessageService.class);
             try {
                 service.handleMessage(message);
             } catch (Throwable e) {
@@ -242,7 +242,7 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
     private List<TransactionInfo> lockRecord(TransactionMessage message) throws Throwable{
         List<TransactionInfo> infos;
 
-        if (message.getParentId() > -1L) {
+        if (message.getTxId() > -1L) {
             // 定时任务调用
             TransactionInfo lockInfo = new TransactionInfo();
             lockInfo.setParentId(message.getParentId());

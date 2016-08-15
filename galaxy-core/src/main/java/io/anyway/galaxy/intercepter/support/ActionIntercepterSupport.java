@@ -67,6 +67,8 @@ public class ActionIntercepterSupport implements ActionIntercepter{
         TXContextSupport ctx= new TXContextSupport();
         ctx.setParentId(transactionInfo.getParentId());
         ctx.setTxId(transactionInfo.getTxId());
+        ctx.setTxType(transactionInfo.getTxType());
+        ctx.setBusinessType(transactionInfo.getBusinessType());
         ctx.setSerialNumber(serialNumber);
         return ctx;
     }
@@ -74,6 +76,7 @@ public class ActionIntercepterSupport implements ActionIntercepter{
     @Override
     public void tryAction(TXContext ctx) throws Throwable {
         TransactionInfo transactionInfo = new TransactionInfo();
+        transactionInfo.setParentId(ctx.getParentId());
         transactionInfo.setTxId(ctx.getTxId());
         transactionInfo.setTxStatus(TransactionStatusEnum.TRIED.getCode());
         transactionRepository.update(transactionInfo);
@@ -102,6 +105,7 @@ public class ActionIntercepterSupport implements ActionIntercepter{
         while(i > 0) {
             try {
                 transactionRepository.create(transactionInfo);
+                break;
             } catch (SQLException e) {
                 if (e.getSQLState().equals(Constants.KEY_23505)) {
                     log.warn("Create root transactionInfo record failed and retry:", e);

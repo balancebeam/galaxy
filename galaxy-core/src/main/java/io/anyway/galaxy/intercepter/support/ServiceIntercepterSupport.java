@@ -44,17 +44,17 @@ public class ServiceIntercepterSupport implements ServiceIntercepter {
     @Override
     public void tryService(TXContext ctx,ServiceExecutePayload bean) throws Throwable{
         TransactionInfo transactionInfo = new TransactionInfo();
-        transactionInfo.setParentId(ctx.getTxId());
-        transactionInfo.setTxId(Constants.TX_MAIN_ID);
+        transactionInfo.setParentId(ctx.getParentId());
 
         // TODO 对于因子事务单元超时引起的事务状态不一致情况，由管控平台统一检查处理?
-        /*if (transactionRepository.find(transactionInfo).size() > 0) {
+        /*transactionInfo.setTxId(Constants.TX_MAIN_ID);
+        if (transactionRepository.find(transactionInfo).size() > 0) {
             throw new DistributedTransactionException("Received cancel command from main transaction unit, interrupt current transaction!");
         }*/
 
         // 插入事务数据
         transactionInfo = new TransactionInfo();
-        transactionInfo.setParentId(ctx.getTxId());
+        transactionInfo.setParentId(ctx.getParentId());
         transactionInfo.setTxId(TransactionIdGenerator.next());
         transactionInfo.setContext(JSON.toJSONString(bean)); // 当前调用上下文环境
         transactionInfo.setBusinessId(ctx.getSerialNumber());  // 业务流水号
@@ -73,6 +73,7 @@ public class ServiceIntercepterSupport implements ServiceIntercepter {
     @Override
     public void confirmService(TXContext ctx) throws Throwable{
         TransactionInfo transactionInfo = new TransactionInfo();
+        transactionInfo.setParentId(ctx.getParentId());
         transactionInfo.setTxId(ctx.getTxId());
         transactionInfo.setTxStatus(TransactionStatusEnum.CONFIRMED.getCode());
         transactionRepository.update(transactionInfo);
@@ -81,6 +82,7 @@ public class ServiceIntercepterSupport implements ServiceIntercepter {
     @Override
     public void cancelService(TXContext ctx) throws Throwable{
         TransactionInfo transactionInfo = new TransactionInfo();
+        transactionInfo.setParentId(ctx.getParentId());
         transactionInfo.setTxId(ctx.getTxId());
         transactionInfo.setTxStatus(TransactionStatusEnum.CANCELLED.getCode());
         transactionRepository.update(transactionInfo);
@@ -91,6 +93,7 @@ public class ServiceIntercepterSupport implements ServiceIntercepter {
         while(i > 0) {
             try {
                 transactionRepository.create(transactionInfo);
+                break;
             } catch (SQLException e) {
                 if (e.getSQLState().equals(Constants.KEY_23505)) {
                     log.warn("Create child transactionInfo record failed and retry:", e);
