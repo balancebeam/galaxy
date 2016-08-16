@@ -69,11 +69,12 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
             log.warn("Process failed, update retry count, TransactionInfo=" + info);
         }
         //发消息成功后更改TX的状态
-        TransactionInfo transactionInfo = new TransactionInfo();
-        transactionInfo.setTxId(ctx.getTxId());
-        transactionInfo.setTxStatus(TransactionStatusEnum.getNextStatus(txStatus).getCode());
-        transactionRepository.update(transactionInfo);
-        log.info("Update Action TX "+ TransactionStatusEnum.getMemo(transactionInfo.getTxStatus()) +", ctx: " + ctx);
+        TransactionInfo updInfo = new TransactionInfo();
+        updInfo.setParentId(ctx.getParentId());
+        updInfo.setTxId(ctx.getTxId());
+        updInfo.setTxStatus(TransactionStatusEnum.getNextStatus(txStatus).getCode());
+        transactionRepository.update(updInfo);
+        log.info("Update Action TX "+ TransactionStatusEnum.getMemo(updInfo.getTxStatus()) +", ctx: " + ctx);
     }
 
     public boolean isValidMessage(TransactionMessage message) throws Throwable {
@@ -89,9 +90,12 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
         TransactionInfo updInfo;
         int successCount = 0;
         for (TransactionInfo info : infos) {
+
+            if (info.getParentId() == Constants.TX_ROOT_ID) continue;
+
             if (message.getTxStatus() == TransactionStatusEnum.CONFIRMING.getCode()) {
                 if (info.getTxType() != TransactionTypeEnum.TCC.getCode()) {
-                    log.warn("Not TCC type transaction, can't process confirm action, message: " + message);
+                    log.warn("Not TCC type transaction, can't perform confirm action, message: " + message);
                     return false;
                 }
                 if (info.getTxStatus() == TransactionStatusEnum.CONFIRMING.getCode()) {
@@ -113,16 +117,10 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
                 }
             }
 
-            if (info.getParentId() == Constants.TX_ROOT_ID) continue;
-
             updInfo = new TransactionInfo();
             updInfo.setParentId(info.getParentId());
             updInfo.setTxId(info.getTxId());
-            updInfo.setTxStatus(TransactionStatusEnum.getNextStatusCode(message.getTxStatus()));
-            if (updInfo.getTxStatus() == TransactionStatusEnum.UNKNOWN.getCode()) {
-                log.warn("Incorrect status, message:" + message);
-                return false;
-            }
+            updInfo.setTxStatus(message.getTxStatus());
             transactionRepository.update(updInfo);
             successCount ++;
             log.info("Valid message and saved to db: " + message + ", status=" + TransactionStatusEnum.getMemo(message.getTxStatus()));

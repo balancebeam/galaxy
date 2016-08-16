@@ -5,6 +5,9 @@ package io.anyway.galaxy.common;
  */
 
 public enum TransactionTypeEnum {
+
+    UNKNOWN(-1, "unknown"),
+
     TC(0, "TC型事务"),
 
     TCC(1, "TCC型事务"),
@@ -39,6 +42,6 @@ public enum TransactionTypeEnum {
     			return type.memo;
     		}
     	}
-    	return "unknow";
+    	return UNKNOWN.getMemo();
     }
 }

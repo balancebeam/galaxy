@@ -7,7 +7,7 @@ package io.anyway.galaxy.common;
 public enum TransactionStatusEnum {
     //SUCCESS(0, "正常完成"),
 
-    UNKNOWN(-1, "错误状态"),
+    UNKNOWN(-1, "unknown"),
 
     BEGIN(1, "事务开始"),
 
@@ -50,7 +50,7 @@ public enum TransactionStatusEnum {
     			return type.memo;
     		}
     	}
-    	return "unknow";
+    	return UNKNOWN.getMemo();
     }
 
     public static TransactionStatusEnum getNextStatus(TransactionStatusEnum txStatus){

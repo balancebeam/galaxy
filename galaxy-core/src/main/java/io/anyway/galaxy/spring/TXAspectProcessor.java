@@ -152,7 +152,8 @@ public class TXAspectProcessor implements Ordered,ResourceLoaderAware,Applicatio
             //更改TX记录状态为TRIED
             if (logger.isInfoEnabled()) {
                 Method method= pjp.getTarget().getClass().getDeclaredMethod(actionMethod.getName(),actionMethod.getParameterTypes());
-                logger.info("Insert TX BEGIN, TXContext:" + ctx+", actionMethod: "+method.getDeclaringClass().getName()+"."+method.getName()+", actionExecutePayload: "+payload);
+                logger.info("Main transaction start and save 'begin' status to db, TXContext:" + ctx+", actionMethod: "
+                        + method.getDeclaringClass().getName()+"."+method.getName()+", actionExecutePayload: "+payload);
             }
 
             //绑定到ThreadLocal中
@@ -198,7 +199,8 @@ public class TXAspectProcessor implements Ordered,ResourceLoaderAware,Applicatio
             actionIntercepter.tryAction(ctx);
             if (logger.isInfoEnabled()) {
                 Method method= pjp.getTarget().getClass().getDeclaredMethod(actionMethod.getName(),actionMethod.getParameterTypes());
-                logger.info("Update TX TRIED, TXContext:" + ctx+", actionMethod: "+method.getDeclaringClass().getName()+"."+method.getName());
+                logger.info("Main transaction 'try' succeed and save 'tried' status to db, TXContext:" + ctx+", actionMethod: "
+                        + method.getDeclaringClass().getName()+"."+method.getName());
             }
             return result;
 
@@ -266,7 +268,8 @@ public class TXAspectProcessor implements Ordered,ResourceLoaderAware,Applicatio
         serviceIntercepter.tryService(ctx,payload);
         if (logger.isInfoEnabled()) {
             Method method= pjp.getTarget().getClass().getDeclaredMethod(tryMethod.getName(),tryMethod.getParameterTypes());
-            logger.info("Insert TX TRIED, TXContext:" + ctx+", tryMethod: "+method.getDeclaringClass().getName()+"."+method.getName()+", serviceExecutePayload: "+payload);
+            logger.info("Child transaction 'try' succeed and save 'tried' status to db, TXContext:" + ctx+", tryMethod: "
+                    + method.getDeclaringClass().getName()+"."+method.getName()+", serviceExecutePayload: "+payload);
         }
         return result;
     }
@@ -300,7 +303,8 @@ public class TXAspectProcessor implements Ordered,ResourceLoaderAware,Applicatio
         if (logger.isInfoEnabled()) {
             Method method= ((MethodSignature) pjp.getSignature()).getMethod();
             method= pjp.getTarget().getClass().getDeclaredMethod(method.getName(),method.getParameterTypes());
-            logger.info("Update TX CONFIRMED, TXContext:" + ctx+", confirmMethod: "+method.getDeclaringClass().getName()+"."+method.getName());
+            logger.info("Child transaction 'confirm' succeed and save 'cancelled' status to db, TXContext:" + ctx+", confirmMethod: "
+                    + method.getDeclaringClass().getName()+"."+method.getName());
         }
         return result;
     }
@@ -334,7 +338,8 @@ public class TXAspectProcessor implements Ordered,ResourceLoaderAware,Applicatio
         if (logger.isInfoEnabled()) {
             Method method= ((MethodSignature) pjp.getSignature()).getMethod();
             method= pjp.getTarget().getClass().getDeclaredMethod(method.getName(),method.getParameterTypes());
-            logger.info("Update TX CANCELLED, TXContext:" + ctx+", cancelMethod: "+method.getDeclaringClass().getName()+"."+method.getName());
+            logger.info("Child transaction 'cancel' succeed and save 'cancelled' status to db, TXContext:" + ctx+", cancelMethod: "
+                    + method.getDeclaringClass().getName()+"."+method.getName());
         }
         return result;
     }
