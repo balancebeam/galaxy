@@ -65,7 +65,7 @@ public class KafkaMessageConsumer implements InitializingBean,DisposableBean{
             logger.info("crete kafka consumer: "+consumer+" ,subscribe topic: galaxy-tx-message");
         }
 
-        Thread thread= new Thread(){
+        final Thread thread= new Thread(){
             @Override
             public void run() {
                 for (; running; ) {
@@ -91,6 +91,11 @@ public class KafkaMessageConsumer implements InitializingBean,DisposableBean{
                         }
                     } catch (Throwable e) {
                         logger.error(e);
+                        try {
+                            Thread.sleep(5000);
+                        } catch (InterruptedException e1) {
+                            // e1.printStackTrace();
+                        }
                     }
                 }
             }

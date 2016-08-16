@@ -2,6 +2,7 @@ package io.anyway.galaxy.domain;
 
 import com.alibaba.fastjson.JSON;
 import io.anyway.galaxy.common.TransactionStatusEnum;
+import io.anyway.galaxy.exception.DistributedTransactionException;
 import lombok.*;
 
 /**
@@ -10,36 +11,34 @@ import lombok.*;
 @Setter
 @Getter
 @ToString
-@RequiredArgsConstructor
+@NoArgsConstructor
 public class RetryCount {
 
     // default tried retry count
-    private final int dMsg;
+    private int dMsg;
 
     // current tried retry count
     private int msg;
 
     // default cancel retry count
-    private final int dCancel;
+    private int dCancel;
 
     // current cancel retry count
     private int cancel;
 
     // default confirm retry count
-    private final int dConfirm;
+    private int dConfirm;
 
     // current cancel retry count
     private int confirm;
 
-    /**
-     * 创建一个实例
-     * @param dMsg
-     * @param dCancel
-     * @param dConfirm
-     * @return
-     */
-    public static RetryCount CreateRetryCount(int dMsg, int dCancel, int dConfirm) {
-        return new RetryCount(dMsg, dCancel, dConfirm);
+    public RetryCount(int dMsg, int dCancel, int dConfirm) {
+        this.dMsg = dMsg;
+        this.dCancel = dCancel;
+        this.dConfirm = dConfirm;
+        this.msg = dMsg;
+        this.cancel = dCancel;
+        this.confirm = dConfirm;
     }
 
     /**
@@ -56,8 +55,9 @@ public class RetryCount {
             return retryCount.getDCancel();
         } else if (txStatus == TransactionStatusEnum.CONFIRMING.getCode()) {
             return retryCount.getDConfirm();
+        } else {
+            throw new DistributedTransactionException("Not support status=" + txStatus + " in here");
         }
-        return 0;
     }
 
     /**
@@ -74,8 +74,9 @@ public class RetryCount {
             return retryCount.getCancel();
         } else if (txStatus == TransactionStatusEnum.CONFIRMING.getCode()) {
             return retryCount.getConfirm();
+        } else {
+            throw new DistributedTransactionException("Not support status=" + txStatus + " in here");
         }
-        return 0;
     }
 
     /**
@@ -89,18 +90,17 @@ public class RetryCount {
         if (txStatus == TransactionStatusEnum.BEGIN.getCode()) {
             retryCount.setMsg(retryCount.getMsg() - 1);
         } else if (txStatus == TransactionStatusEnum.CANCELLING.getCode()) {
-            retryCount.setMsg(retryCount.getCancel() - 1);
+            retryCount.setCancel(retryCount.getCancel() - 1);
         } else if (txStatus == TransactionStatusEnum.CONFIRMING.getCode()) {
-            retryCount.setMsg(retryCount.getConfirm() - 1);
+            retryCount.setConfirm(retryCount.getConfirm() - 1);
+        } else {
+            throw new DistributedTransactionException("Not support status=" + txStatus + " in here");
         }
         return JSON.toJSONString(retryCount);
     }
 
     public static void main(String args[]){
-        RetryCount r = new RetryCount(999, 999, 999);
-        r.setCancel(999);
-        r.setConfirm(999);
-        r.setMsg(999);
+        RetryCount r = new RetryCount(5, 5, 3);
         System.out.println(JSON.toJSONString(r));
     }
 }

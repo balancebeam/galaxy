@@ -53,4 +53,7 @@
 		<property name="dataSource" ref="dataSource"></property>
 	</bean>
 
+	<!-- Mock bean -->
+	<bean id="messageProducer" class="common.MockMessageProducer" />
+
 </beans>

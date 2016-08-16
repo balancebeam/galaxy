@@ -62,11 +62,12 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
             messageProducer.sendMessage(message);
         } catch (Exception e){
             // 更新重试信息
+            log.warn("Process 'handleMessage' failed, TXContext=" + ctx, e);
             TransactionInfo info = new TransactionInfo();
             info.setTxId(ctx.getTxId());
             info.setParentId(ctx.getParentId());
             updateRetryCount(transactionRepository.find(info).get(0));
-            log.warn("Process failed, update retry count, TransactionInfo=" + info);
+            return;
         }
         //发消息成功后更改TX的状态
         TransactionInfo updInfo = new TransactionInfo();
@@ -74,7 +75,7 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
         updInfo.setTxId(ctx.getTxId());
         updInfo.setTxStatus(TransactionStatusEnum.getNextStatus(txStatus).getCode());
         transactionRepository.update(updInfo);
-        log.info("Update Action TX "+ TransactionStatusEnum.getMemo(updInfo.getTxStatus()) +", ctx: " + ctx);
+        log.info("Update Action TX status="+ TransactionStatusEnum.getMemo(updInfo.getTxStatus()) +", ctx=" + ctx);
     }
 
     public boolean isValidMessage(TransactionMessage message) throws Throwable {
@@ -182,6 +183,7 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
     }
 
     @Transactional
+    // TODO 如果一个TX中同一个module参与多次，出现多条事务数据，此处事务需拆分处理
     public void handleMessage(TransactionMessage message) throws Throwable {
         try {
             //从消息中获取事务的标识和业务序列号
@@ -228,8 +230,8 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
                     }
                 } catch (Exception e){
                     // 更新重试信息
+                    log.warn("Process 'handleMessage' failed, TransactionInfo=" + info, e);
                     updateRetryCount(info);
-                    log.warn("Process failed, update retry count, TransactionInfo=" + info);
                 }
             }
         } finally {
@@ -276,9 +278,10 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
         updInfo.setTxId(info.getTxId());
         RetryCount retryCount = JSON.parseObject(info.getRetriedCount(), RetryCount.class);
         updInfo.setRetriedCount(retryCount.getNextRetryTimes(retryCount, info.getTxStatus()));
-        updInfo.setNextRetryTime(getNextRetryTime(retryCount, updInfo));
+        updInfo.setNextRetryTime(getNextRetryTime(retryCount, info));
 
         transactionRepository.update(updInfo);
+        log.info("Update retry count, TransactionInfo=" + info);
     }
 
     private ServiceExecutePayload parsePayload(TransactionInfo transactionInfo) {

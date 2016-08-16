@@ -61,7 +61,7 @@ public class ActionIntercepterSupport implements ActionIntercepter{
         transactionInfo.setTxType(bean.getTxType().getCode()); // TC | TCC
         transactionInfo.setTxStatus(TransactionStatusEnum.BEGIN.getCode()); //begin状态
         transactionInfo.setRetriedCount(JSON.toJSONString(  // 设置重试次数
-                RetryCount.CreateRetryCount(defaultMsgRetryTimes, defaultCancelRetryTimes, defaultConfirmRetryTimes)));
+                new RetryCount(defaultMsgRetryTimes, defaultCancelRetryTimes, defaultConfirmRetryTimes)));
         createTransactionInfo(transactionInfo);
         // 设置事务上下文
         TXContextSupport ctx= new TXContextSupport();
@@ -87,7 +87,7 @@ public class ActionIntercepterSupport implements ActionIntercepter{
         try {
             transactionMessageService.sendMessage(ctx, TransactionStatusEnum.CONFIRMING);
         } catch (Throwable t) {
-            log.warn("Send confirm message failed, waiting job retry. TXContext=", ctx);
+            log.warn("Send confirm message failed, waiting job retry. TXContext=" + ctx, t);
         }
     }
 
@@ -96,7 +96,7 @@ public class ActionIntercepterSupport implements ActionIntercepter{
         try {
             transactionMessageService.sendMessage(ctx, TransactionStatusEnum.CANCELLING);
         } catch (Throwable t) {
-            log.warn("Send cancel message failed, waiting job retry. TXContext=", ctx);
+            log.warn("Send cancel message failed, waiting job retry. TXContext=" + ctx, t);
         }
     }
 

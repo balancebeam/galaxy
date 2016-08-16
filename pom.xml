@@ -46,6 +46,7 @@
 		<jetty.version>8.1.0.RC5</jetty.version>
 		<javassist.version>3.20.0-GA</javassist.version>
 		<elastic-jobx.version>1.0.0</elastic-jobx.version>
+		<mockit.version>1.9.5</mockit.version>
 	</properties>
 
 	<dependencyManagement>
@@ -56,6 +57,13 @@
 				<artifactId>junit</artifactId>
 				<version>${junit.version}</version>
 			</dependency>
+			<!-- https://mvnrepository.com/artifact/org.mockito/mockito-all -->
+			<dependency>
+				<groupId>org.mockito</groupId>
+				<artifactId>mockito-all</artifactId>
+				<version>${mockit.version}</version>
+			</dependency>
+
 			<!-- spring -->
 			<dependency>
 				<groupId>org.springframework</groupId>

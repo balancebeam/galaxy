@@ -63,7 +63,7 @@ public class ServiceIntercepterSupport implements ServiceIntercepter {
         transactionInfo.setTxType(ctx.getTxType());  // TC | TCC
         transactionInfo.setTxStatus(TransactionStatusEnum.TRIED.getCode());
         transactionInfo.setRetriedCount(JSON.toJSONString(  // 设置重试次数
-                RetryCount.CreateRetryCount(defaultMsgRetryTimes, defaultCancelRetryTimes, defaultConfirmRetryTimes)));
+                new RetryCount(defaultMsgRetryTimes, defaultCancelRetryTimes, defaultConfirmRetryTimes)));
         createTransactionInfo(transactionInfo);
         // 设置事务上下文
         ((TXContextSupport)ctx).setParentId(transactionInfo.getParentId());
