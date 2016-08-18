@@ -118,7 +118,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 				stmt.setString(++condition, transactionInfo.getContext());
 			}
 			if (transactionInfo.getNextRetryTime() != null) {
-				stmt.setDate(++condition, transactionInfo.getNextRetryTime());
+				stmt.setTimestamp(++condition, new Timestamp(transactionInfo.getNextRetryTime().getTime()));
 			}
 			if (!Strings.isNullOrEmpty(transactionInfo.getRetriedCount())) {
 				stmt.setString(++condition, transactionInfo.getRetriedCount());
@@ -208,12 +208,12 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			builderOuter.append(") tx ORDER BY PARENT_ID, TX_ID");
 
 			stmt = conn.prepareStatement(builderOuter.toString());
-			stmt.setDate(1, date);
+			stmt.setTimestamp(1, new Timestamp(date.getTime()));
 			stmt.setString(2, moduleId);
-            stmt.setDate(3, new Date(System.currentTimeMillis()));
-            stmt.setDate(4, date);
+            stmt.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
+            stmt.setTimestamp(4, new Timestamp(date.getTime()));
             stmt.setString(5, moduleId);
-            stmt.setDate(6, DateUtil.getPrevSec(beginTimeoutSecond));
+            stmt.setTimestamp(6, DateUtil.getPrevSecTimestamp(beginTimeoutSecond));
 
 			ResultSet resultSet = stmt.executeQuery();
 			while (resultSet.next()) {
@@ -294,7 +294,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 				stmt.setInt(++condition, transactionInfo.getTxStatus());
 			}
 			if (transactionInfo.getGmtCreated() != null) {
-				stmt.setDate(++condition, transactionInfo.getGmtCreated());
+				stmt.setTimestamp(++condition, new Timestamp(transactionInfo.getGmtCreated().getTime()));
 			}
 
 			ResultSet resultSet = stmt.executeQuery();
@@ -480,7 +480,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
 			stmt = conn.prepareStatement(builder.toString());
 
-			stmt.setDate(1, date);
+			stmt.setTimestamp(1, new Timestamp(date.getTime()));
 
 			ResultSet resultSet = stmt.executeQuery();
 

@@ -1,6 +1,7 @@
 package io.anyway.galaxy.util;
 
 import java.sql.Date;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
@@ -27,8 +28,12 @@ public class DateUtil {
 		return new java.sql.Date(cal.getTimeInMillis());
 	}
 
-	public static java.sql.Date getPrevSec(int interval){
+	public static java.sql.Date getPrevSecDate(int interval){
 		return new java.sql.Date(System.currentTimeMillis() - SECOND*interval);
+	}
+
+	public static Timestamp getPrevSecTimestamp(int interval){
+		return new Timestamp(System.currentTimeMillis() - SECOND*interval);
 	}
 
 	public static void main(String args[]){

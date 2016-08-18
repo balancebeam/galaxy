@@ -285,7 +285,7 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
             updInfo.setNextRetryTime(getNextRetryTime(retryCount, info));
         }
         transactionRepository.update(updInfo);
-        log.info("Update retry count, TransactionInfo=" + info);
+        log.info("Update retry count, TransactionInfo=" + updInfo);
     }
 
     private ServiceExecutePayload parsePayload(TransactionInfo transactionInfo) {
