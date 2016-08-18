@@ -6,7 +6,9 @@ import io.anyway.galaxy.common.TransactionStatusEnum;
 import io.anyway.galaxy.domain.TransactionInfo;
 import io.anyway.galaxy.exception.DistributedTransactionException;
 import io.anyway.galaxy.spring.DataSourceAdaptor;
+import io.anyway.galaxy.util.DateUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.jdbc.support.JdbcUtils;
 import org.springframework.stereotype.Repository;
@@ -27,7 +29,10 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
 	private static final String SELECT_DQL = "SELECT TX_ID, PARENT_ID, MODULE_ID, BUSINESS_ID, BUSINESS_TYPE, TX_TYPE, TX_STATUS, CONTEXT, RETRIED_COUNT, NEXT_RETRY_TIME, GMT_CREATED, GMT_MODIFIED";
 
-	@Autowired
+    @Value("${tx.begin.timeout.second}")
+    private int beginTimeoutSecond = 600;
+
+    @Autowired
 	private DataSourceAdaptor dataSourceAdaptor;
 
 	protected int doCreate(TransactionInfo transactionInfo) throws SQLException  {
@@ -171,12 +176,11 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
 		try {
 
+			StringBuilder builderOuter = new StringBuilder();
+			builderOuter.append(SELECT_DQL + " FROM (");
+
 			StringBuilder builder = new StringBuilder();
-			builder.append(SELECT_DQL + " FROM TRANSACTION_INFO WHERE GMT_CREATED > ? AND ")
-					.append("(CASE WHEN NEXT_RETRY_TIME IS NOT NULL THEN NEXT_RETRY_TIME ELSE GMT_MODIFIED END) <= NOW() ")
-					/*.append("(CASE WHEN NEXT_RETRY_TIME IS NOT NULL THEN NEXT_RETRY_TIME ELSE GMT_MODIFIED END) < ")
-					.append(getDateSubtSecSql(conn, 10))*/
-					.append(" AND TX_STATUS ");
+			builder.append(SELECT_DQL + " FROM TRANSACTION_INFO WHERE GMT_CREATED > ? AND TX_STATUS");
 					/*.append(getLimitSql(conn, 1000))*/
 
 			if (txStatus.length > 1) {
@@ -194,13 +198,22 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 				builder.append(txStatus[0]);
 			}
 
+			builder.append(" AND TX_STATUS <> " + TransactionStatusEnum.MANUAL_CANCEL_WAIT.getCode());
+			builder.append(" AND TX_STATUS <> " + TransactionStatusEnum.MANUAL_CONFIRM_WAIT.getCode());
 			builder.append(" AND MODULE_ID = ? ");
 
-			builder.append(" ORDER BY PARENT_ID, TX_ID");
+			builderOuter.append(builder).append(" AND NEXT_RETRY_TIME <= ? AND NEXT_RETRY_TIME IS NOT NULL");
+			builderOuter.append(" UNION ALL ").append(builder)
+					.append(" AND GMT_MODIFIED <= ? ").append("AND NEXT_RETRY_TIME IS NULL");
+			builderOuter.append(") tx ORDER BY PARENT_ID, TX_ID");
 
-			stmt = conn.prepareStatement(builder.toString());
+			stmt = conn.prepareStatement(builderOuter.toString());
 			stmt.setDate(1, date);
 			stmt.setString(2, moduleId);
+            stmt.setDate(3, new Date(System.currentTimeMillis()));
+            stmt.setDate(4, date);
+            stmt.setString(5, moduleId);
+            stmt.setDate(6, DateUtil.getPrevSec(beginTimeoutSecond));
 
 			ResultSet resultSet = stmt.executeQuery();
 			while (resultSet.next()) {

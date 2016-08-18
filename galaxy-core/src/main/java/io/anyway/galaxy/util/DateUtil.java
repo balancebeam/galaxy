@@ -26,7 +26,11 @@ public class DateUtil {
 		cal.set(Calendar.SECOND, 0);
 		return new java.sql.Date(cal.getTimeInMillis());
 	}
-	
+
+	public static java.sql.Date getPrevSec(int interval){
+		return new java.sql.Date(System.currentTimeMillis() - SECOND*interval);
+	}
+
 	public static void main(String args[]){
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");		
 		System.out.println(sdf.format(new Date(System.currentTimeMillis())));

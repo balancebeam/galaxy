@@ -1,5 +1,7 @@
 package io.anyway.galaxy.context;
 
+import java.util.Date;
+
 /**
  * Created by yangzz on 16/7/21.
  */
@@ -27,5 +29,16 @@ public interface TXContext extends SerialNumberGenerator {
      * @return
      */
     int getTxType();
+
+    /**
+     * 超时时间
+     * @return
+     */
+    long getTimeout();
+
+    /**
+     *
+     */
+    Date getCallTime();
 }
 

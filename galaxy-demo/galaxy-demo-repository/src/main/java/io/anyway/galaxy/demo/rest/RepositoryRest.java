@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import java.util.Date;
 import java.util.Map;
 
 /**
@@ -30,8 +31,18 @@ public class RepositoryRest {
         long txId= Long.parseLong(params.get("txId").toString());
         int txType = (Integer)(params.get("txType"));
         String businessType = (String)params.get("businessType");
-    	String serialNumber= (String)params.get("serialNumber");
-    	TXContext tx= new TXContextSupport(txId, serialNumber, businessType);
+        String serialNumber= (String)params.get("serialNumber");
+        Date callTime = null;
+        if (params.get("callTime") != null) {
+            callTime = new Date((Long)params.get("callTime"));
+        }
+        long timeout = -1L;
+        if (params.get("timeout") != null) {
+            timeout = Long.parseLong(params.get("timeout").toString());
+        }
+        TXContextSupport tx= new TXContextSupport(txId, serialNumber, businessType);
+        tx.setTimeout(timeout);
+        tx.setCallTime(callTime);
 
         long productId= Long.parseLong(params.get("productId").toString());
         long amount= Long.parseLong(params.get("amount").toString());

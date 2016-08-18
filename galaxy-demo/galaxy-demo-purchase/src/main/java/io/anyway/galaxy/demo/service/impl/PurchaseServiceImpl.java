@@ -50,6 +50,8 @@ public class PurchaseServiceImpl implements PurchaseService {
         final JSONObject request= new JSONObject();
         request.put("txId",ctx.getTxId());
         request.put("txType",ctx.getTxType());
+        request.put("timeout",5);
+        request.put("callTime",System.currentTimeMillis());
         request.put("businessType",ctx.getBusinessType());
         request.put("serialNumber",ctx.getSerialNumber());
         request.put("productId",productId);

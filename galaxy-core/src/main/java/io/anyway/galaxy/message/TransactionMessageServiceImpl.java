@@ -96,7 +96,7 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
 
             if (message.getTxStatus() == TransactionStatusEnum.CONFIRMING.getCode()) {
                 if (info.getTxType() != TransactionTypeEnum.TCC.getCode()) {
-                    log.warn("Not TCC type transaction, can't perform confirm action, message: " + message);
+                    log.warn("Not 'TCC' type transaction, can't perform confirm action, message: " + message);
                     return false;
                 }
                 if (info.getTxStatus() == TransactionStatusEnum.CONFIRMING.getCode()) {
@@ -277,9 +277,13 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
         updInfo.setParentId(info.getParentId());
         updInfo.setTxId(info.getTxId());
         RetryCount retryCount = JSON.parseObject(info.getRetriedCount(), RetryCount.class);
-        updInfo.setRetriedCount(retryCount.getNextRetryTimes(retryCount, info.getTxStatus()));
-        updInfo.setNextRetryTime(getNextRetryTime(retryCount, info));
-
+        if (retryCount.getCurrentRetryTimes(retryCount, info.getTxStatus()) == 0) {
+            // 重试次试为0，设为手动模式
+            updInfo.setTxStatus(TransactionStatusEnum.getManulStatusCode(info.getTxStatus()));
+        } else {
+            updInfo.setRetriedCount(retryCount.getNextRetryTimes(retryCount, info.getTxStatus()));
+            updInfo.setNextRetryTime(getNextRetryTime(retryCount, info));
+        }
         transactionRepository.update(updInfo);
         log.info("Update retry count, TransactionInfo=" + info);
     }

@@ -1,5 +1,6 @@
 package io.anyway.galaxy.demo.rest;
 
+import com.google.common.base.Strings;
 import io.anyway.galaxy.context.TXContext;
 import io.anyway.galaxy.context.support.TXContextSupport;
 import io.anyway.galaxy.demo.domain.OrderDO;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.io.*;
+import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -34,7 +36,17 @@ public class OrderRest {
         int txType = (Integer)(params.get("txType"));
         String businessType = (String)params.get("businessType");
         String serialNumber= (String)params.get("serialNumber");
-        TXContext tx= new TXContextSupport(txId, serialNumber, businessType);
+        Date callTime = null;
+        if (params.get("callTime") != null) {
+            callTime = new Date((Long)params.get("callTime"));
+        }
+        long timeout = -1L;
+        if (params.get("timeout") != null) {
+            timeout = Long.parseLong(params.get("timeout").toString());
+        }
+        TXContextSupport tx= new TXContextSupport(txId, serialNumber, businessType);
+        tx.setTimeout(timeout);
+        tx.setCallTime(callTime);
 
         long orderId= nextval();
         long productId= Long.parseLong(params.get("productId").toString());

@@ -41,6 +41,9 @@ public class ServiceIntercepterSupport implements ServiceIntercepter {
     @Value("${tx.default.confirm.retry.times}")
     private int defaultConfirmRetryTimes;
 
+    @Value("${tx.diff.time}")
+    private long diffTime = 1000;
+
     @Override
     public void tryService(TXContext ctx,ServiceExecutePayload bean) throws Throwable{
         TransactionInfo transactionInfo = new TransactionInfo();
@@ -52,22 +55,26 @@ public class ServiceIntercepterSupport implements ServiceIntercepter {
             throw new DistributedTransactionException("Received cancel command from main transaction unit, interrupt current transaction!");
         }*/
 
-        // 插入事务数据
-        transactionInfo = new TransactionInfo();
-        transactionInfo.setParentId(ctx.getParentId());
-        transactionInfo.setTxId(TransactionIdGenerator.next());
-        transactionInfo.setContext(JSON.toJSONString(bean)); // 当前调用上下文环境
-        transactionInfo.setBusinessId(ctx.getSerialNumber());  // 业务流水号
-        transactionInfo.setBusinessType(ctx.getBusinessType());  // 业务类型
-        transactionInfo.setModuleId(bean.getModuleId());
-        transactionInfo.setTxType(ctx.getTxType());  // TC | TCC
-        transactionInfo.setTxStatus(TransactionStatusEnum.TRIED.getCode());
-        transactionInfo.setRetriedCount(JSON.toJSONString(  // 设置重试次数
-                new RetryCount(defaultMsgRetryTimes, defaultCancelRetryTimes, defaultConfirmRetryTimes)));
-        createTransactionInfo(transactionInfo);
-        // 设置事务上下文
-        ((TXContextSupport)ctx).setParentId(transactionInfo.getParentId());
-        ((TXContextSupport)ctx).setTxId(transactionInfo.getTxId());
+        if (!isTimeout(ctx)) {
+            // 插入事务数据
+            transactionInfo = new TransactionInfo();
+            transactionInfo.setParentId(ctx.getParentId());
+            transactionInfo.setTxId(TransactionIdGenerator.next());
+            transactionInfo.setContext(JSON.toJSONString(bean)); // 当前调用上下文环境
+            transactionInfo.setBusinessId(ctx.getSerialNumber());  // 业务流水号
+            transactionInfo.setBusinessType(ctx.getBusinessType());  // 业务类型
+            transactionInfo.setModuleId(bean.getModuleId());
+            transactionInfo.setTxType(ctx.getTxType());  // TC | TCC
+            transactionInfo.setTxStatus(TransactionStatusEnum.TRIED.getCode());
+            transactionInfo.setRetriedCount(JSON.toJSONString(  // 设置重试次数
+                    new RetryCount(defaultMsgRetryTimes, defaultCancelRetryTimes, defaultConfirmRetryTimes)));
+            createTransactionInfo(transactionInfo);
+            // 设置事务上下文
+            ((TXContextSupport)ctx).setParentId(transactionInfo.getParentId());
+            ((TXContextSupport)ctx).setTxId(transactionInfo.getTxId());
+        } else {
+            throw new DistributedTransactionException("Transaction timeout, abort this process. ctx=" + ctx);
+        }
     }
 
     @Override
@@ -105,5 +112,15 @@ public class ServiceIntercepterSupport implements ServiceIntercepter {
             }
             i--;
         }
+    }
+
+    private boolean isTimeout(TXContext ctx){
+        if (ctx.getTimeout() <= 0 || ctx.getCallTime() == null) return false;
+
+        if (System.currentTimeMillis() - diffTime - ctx.getCallTime().getTime() > ctx.getTimeout()) {
+            return true;
+        }
+
+        return false;
     }
 }

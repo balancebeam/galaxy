@@ -2,6 +2,8 @@ package io.anyway.galaxy.context.support;
 
 import io.anyway.galaxy.context.TXContext;
 
+import java.util.Date;
+
 
 /**
  * Created by yangzz on 16/7/21.
@@ -18,6 +20,10 @@ public class TXContextSupport implements TXContext{
 
     private int txType;
 
+    private long timeout = -1L;
+
+    private Date callTime;
+
     public TXContextSupport(){}
 
     public TXContextSupport(long parentId, String serialNumber){
@@ -33,7 +39,6 @@ public class TXContextSupport implements TXContext{
 
     public TXContextSupport(long parentId, String serialNumber, String businessType){
         this.parentId = parentId;
-        this.txId= txId;
         this.serialNumber = serialNumber;
         this.businessType = businessType;
     }
@@ -88,6 +93,22 @@ public class TXContextSupport implements TXContext{
         this.txType = txType;
     }
 
+    public long getTimeout() {
+        return timeout;
+    }
+
+    public void setTimeout(long timeout) {
+        this.timeout = timeout;
+    }
+
+    public Date getCallTime() {
+        return callTime;
+    }
+
+    public void setCallTime(Date callTime) {
+        this.callTime = callTime;
+    }
+
     @Override
     public String toString() {
         return "TXContextSupport{" +
@@ -96,6 +117,8 @@ public class TXContextSupport implements TXContext{
                 ", serialNumber='" + serialNumber + '\'' +
                 ", businessType='" + businessType + '\'' +
                 ", txType=" + txType +
+                ", timeout=" + timeout +
+                ", callTime=" + callTime +
                 '}';
     }
 }

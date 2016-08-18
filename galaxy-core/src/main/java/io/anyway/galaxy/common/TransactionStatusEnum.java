@@ -21,7 +21,11 @@ public enum TransactionStatusEnum {
 
     CONFIRMED(6, "确认完成"),
 
-    RECEIVE_CANCEL(7, "接收到回滚指令");
+    // 达到重试次数，需手动回滚
+    MANUAL_CANCEL_WAIT(7, "等待手动回滚"),
+
+    // 达到重试次数，需手动确认
+    MANUAL_CONFIRM_WAIT(8, "等待手动确认");
 
     private int    code;
 
@@ -80,6 +84,16 @@ public enum TransactionStatusEnum {
             return CANCELLED.getCode();
         } else if (CONFIRMING.getCode() == txStatus) {
             return CONFIRMED.getCode();
+        } else {
+            return UNKNOWN.getCode();
+        }
+    }
+
+    public static int getManulStatusCode(int txStatus) {
+        if (CANCELLING.getCode() == txStatus) {
+            return MANUAL_CANCEL_WAIT.getCode();
+        } else if (CONFIRMING.getCode() == txStatus) {
+            return MANUAL_CONFIRM_WAIT.getCode();
         } else {
             return UNKNOWN.getCode();
         }
