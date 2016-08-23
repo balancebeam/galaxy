@@ -28,12 +28,12 @@ public class TransactionRecoveryJob extends AbstractBatchThroughputDataFlowElast
 
     private static Map<Integer, Integer> statusMap = initStatus();
 
-    @Autowired
+    /*@Autowired
     private CoordinatorRegistryCenter regCenter;
 
     @Autowired
     @Qualifier("transactionRecoveryJobConfig")
-    private JobConfiguration jobConfiguration;
+    private JobConfiguration jobConfiguration;*/
 
     @Autowired
     private static SpringContextUtil springContextUtil;
@@ -41,9 +41,9 @@ public class TransactionRecoveryJob extends AbstractBatchThroughputDataFlowElast
     @Autowired
     private static TransactionRecoveryService transactionRecoveryService;
 
-    public void init(){
+    /*public void init(){
         new JobScheduler(regCenter, jobConfiguration).init();
-    }
+    }*/
 
     @Override
     public List<TransactionInfo> fetchData(JobExecutionMultipleShardingContext shardingContext) {
@@ -83,19 +83,12 @@ public class TransactionRecoveryJob extends AbstractBatchThroughputDataFlowElast
     }
 
 
-    public void setRegCenter(CoordinatorRegistryCenter regCenter) {
+    /*public void setRegCenter(CoordinatorRegistryCenter regCenter) {
         this.regCenter = regCenter;
     }
 
     public void setJobConfiguration(JobConfiguration jobConfiguration) {
         this.jobConfiguration = jobConfiguration;
-    }
+    }*/
 
-    public void setSpringContextUtil(SpringContextUtil springContextUtil) {
-        this.springContextUtil = springContextUtil;
-    }
-
-    public void setTransactionRecoveryService(TransactionRecoveryService transactionRecoveryService) {
-        this.transactionRecoveryService = transactionRecoveryService;
-    }
 }

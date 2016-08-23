@@ -14,19 +14,19 @@
     <description>Spring公共配置</description>
 
     <context:annotation-config />
-
-    <bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <context:property-placeholder location="classpath:config.properties" order="1" ignore-unresolvable="true"/>
+    <!--<bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
         <property name="order" value="1" />
         <property name="ignoreUnresolvablePlaceholders" value="true" />
         <property name="locations">
             <list>
                 <value>classpath:config.properties</value>
-                <!--<value>classpath:galaxy-plugin.properties</value>-->
-                <!--<value>classpath:galaxy-core.properties</value>-->
-                <!--<value>classpath:galaxy-*.properties</value>-->
+                &lt;!&ndash;<value>classpath:galaxy-plugin.properties</value>&ndash;&gt;
+                &lt;!&ndash;<value>classpath:galaxy-core.properties</value>&ndash;&gt;
+                &lt;!&ndash;<value>classpath:galaxy-*.properties</value>&ndash;&gt;
             </list>
         </property>
-    </bean>
+    </bean>-->
 
     <mvc:annotation-driven>
         <mvc:message-converters register-defaults="true">

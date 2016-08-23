@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:schemaLocation="http://www.springframework.org/schema/beans
-                        http://www.springframework.org/schema/beans/spring-beans.xsd
-                        "
+       xmlns:reg="http://www.dangdang.com/schema/ddframe/reg"
+       xmlns:job="http://www.dangdang.com/schema/ddframe/job"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                        http://www.dangdang.com/schema/ddframe/reg http://www.dangdang.com/schema/ddframe/reg/reg.xsd
+                        http://www.dangdang.com/schema/ddframe/job http://www.dangdang.com/schema/ddframe/job/job.xsd
+                        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd"
        default-autowire="byName" default-lazy-init="false">
 
-    <bean id="galaxy.plugin.propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <!--<bean id="galaxy.plugin.propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
         <property name="order" value="2" />
         <property name="ignoreUnresolvablePlaceholders" value="true" />
         <property name="locations">
@@ -14,9 +18,10 @@
                 <value>classpath:galaxy-plugin.properties</value>
             </list>
         </property>
-    </bean>
+    </bean>-->
+    <context:property-placeholder location="classpath:galaxy-plugin.properties" order="2" ignore-unresolvable="true"/>
 
-    <bean id="regCenter" class="com.dangdang.ddframe.reg.zookeeper.ZookeeperRegistryCenter" init-method="init">
+    <!--<bean id="regCenter" class="com.dangdang.ddframe.reg.zookeeper.ZookeeperRegistryCenter" init-method="init">
         <constructor-arg>
             <bean class="com.dangdang.ddframe.reg.zookeeper.ZookeeperConfiguration">
                 <property name="serverLists" value="${zk.serverLists}" />
@@ -36,25 +41,19 @@
         <property name="description" value="${transactionRecoveryJob.description}" />
     </bean>
 
-	<bean id="transactionRecoveryJob" class="io.anyway.galaxy.scheduler.TransactionRecoveryJob" init-method="init" />
+	<bean id="transactionRecoveryJob" class="io.anyway.galaxy.scheduler.TransactionRecoveryJob" init-method="init" />-->
 
-    <!--<bean id="transactionRecoveryJob" class="com.dangdang.ddframe.job.spring.schedule.SpringJobScheduler" init-method="init">
-        <constructor-arg ref="regCenter" />
-        <constructor-arg>
-            <bean class="com.dangdang.ddframe.job.api.JobConfiguration">
-                <constructor-arg name="jobName" value="${sar.name}-TxRecoveryJob" />
-                <constructor-arg name="jobClass" value="io.anyway.galaxy.scheduler.TransactionRecoveryJob" />
-                <constructor-arg name="shardingTotalCount" value="${transactionRecoveryJob.shardingTotalCount}" />
-                <constructor-arg name="cron" value="${transactionRecoveryJob.cron}" />
-                <property name="description" value="${transactionRecoveryJob.description}" />
-            </bean>
-        </constructor-arg>
-    </bean>-->
+    <reg:zookeeper id="regCenter"
+                   serverLists="${zk.serverLists}"
+                   namespace="${zk.namespace}"
+                   baseSleepTimeMilliseconds="${zk.baseSleepTimeMilliseconds}"
+                   maxSleepTimeMilliseconds="${zk.maxSleepTimeMilliseconds}"
+                   maxRetries="${zk.maxRetries}" />
 
-    <!--<job:bean id="transactionRecoveryJob" class="io.anyway.galaxy.scheduler.TransactionRecoveryJob"
+    <job:bean id="transactionRecoveryJob" class="io.anyway.galaxy.scheduler.TransactionRecoveryJob"
               regCenter="regCenter"
               shardingTotalCount="${transactionRecoveryJob.shardingTotalCount}"
               cron="${transactionRecoveryJob.cron}"
-              description="${transactionRecoveryJob.description}" />-->
+              description="${transactionRecoveryJob.description}" />
 
 </beans>
