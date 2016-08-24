@@ -3,6 +3,7 @@ package io.anyway.galaxy.intercepter.support;
 import com.alibaba.fastjson.JSON;
 import io.anyway.galaxy.common.Constants;
 import io.anyway.galaxy.common.TransactionStatusEnum;
+import io.anyway.galaxy.common.TransactionTypeEnum;
 import io.anyway.galaxy.context.TXContext;
 import io.anyway.galaxy.context.support.ActionExecutePayload;
 import io.anyway.galaxy.context.support.TXContextSupport;
@@ -78,7 +79,12 @@ public class ActionIntercepterSupport implements ActionIntercepter{
         TransactionInfo transactionInfo = new TransactionInfo();
         transactionInfo.setParentId(ctx.getParentId());
         transactionInfo.setTxId(ctx.getTxId());
-        transactionInfo.setTxStatus(TransactionStatusEnum.TRIED.getCode());
+        if (ctx.getTxType() == TransactionTypeEnum.TC.getCode()) {
+            // TC型直接改为确认状态
+            transactionInfo.setTxStatus(TransactionStatusEnum.CONFIRMED.getCode());
+        } else {
+            transactionInfo.setTxStatus(TransactionStatusEnum.TRIED.getCode());
+        }
         transactionRepository.update(transactionInfo);
     }
 

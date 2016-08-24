@@ -48,12 +48,14 @@ public class PurchaseServiceImpl implements PurchaseService {
         TXContext ctx= TXContextHolder.getTXContext();
 
         final JSONObject request= new JSONObject();
-        request.put("txId",ctx.getTxId());
-        request.put("txType",ctx.getTxType());
-        request.put("timeout",30);
-        request.put("callTime",System.currentTimeMillis());
-        request.put("businessType",ctx.getBusinessType());
-        request.put("serialNumber",ctx.getSerialNumber());
+        if (ctx != null) {
+            request.put("txId",ctx.getTxId());
+            request.put("txType",ctx.getTxType());
+            request.put("timeout",30 * 1000);
+            request.put("callTime",System.currentTimeMillis());
+            request.put("businessType",ctx.getBusinessType());
+            request.put("serialNumber",ctx.getSerialNumber());
+        }
         request.put("productId",productId);
         request.put("amount",amount);
         request.put("userId",userId);
