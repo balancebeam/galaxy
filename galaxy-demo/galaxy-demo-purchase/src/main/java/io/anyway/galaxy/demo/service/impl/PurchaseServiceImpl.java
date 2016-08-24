@@ -50,7 +50,7 @@ public class PurchaseServiceImpl implements PurchaseService {
         final JSONObject request= new JSONObject();
         request.put("txId",ctx.getTxId());
         request.put("txType",ctx.getTxType());
-        request.put("timeout",5);
+        request.put("timeout",30);
         request.put("callTime",System.currentTimeMillis());
         request.put("businessType",ctx.getBusinessType());
         request.put("serialNumber",ctx.getSerialNumber());
@@ -66,8 +66,8 @@ public class PurchaseServiceImpl implements PurchaseService {
         if(result.getBody()){
             result= restOperations.exchange(orderURL, HttpMethod.POST,entity, Boolean.class);
             if(result.getBody()){
-                //return "购买产品成功";
-                throw new RuntimeException("测试回滚");
+                return "购买产品成功";
+                //throw new RuntimeException("测试回滚");
             }
             throw new RuntimeException("生成订单操作失败.");
         }

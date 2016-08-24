@@ -52,7 +52,14 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void sendMessage(final TXContext ctx, TransactionStatusEnum txStatus) throws Throwable {
+        TransactionInfo lockInfo = new TransactionInfo();
         try {
+            //对需处理的数据加锁
+            lockInfo.setParentId(ctx.getParentId());
+            lockInfo.setTxId(ctx.getTxId());
+            lockInfo = transactionRepository.lock(lockInfo).get(0);
+            if (lockInfo == null) return;
+
             //先发送消息,如果发送失败会抛出Runtime异常
             TransactionMessage message = new TransactionMessage();
             message.setParentId(ctx.getTxId());
@@ -66,7 +73,7 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
             TransactionInfo info = new TransactionInfo();
             info.setTxId(ctx.getTxId());
             info.setParentId(ctx.getParentId());
-            updateRetryCount(transactionRepository.find(info).get(0));
+            updateRetryCount(lockInfo);
             return;
         }
         //发消息成功后更改TX的状态
