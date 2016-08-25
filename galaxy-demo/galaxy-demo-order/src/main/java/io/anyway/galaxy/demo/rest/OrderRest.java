@@ -40,7 +40,8 @@ public class OrderRest {
                 case 2:  // 模拟下单失败
                     throw new DistributedTransactionException("Test repository failed!!");
                 case 4:  // 模拟下单超时
-                    Thread.sleep(29000);
+                    params.put("timeout", 1L);
+                    Thread.sleep(1000);
             }
             long txId= Long.parseLong(params.get("txId").toString());
             int txType = (Integer)(params.get("txType"));

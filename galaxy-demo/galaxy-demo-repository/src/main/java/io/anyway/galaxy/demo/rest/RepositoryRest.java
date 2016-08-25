@@ -36,7 +36,8 @@ public class RepositoryRest {
                 case 1:  // 模拟减库存失败
                     throw new DistributedTransactionException("Test repository failed!!");
                 case 3:  // 模拟减库存超时
-                    Thread.sleep(29000);
+                    params.put("timeout", 1L);
+                    Thread.sleep(1000);
             }
             long txId = Long.parseLong(params.get("txId").toString());
             int txType = (Integer) (params.get("txType"));
