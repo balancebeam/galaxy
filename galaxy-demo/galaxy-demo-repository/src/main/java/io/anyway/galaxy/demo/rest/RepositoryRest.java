@@ -3,6 +3,7 @@ package io.anyway.galaxy.demo.rest;
 import io.anyway.galaxy.context.TXContext;
 import io.anyway.galaxy.context.support.TXContextSupport;
 import io.anyway.galaxy.demo.service.RepositoryService;
+import io.anyway.galaxy.exception.DistributedTransactionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,6 +31,13 @@ public class RepositoryRest {
     public boolean purchase(@RequestBody  Map<String,Object> params)throws Exception {
         TXContextSupport tx = null;
         if (params.get("txId") !=null) {
+            int tcase = (Integer) (params.get("tcase"));
+            switch (tcase) {
+                case 1:  // 模拟减库存失败
+                    throw new DistributedTransactionException("Test repository failed!!");
+                case 3:  // 模拟减库存超时
+                    Thread.sleep(29000);
+            }
             long txId = Long.parseLong(params.get("txId").toString());
             int txType = (Integer) (params.get("txType"));
             String businessType = (String) params.get("businessType");
@@ -45,6 +53,8 @@ public class RepositoryRest {
             tx = new TXContextSupport(txId, serialNumber, businessType);
             tx.setTimeout(timeout);
             tx.setCallTime(callTime);
+
+
         }
 
         long productId= Long.parseLong(params.get("productId").toString());

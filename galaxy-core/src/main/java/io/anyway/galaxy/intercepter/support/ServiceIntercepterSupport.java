@@ -66,12 +66,7 @@ public class ServiceIntercepterSupport implements ServiceIntercepter {
             transactionInfo.setBusinessType(ctx.getBusinessType());  // 业务类型
             transactionInfo.setModuleId(bean.getModuleId());
             transactionInfo.setTxType(ctx.getTxType());  // TC | TCC
-            if (ctx.getTxType() == TransactionTypeEnum.TC.getCode()) {
-                // TC型直接改为确认状态
-                transactionInfo.setTxStatus(TransactionStatusEnum.CONFIRMED.getCode());
-            } else {
-                transactionInfo.setTxStatus(TransactionStatusEnum.TRIED.getCode());
-            }
+            transactionInfo.setTxStatus(TransactionStatusEnum.TRIED.getCode());
             transactionInfo.setRetriedCount(JSON.toJSONString(  // 设置重试次数
                     new RetryCount(defaultMsgRetryTimes, defaultCancelRetryTimes, defaultConfirmRetryTimes)));
             createTransactionInfo(transactionInfo);

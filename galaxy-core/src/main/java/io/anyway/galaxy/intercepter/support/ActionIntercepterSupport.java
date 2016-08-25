@@ -79,12 +79,7 @@ public class ActionIntercepterSupport implements ActionIntercepter{
         TransactionInfo transactionInfo = new TransactionInfo();
         transactionInfo.setParentId(ctx.getParentId());
         transactionInfo.setTxId(ctx.getTxId());
-        if (ctx.getTxType() == TransactionTypeEnum.TC.getCode()) {
-            // TC型直接改为确认状态
-            transactionInfo.setTxStatus(TransactionStatusEnum.CONFIRMED.getCode());
-        } else {
-            transactionInfo.setTxStatus(TransactionStatusEnum.TRIED.getCode());
-        }
+        transactionInfo.setTxStatus(TransactionStatusEnum.TRIED.getCode());
         transactionRepository.update(transactionInfo);
     }
 

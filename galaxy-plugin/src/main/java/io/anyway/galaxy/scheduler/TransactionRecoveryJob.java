@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.anyway.galaxy.spring.SpringContextUtil;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -28,26 +29,12 @@ public class TransactionRecoveryJob extends AbstractBatchThroughputDataFlowElast
 
     private static Map<Integer, Integer> statusMap = initStatus();
 
-    /*@Autowired
-    private CoordinatorRegistryCenter regCenter;
+    private SpringContextUtil springContextUtil;
 
-    @Autowired
-    @Qualifier("transactionRecoveryJobConfig")
-    private JobConfiguration jobConfiguration;*/
-
-    @Autowired
-    private static SpringContextUtil springContextUtil;
-
-    @Autowired
-    private static TransactionRecoveryService transactionRecoveryService;
-
-    /*public void init(){
-        new JobScheduler(regCenter, jobConfiguration).init();
-    }*/
+    private TransactionRecoveryService transactionRecoveryService;
 
     @Override
     public List<TransactionInfo> fetchData(JobExecutionMultipleShardingContext shardingContext) {
-
         if (this.transactionRecoveryService == null) {
             this.transactionRecoveryService = SpringContextUtil.getBean(springContextUtil.getModuleId(), TransactionRecoveryService.class);
         }
@@ -82,13 +69,8 @@ public class TransactionRecoveryJob extends AbstractBatchThroughputDataFlowElast
         return statusMap;
     }
 
-
-    /*public void setRegCenter(CoordinatorRegistryCenter regCenter) {
-        this.regCenter = regCenter;
+    public void setSpringContextUtil(SpringContextUtil springContextUtil) {
+        this.springContextUtil = springContextUtil;
     }
-
-    public void setJobConfiguration(JobConfiguration jobConfiguration) {
-        this.jobConfiguration = jobConfiguration;
-    }*/
 
 }

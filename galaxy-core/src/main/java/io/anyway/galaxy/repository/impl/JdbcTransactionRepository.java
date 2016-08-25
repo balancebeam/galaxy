@@ -3,6 +3,7 @@ package io.anyway.galaxy.repository.impl;
 import com.google.common.base.Strings;
 import io.anyway.galaxy.common.Constants;
 import io.anyway.galaxy.common.TransactionStatusEnum;
+import io.anyway.galaxy.common.TransactionTypeEnum;
 import io.anyway.galaxy.domain.TransactionInfo;
 import io.anyway.galaxy.exception.DistributedTransactionException;
 import io.anyway.galaxy.spring.DataSourceAdaptor;
@@ -180,40 +181,62 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			builderOuter.append(SELECT_DQL + " FROM (");
 
 			StringBuilder builder = new StringBuilder();
-			builder.append(SELECT_DQL + " FROM TRANSACTION_INFO WHERE GMT_CREATED > ? AND TX_STATUS");
+			builder.append(SELECT_DQL + " FROM TRANSACTION_INFO WHERE GMT_CREATED > ? ");
 					/*.append(getLimitSql(conn, 1000))*/
 
+			boolean hasTriedStatus = false;
+			StringBuilder sBuilder = new StringBuilder();
+			sBuilder.append(" AND TX_STATUS ");
 			if (txStatus.length > 1) {
-				builder.append(" IN (");
+				sBuilder.append(" IN (");
 				for (int i = 0; i < txStatus.length; i++) {
-					if (i == 0) {
-						builder.append(txStatus[i]);
+					if (txStatus[i] != TransactionStatusEnum.TRIED.getCode()) {
+						if (i == 0) {
+							sBuilder.append(txStatus[i]);
+						} else {
+							sBuilder.append(",").append(txStatus[i]);
+						}
 					} else {
-						builder.append(",").append(txStatus[i]);
+						hasTriedStatus = true;
 					}
 				}
-				builder.append(")");
+				sBuilder.append(")");
 			} else if (txStatus.length == 1) {
-				builder.append(" = ");
-				builder.append(txStatus[0]);
+				if (txStatus[0] != TransactionStatusEnum.TRIED.getCode()) {
+					sBuilder.append(" = ");
+					sBuilder.append(txStatus[0]);
+				} else {
+					hasTriedStatus = true;
+				}
 			}
 
-			builder.append(" AND TX_STATUS <> " + TransactionStatusEnum.MANUAL_CANCEL_WAIT.getCode());
-			builder.append(" AND TX_STATUS <> " + TransactionStatusEnum.MANUAL_CONFIRM_WAIT.getCode());
 			builder.append(" AND MODULE_ID = ? ");
 
-			builderOuter.append(builder).append(" AND NEXT_RETRY_TIME <= ? AND NEXT_RETRY_TIME IS NOT NULL");
-			builderOuter.append(" UNION ALL ").append(builder)
-					.append(" AND GMT_MODIFIED <= ? ").append("AND NEXT_RETRY_TIME IS NULL");
-			builderOuter.append(") tx ORDER BY PARENT_ID, TX_ID");
+			builderOuter.append(builder).append(" AND NEXT_RETRY_TIME <= ? AND NEXT_RETRY_TIME IS NOT NULL").append(sBuilder);
+			builderOuter.append(" UNION ALL ").append(builder).append("AND NEXT_RETRY_TIME IS NULL").append(sBuilder);
+			if (hasTriedStatus) {
+				builderOuter.append(" UNION ALL ").append(builder).append(" AND NEXT_RETRY_TIME <= ? AND NEXT_RETRY_TIME IS NOT NULL")
+						.append(" AND TX_STATUS = " + TransactionStatusEnum.TRIED.getCode() + " AND TX_TYPE = " + TransactionTypeEnum.TCC.getCode());
+				builderOuter.append(" UNION ALL ").append(builder).append("AND NEXT_RETRY_TIME IS NULL")
+						.append(" AND TX_STATUS = " + TransactionStatusEnum.TRIED.getCode() + " AND TX_TYPE = " + TransactionTypeEnum.TCC.getCode());
+			}
+			builderOuter.append(") TX ORDER BY PARENT_ID, TX_ID");
+
+			Timestamp gmtCreated = new Timestamp(date.getTime());
+			Timestamp nowTime = new Timestamp(System.currentTimeMillis());
+			Timestamp timeoutTime = DateUtil.getPrevSecTimestamp(beginTimeoutSecond);
 
 			stmt = conn.prepareStatement(builderOuter.toString());
-			stmt.setTimestamp(1, new Timestamp(date.getTime()));
+			stmt.setTimestamp(1, gmtCreated);
 			stmt.setString(2, moduleId);
-            stmt.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
-            stmt.setTimestamp(4, new Timestamp(date.getTime()));
-            stmt.setString(5, moduleId);
-            stmt.setTimestamp(6, DateUtil.getPrevSecTimestamp(beginTimeoutSecond));
+            stmt.setTimestamp(3, nowTime);
+			stmt.setTimestamp(4, gmtCreated);
+			stmt.setString(5, moduleId);
+			stmt.setTimestamp(6, gmtCreated);
+			stmt.setString(7, moduleId);
+			stmt.setTimestamp(8, nowTime);
+			stmt.setTimestamp(9, gmtCreated);
+			stmt.setString(10, moduleId);
 
 			ResultSet resultSet = stmt.executeQuery();
 			while (resultSet.next()) {

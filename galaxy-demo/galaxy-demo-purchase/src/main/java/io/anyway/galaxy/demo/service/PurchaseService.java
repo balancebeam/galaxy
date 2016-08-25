@@ -12,8 +12,9 @@ public interface PurchaseService {
      * @param userId 用户标识
      * @param productId 商品ID
      * @param amount 购买数量
+     * @param tcase 测试类别
      * @return
      * @throws Exception
      */
-    String purchase(SerialNumberGenerator generator, long userId, long productId, long amount);
+    String purchase(SerialNumberGenerator generator, long userId, long productId, long amount, int tcase);
 }

@@ -37,8 +37,28 @@ public class PurchaseRest {
 
         long userId = 1;
         long productId = 1;
+        int tcase = 0; // 正常
 
-        String result=  purchaseService.purchase(generator,userId,productId,amount);
+        String result=  purchaseService.purchase(generator,userId,productId,amount, tcase);
+        return result;
+    }
+
+    @RequestMapping(value="case/{tcase}")
+    @ResponseBody
+    public String purchaseCase(@PathVariable int tcase)throws Exception {
+
+        SerialNumberGenerator generator= new SerialNumberGenerator() {
+            @Override
+            public String getSerialNumber() {
+                return "serial_"+new Random ().nextInt(100000);
+            }
+        };
+
+        long userId = 1;
+        long productId = 1;
+        long amount = 1;
+
+        String result=  purchaseService.purchase(generator,userId,productId,amount, tcase);
         return result;
     }
 

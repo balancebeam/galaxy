@@ -43,7 +43,7 @@ public class PurchaseServiceImpl implements PurchaseService {
     @Override
     @Transactional
     @TXAction(value = TransactionTypeEnum.TC,bizType = "purchase")
-    public String purchase(SerialNumberGenerator generator, long userId, long productId, long amount){
+    public String purchase(SerialNumberGenerator generator, long userId, long productId, long amount, int tcase){
 
         TXContext ctx= TXContextHolder.getTXContext();
 
@@ -59,6 +59,7 @@ public class PurchaseServiceImpl implements PurchaseService {
         request.put("productId",productId);
         request.put("amount",amount);
         request.put("userId",userId);
+        request.put("tcase", tcase);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);

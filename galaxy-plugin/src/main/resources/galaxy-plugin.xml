@@ -31,17 +31,8 @@
                 <property name="maxRetries" value="${zk.maxRetries}" />
             </bean>
         </constructor-arg>
-    </bean>
+    </bean>-->
 
-    <bean id="transactionRecoveryJobConfig" class="com.dangdang.ddframe.job.api.JobConfiguration">
-        <constructor-arg name="jobName" value="${sar.name}-TxRecoveryJob" />
-        <constructor-arg name="jobClass" value="io.anyway.galaxy.scheduler.TransactionRecoveryJob" />
-        <constructor-arg name="shardingTotalCount" value="${transactionRecoveryJob.shardingTotalCount}" />
-        <constructor-arg name="cron" value="${transactionRecoveryJob.cron}" />
-        <property name="description" value="${transactionRecoveryJob.description}" />
-    </bean>
-
-	<bean id="transactionRecoveryJob" class="io.anyway.galaxy.scheduler.TransactionRecoveryJob" init-method="init" />-->
 
     <reg:zookeeper id="regCenter"
                    serverLists="${zk.serverLists}"
@@ -50,10 +41,28 @@
                    maxSleepTimeMilliseconds="${zk.maxSleepTimeMilliseconds}"
                    maxRetries="${zk.maxRetries}" />
 
-    <job:bean id="transactionRecoveryJob" class="io.anyway.galaxy.scheduler.TransactionRecoveryJob"
+    <!-- 因Job名需动态配置，使用Bean来配置-->
+    <bean id="transactionRecoveryJobConfig" class="com.dangdang.ddframe.job.api.JobConfiguration">
+        <constructor-arg name="jobName" value="${sar.name}-TxRecoveryJob" />
+        <constructor-arg name="jobClass" value="io.anyway.galaxy.scheduler.TransactionRecoveryJob" />
+        <constructor-arg name="shardingTotalCount" value="${transactionRecoveryJob.shardingTotalCount}" />
+        <constructor-arg name="cron" value="${transactionRecoveryJob.cron}" />
+        <property name="description" value="${transactionRecoveryJob.description}" />
+    </bean>
+
+    <bean id="transactionRecoveryJob" class="io.anyway.galaxy.scheduler.TransactionRecoveryJob">
+        <property name="springContextUtil" ref="springContextUtil" />
+    </bean>
+
+    <bean id="txSpringJobScheduler" class="com.dangdang.ddframe.job.spring.schedule.SpringJobScheduler" init-method="init">
+        <constructor-arg ref="regCenter" />
+        <constructor-arg ref="transactionRecoveryJobConfig" />
+    </bean>
+
+    <!--<job:bean id="${sar.name}-TxRecoveryJob" class="io.anyway.galaxy.scheduler.TransactionRecoveryJob"
               regCenter="regCenter"
               shardingTotalCount="${transactionRecoveryJob.shardingTotalCount}"
               cron="${transactionRecoveryJob.cron}"
-              description="${transactionRecoveryJob.description}" />
+              description="${transactionRecoveryJob.description}" />-->
 
 </beans>

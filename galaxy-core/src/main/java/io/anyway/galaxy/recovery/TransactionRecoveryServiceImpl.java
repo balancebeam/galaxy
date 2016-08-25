@@ -39,11 +39,11 @@ public class TransactionRecoveryServiceImpl implements TransactionRecoveryServic
     @Autowired
     private SpringContextUtil springContextUtil;
 
-    @Value("${recovery.retry.interval}")
-    private static long interval = 10 * 1000;
+    /*@Value("${recovery.retry.interval}")
+    private long interval = 10 * 1000;*/
 
     @Value("${recovery.start.day}")
-    private static int day = 7;
+    private int day = 7;
 
     @Override
     public List<TransactionInfo> fetchData(List<Integer> shardingItem) {

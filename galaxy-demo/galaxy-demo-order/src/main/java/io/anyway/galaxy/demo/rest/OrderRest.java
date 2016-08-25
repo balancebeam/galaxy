@@ -5,6 +5,7 @@ import io.anyway.galaxy.context.TXContext;
 import io.anyway.galaxy.context.support.TXContextSupport;
 import io.anyway.galaxy.demo.domain.OrderDO;
 import io.anyway.galaxy.demo.service.OrderService;
+import io.anyway.galaxy.exception.DistributedTransactionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -34,6 +35,13 @@ public class OrderRest {
     public boolean purchase(@RequestBody Map<String,Object> params)throws Exception {
         TXContextSupport tx = null;
         if (params.get("txId") !=null) {
+            int tcase = (Integer) (params.get("tcase"));
+            switch (tcase) {
+                case 2:  // 模拟下单失败
+                    throw new DistributedTransactionException("Test repository failed!!");
+                case 4:  // 模拟下单超时
+                    Thread.sleep(29000);
+            }
             long txId= Long.parseLong(params.get("txId").toString());
             int txType = (Integer)(params.get("txType"));
             String businessType = (String)params.get("businessType");
