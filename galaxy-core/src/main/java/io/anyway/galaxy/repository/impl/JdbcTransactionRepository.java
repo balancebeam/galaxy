@@ -217,7 +217,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			if (hasTriedStatus) {
 				builderOuter.append(" UNION ALL ").append(builder).append(" AND NEXT_RETRY_TIME <= ? AND NEXT_RETRY_TIME IS NOT NULL")
 						.append(" AND TX_STATUS = " + TransactionStatusEnum.TRIED.getCode() + " AND TX_TYPE = " + TransactionTypeEnum.TCC.getCode());
-				builderOuter.append(" UNION ALL ").append(builder).append("AND NEXT_RETRY_TIME IS NULL")
+				builderOuter.append(" UNION ALL ").append(builder).append("AND NEXT_RETRY_TIME IS NULL AND GMT_MODIFIED <= ?")
 						.append(" AND TX_STATUS = " + TransactionStatusEnum.TRIED.getCode() + " AND TX_TYPE = " + TransactionTypeEnum.TCC.getCode());
 			}
 			builderOuter.append(") TX ORDER BY PARENT_ID, TX_ID");
@@ -237,6 +237,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			stmt.setTimestamp(8, nowTime);
 			stmt.setTimestamp(9, gmtCreated);
 			stmt.setString(10, moduleId);
+			stmt.setTimestamp(11, timeoutTime);
 
 			ResultSet resultSet = stmt.executeQuery();
 			while (resultSet.next()) {
