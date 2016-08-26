@@ -17,3 +17,14 @@
 ## 架构图
 ![Galaxy Architecture](galaxy-doc/images/architecture.png)
 
+## Demo
+* galaxy-demo-purchase：商城系统
+* galaxy-demo-repository：库存系统
+* galaxy-demo-order：订单系统
+
+### 测试用例
+* 正常下单：localhost:8080/purchase/rest/{quantity}   
+* 模拟减库存失败：localhost:8080/purchase/rest/case/1     
+* 模拟下单失败：localhost:8080/purchase/rest/case/2     
+* 模拟减库存超时：localhost:8080/purchase/rest/case/3     
+* 模拟下单超时：localhost:8080/purchase/rest/case/4     
