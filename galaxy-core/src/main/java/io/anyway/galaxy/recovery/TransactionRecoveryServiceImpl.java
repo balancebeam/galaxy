@@ -56,6 +56,7 @@ public class TransactionRecoveryServiceImpl implements TransactionRecoveryServic
     }
 
     public int execute(List<TransactionInfo> transactionInfos) {
+        log.info("Recovery job start, data count=" + transactionInfos.size());
         int successCount = 0;
 
         long parentId = -1L;
@@ -134,6 +135,7 @@ public class TransactionRecoveryServiceImpl implements TransactionRecoveryServic
                 }
             }
         }
+        log.info("Recovery job end, success count=" + successCount);
         return successCount;
     }
 

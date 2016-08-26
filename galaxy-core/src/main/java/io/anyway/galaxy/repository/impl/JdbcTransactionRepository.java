@@ -392,8 +392,11 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			} else if (modules.size() == 1) {
 				builder.append(" = '" + modules.get(0) + "'");
 			}
-			builder.append(" AND TX_STATUS NOT IN(").append(TransactionStatusEnum.CANCELLED.getCode()).append(", ")
-					.append(TransactionStatusEnum.CONFIRMED.getCode())
+			builder.append(" AND TX_STATUS NOT IN(")
+					.append(TransactionStatusEnum.CANCELLED.getCode()).append(", ")
+					.append(TransactionStatusEnum.CONFIRMED.getCode()).append(", ")
+					.append(TransactionStatusEnum.MANUAL_CANCEL_WAIT.getCode()).append(", ")
+					.append(TransactionStatusEnum.MANUAL_CONFIRM_WAIT.getCode())
 					.append(")");
 			builder.append(" FOR UPDATE NOWAIT");
 
