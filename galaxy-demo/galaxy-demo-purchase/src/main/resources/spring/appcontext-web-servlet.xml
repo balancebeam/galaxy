@@ -43,8 +43,8 @@
     </mvc:annotation-driven>
 
     <bean id="ky.requestFactory" class="org.springframework.http.client.SimpleClientHttpRequestFactory">
-        <property name="readTimeout" value="10000"/>
-        <property name="connectTimeout" value="5000"/>
+        <property name="readTimeout" value="60000"/>
+        <property name="connectTimeout" value="30000"/>
     </bean>
 
     <bean id="simpleRestTemplate" class="org.springframework.web.client.RestTemplate">
