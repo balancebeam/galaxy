@@ -44,6 +44,8 @@
 		<httpclient.version>4.5.2</httpclient.version>
 		<gson.version>2.3.1</gson.version>
 		<jetty.version>8.1.0.RC5</jetty.version>
+		<servlet.version>3.0.20100224</servlet.version>
+		<archaius.version>0.6.0</archaius.version>
 		<javassist.version>3.20.0-GA</javassist.version>
 		<elastic-jobx.version>1.0.1</elastic-jobx.version>
 		<mockit.version>1.9.5</mockit.version>
@@ -270,6 +272,16 @@
 				<groupId>org.eclipse.jetty</groupId>
 				<artifactId>jetty-servlet</artifactId>
 				<version>${jetty.version}</version>		
+			</dependency>
+			<dependency>
+				<groupId>com.netflix.archaius</groupId>
+				<artifactId>archaius-core</artifactId>
+				<version>${archaius.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.mortbay.jetty</groupId>
+				<artifactId>servlet-api</artifactId>
+				<version>${servlet.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
