@@ -1,24 +1,24 @@
 package io.anyway.galaxy.spring;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.sql.Connection;
-import java.util.concurrent.ConcurrentHashMap;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.sql.DataSource;
-
-import io.anyway.galaxy.context.TXContext;
+import io.anyway.galaxy.annotation.TXAction;
+import io.anyway.galaxy.annotation.TXTry;
+import io.anyway.galaxy.common.TransactionTypeEnum;
+import io.anyway.galaxy.context.AbstractExecutePayload;
 import io.anyway.galaxy.context.SerialNumberGenerator;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import io.anyway.galaxy.context.TXContext;
+import io.anyway.galaxy.context.TXContextHolder;
+import io.anyway.galaxy.context.support.ActionExecutePayload;
+import io.anyway.galaxy.context.support.ServiceExecutePayload;
+import io.anyway.galaxy.exception.DistributedTransactionException;
+import io.anyway.galaxy.intercepter.ActionIntercepter;
+import io.anyway.galaxy.intercepter.ServiceIntercepter;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.*;
@@ -31,17 +31,12 @@ import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
-import io.anyway.galaxy.annotation.TXAction;
-import io.anyway.galaxy.annotation.TXTry;
-import io.anyway.galaxy.common.TransactionTypeEnum;
-import io.anyway.galaxy.context.AbstractExecutePayload;
-import io.anyway.galaxy.context.TXContextHolder;
-import io.anyway.galaxy.context.support.ActionExecutePayload;
-import io.anyway.galaxy.context.support.ServiceExecutePayload;
-import io.anyway.galaxy.exception.DistributedTransactionException;
-import io.anyway.galaxy.infoBoard.TransactionServer;
-import io.anyway.galaxy.intercepter.ActionIntercepter;
-import io.anyway.galaxy.intercepter.ServiceIntercepter;
+import javax.sql.DataSource;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.sql.Connection;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by yangzz on 16/7/20.
@@ -50,7 +45,7 @@ import io.anyway.galaxy.intercepter.ServiceIntercepter;
 @Aspect
 public class TXAspectProcessor implements Ordered,ResourceLoaderAware,ApplicationContextAware,ApplicationListener {
 
-    private static Log logger= LogFactory.getLog(TXAspectProcessor.class);
+    private static Logger logger = LoggerFactory.getLogger(TXAspectProcessor.class);
 
     private ResourceLoader resourceLoader;
 
@@ -67,23 +62,9 @@ public class TXAspectProcessor implements Ordered,ResourceLoaderAware,Applicatio
 
     private ConcurrentHashMap<Method, AbstractExecutePayload> cache= new ConcurrentHashMap<Method, AbstractExecutePayload>();
 
-    private TransactionServer transactionServer;
-    
     @Override
     public int getOrder() {
         return Ordered.LOWEST_PRECEDENCE;
-    }
-    
-    @PostConstruct
-    public void init(){
-//    	this.transactionServer = TransactionServer.instance();
-//    	this.transactionServer.setDataSource(dataSourceAdaptor);
-//    	this.transactionServer.start();
-    }
-    
-    @PreDestroy
-    public void destroy(){
-//        this.transactionServer.shutdown();
     }
 
     //切面注解TXAction

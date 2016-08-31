@@ -1,4 +1,4 @@
-package io.anyway.galaxy.testcase;
+package io.anyway.galaxy;
 
 import io.anyway.galaxy.annotation.TXAction;
 import io.anyway.galaxy.common.TransactionTypeEnum;

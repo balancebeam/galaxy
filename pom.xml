@@ -14,6 +14,7 @@
 		<module>galaxy-plugin</module>
         <module>galaxy-demo</module>
 		<module>galaxy-console</module>
+		<module>galaxy-jetty</module>
 	</modules>
     
 	<properties>
@@ -37,7 +38,7 @@
 		<guava.version>19.0</guava.version>
 		<commons-collections4.version>4.1</commons-collections4.version>
 		<slf4j.version>1.7.7</slf4j.version>
-		<logback.version>1.1.2</logback.version>
+		<log4j.version>1.2.17</log4j.version>
 		<fastjson.version>1.2.14</fastjson.version>
 		<idcenter.version>2.2.2</idcenter.version>
 		<kafka.version>0.9.0.1</kafka.version>
@@ -219,14 +220,9 @@
 				<version>${slf4j.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.slf4j</groupId>
-				<artifactId>jcl-over-slf4j</artifactId>
-				<version>${slf4j.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.slf4j</groupId>
-				<artifactId>log4j-over-slf4j</artifactId>
-				<version>${slf4j.version}</version>
+				<groupId>log4j</groupId>
+				<artifactId>log4j</artifactId>
+				<version>${log4j.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.slf4j</groupId>

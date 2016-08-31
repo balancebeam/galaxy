@@ -2,13 +2,13 @@ package io.anyway.galaxy.message.consumer;
 
 import io.anyway.galaxy.message.TransactionMessage;
 import io.anyway.galaxy.message.TransactionMessageService;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +23,7 @@ import java.util.*;
 @Component
 public class KafkaMessageConsumer implements InitializingBean,DisposableBean{
 
-    private final static Log logger= LogFactory.getLog(KafkaMessageConsumer.class);
+    private final static Logger logger = LoggerFactory.getLogger(KafkaMessageConsumer.class);
 
     @Value("${kafka.servers}")
     private String servers;
@@ -90,7 +90,7 @@ public class KafkaMessageConsumer implements InitializingBean,DisposableBean{
                             }
                         }
                     } catch (Throwable e) {
-                        logger.error(e);
+                        logger.error("Consumer message failed ", e);
                         try {
                             Thread.sleep(5000);
                         } catch (InterruptedException e1) {

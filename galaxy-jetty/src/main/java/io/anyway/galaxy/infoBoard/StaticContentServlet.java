@@ -46,7 +46,7 @@ public class StaticContentServlet extends HttpServlet {
         if(mediaType!=null){
             contentBytes = CONTENT_CACHE.get(path);
             if (contentBytes == null) {
-                InputStream is = getClass().getClassLoader().getResourceAsStream("content" + path);
+                InputStream is = getClass().getClassLoader().getResourceAsStream("message.content" + path);
                 if (is != null) {
                     try {
                         ByteArrayOutputStream os = new ByteArrayOutputStream(4096);

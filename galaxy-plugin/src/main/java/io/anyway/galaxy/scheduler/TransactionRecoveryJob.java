@@ -1,26 +1,16 @@
 package io.anyway.galaxy.scheduler;
 
-import io.anyway.galaxy.common.Constants;
+import com.dangdang.ddframe.job.api.JobExecutionMultipleShardingContext;
+import com.dangdang.ddframe.job.plugin.job.type.dataflow.AbstractBatchThroughputDataFlowElasticJob;
 import io.anyway.galaxy.common.TransactionStatusEnum;
 import io.anyway.galaxy.domain.TransactionInfo;
 import io.anyway.galaxy.recovery.TransactionRecoveryService;
+import io.anyway.galaxy.spring.SpringContextUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import io.anyway.galaxy.spring.SpringContextUtil;
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Component;
-
-import com.dangdang.ddframe.job.api.JobConfiguration;
-import com.dangdang.ddframe.job.api.JobExecutionMultipleShardingContext;
-import com.dangdang.ddframe.job.api.JobScheduler;
-import com.dangdang.ddframe.job.plugin.job.type.dataflow.AbstractBatchThroughputDataFlowElasticJob;
-import com.dangdang.ddframe.reg.base.CoordinatorRegistryCenter;
 
 /**
  * Created by xiong.j on 2016/7/29.

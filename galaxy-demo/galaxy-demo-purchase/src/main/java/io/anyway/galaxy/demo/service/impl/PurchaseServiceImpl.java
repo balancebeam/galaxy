@@ -1,7 +1,6 @@
 package io.anyway.galaxy.demo.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import io.anyway.galaxy.annotation.TXAction;
 import io.anyway.galaxy.common.TransactionTypeEnum;
 import io.anyway.galaxy.context.SerialNumberGenerator;
@@ -13,13 +12,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestOperations;
-import org.springframework.web.client.RestTemplate;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**

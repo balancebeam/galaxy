@@ -2,12 +2,12 @@ package io.anyway.galaxy.message.producer;
 
 import io.anyway.galaxy.exception.DistributedTransactionException;
 import io.anyway.galaxy.message.TransactionMessage;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class KafkaMessageProducer implements MessageProducer<TransactionMessage>,InitializingBean,DisposableBean {
 
-    private final static Log logger= LogFactory.getLog(KafkaMessageProducer.class);
+    private final static Logger logger= LoggerFactory.getLogger(KafkaMessageProducer.class);
 
     @Value("${kafka.servers}")
     private String servers;

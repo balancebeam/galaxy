@@ -6,9 +6,16 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 
 import io.anyway.galaxy.spring.DataSourceAdaptor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 @Slf4j
 public class TransactionServer {
+
+	@Autowired
+	private DataSourceAdaptor dataSourceAdaptor;
 
 	private static final int port = 3000;
 
@@ -16,11 +23,19 @@ public class TransactionServer {
 
 	private volatile boolean running = false;
 	
-	private DataSourceAdaptor dataSourceAdaptor = null;
-	
 	private static TransactionServer instance;
-	
-	
+
+
+	@PostConstruct
+	public void init(){
+    	this.start();
+	}
+
+	@PreDestroy
+	public void destroy(){
+        this.shutdown();
+	}
+
 	public static TransactionServer instance(){
 		if(instance == null){
 			synchronized (TransactionServer.class) {
