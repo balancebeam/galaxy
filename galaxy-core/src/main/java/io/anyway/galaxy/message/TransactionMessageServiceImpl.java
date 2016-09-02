@@ -231,7 +231,7 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
                             }
                         }
                         // 执行消息对应的操作
-                        ProxyUtil.proxyMethod(aopBean,methodName, payload.getTypes(), payload.getArgs());
+                        ProxyUtil.proxyMethod(aopBean,payload.getTargetClass(),methodName, payload.getTypes(), payload.getArgs());
                     } else {
                         log.warn("Validation error, " + message + ", " + info);
                     }

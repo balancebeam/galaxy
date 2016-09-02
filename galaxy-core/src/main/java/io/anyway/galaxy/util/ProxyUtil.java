@@ -15,6 +15,7 @@ public class ProxyUtil {
      * 动态代理方法调用
      *
      * @param aopBean 目标代理对象
+     * @param targetClass 目标类定义
      * @param methodName 方法名
      * @param types 参数类型
      * @param args 参数值
@@ -22,8 +23,8 @@ public class ProxyUtil {
      * @throws Throwable
      *
      */
-    public static Object proxyMethod(Object aopBean, String methodName, Class<?>[] types, Object[] args) throws Throwable {
-        Method method = ReflectionUtils.findMethod(aopBean.getClass(),methodName,types);
+    public static Object proxyMethod(Object aopBean, Class<?> targetClass, String methodName, Class<?>[] types, Object[] args) throws Throwable {
+        Method method = ReflectionUtils.findMethod(targetClass,methodName,types);
         ReflectionUtils.makeAccessible(method);
         return ReflectionUtils.invokeMethod(method,aopBean,args);
     }
