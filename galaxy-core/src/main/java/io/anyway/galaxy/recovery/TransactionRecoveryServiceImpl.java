@@ -72,9 +72,9 @@ public class TransactionRecoveryServiceImpl implements TransactionRecoveryServic
                                 new TXContextSupport(info.getParentId(), info.getTxId(), info.getBusinessId(), info.getBusinessType())
                                 , TransactionStatusEnum.CANCELLING);
                         successCount++;
-                        log.debug("Send cancel message success, TransactionInfo=" + info);
+                        log.debug("Send cancel message success, " + info);
                     } catch (Throwable e) {
-                        log.warn("Send cancel message error, TransactionInfo=" + info, e);
+                        log.warn("Send cancel message error, " + info, e);
                     }
                 } else if (TransactionStatusEnum.TRIED.getCode() == info.getTxStatus() && TransactionTypeEnum.TCC.getCode() == info.getTxType()){
                     try {
@@ -82,12 +82,12 @@ public class TransactionRecoveryServiceImpl implements TransactionRecoveryServic
                                 new TXContextSupport(info.getParentId(), info.getTxId(), info.getBusinessId(), info.getBusinessType())
                                 , TransactionStatusEnum.CONFIRMING);
                         successCount++;
-                        log.debug("Send confirm message success, TransactionInfo=" + info);
+                        log.debug("Send confirm message success, " + info);
                     } catch (Throwable e) {
-                        log.warn("Send confirm message error, TransactionInfo=" + info, e);
+                        log.warn("Send confirm message error, " + info, e);
                     }
                 } else {
-                    log.debug("Needn't process, ignored this record, TransactionInfo=" + info);
+                    log.debug("Needn't process, ignored this record, " + info);
                 }
             } else {
                 // TODO 对于因子事务单元超时引起的事务状态不一致情况，由管控平台统一检查处理?
@@ -101,9 +101,9 @@ public class TransactionRecoveryServiceImpl implements TransactionRecoveryServic
                                 TransactionStatusEnum.getEnum(info.getTxStatus())
                             ).getCode());
                         transactionRepository.update(updInfo);
-                        log.debug("Update main transaction status success, TransactionInfo=", info);
+                        log.debug("Update main transaction status success, " + info);
                     } catch (Throwable e) {
-                        log.warn("Update main transaction status error, TransactionInfo=", info.toString());
+                        log.warn("Update main transaction status error, " + info.toString());
                     }
                     parentId = info.getParentId();
                     continue;
@@ -113,9 +113,9 @@ public class TransactionRecoveryServiceImpl implements TransactionRecoveryServic
                     try {
                         transactionMessageService.handleMessage(transInfo2Msg(info));
                         successCount++;
-                        log.debug("Process cancelling message success, TransactionInfo=" + info);
+                        log.debug("Process cancelling message success, " + info);
                     } catch (Throwable e) {
-                        log.warn("Process cancelling error, TransactionInfo=" + info, e);
+                        log.warn("Process cancelling error, " + info, e);
                     }
                 }
 
@@ -123,9 +123,9 @@ public class TransactionRecoveryServiceImpl implements TransactionRecoveryServic
                     try {
                         transactionMessageService.handleMessage(transInfo2Msg(info));
                         successCount++;
-                        log.debug("Process confirming message success, TransactionInfo=" + info);
+                        log.debug("Process confirming message success, " + info);
                     } catch (Throwable e) {
-                        log.warn("Process confirm error, TransactionInfo=" + info, e);
+                        log.warn("Process confirm error, " + info, e);
                     }
                 }
             }

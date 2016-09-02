@@ -82,7 +82,7 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
         updInfo.setTxId(ctx.getTxId());
         updInfo.setTxStatus(TransactionStatusEnum.getNextStatus(txStatus).getCode());
         transactionRepository.update(updInfo);
-        log.info("Update Action TX status="+ TransactionStatusEnum.getMemo(updInfo.getTxStatus()) +", ctx=" + ctx);
+        log.info("Update Action TX status="+ TransactionStatusEnum.getMemo(updInfo.getTxStatus()) +", TXContext=" + ctx);
     }
 
     public boolean isValidMessage(TransactionMessage message) throws Throwable {
@@ -233,11 +233,11 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
                         // 执行消息对应的操作
                         ProxyUtil.proxyMethod(aopBean,methodName, payload.getTypes(), payload.getArgs());
                     } else {
-                        log.warn("Validation error, txMsg=" + message + " txInfo=" + info);
+                        log.warn("Validation error, " + message + ", " + info);
                     }
                 } catch (Exception e){
                     // 更新重试信息
-                    log.warn("Process 'handleMessage' failed, TransactionInfo=" + info, e);
+                    log.warn("Process 'handleMessage' failed, " + info, e);
                     updateRetryCount(info);
                 }
             }
@@ -292,7 +292,7 @@ public class TransactionMessageServiceImpl implements TransactionMessageService 
             updInfo.setNextRetryTime(getNextRetryTime(retryCount, info));
         }
         transactionRepository.update(updInfo);
-        log.info("Update retry count, TransactionInfo=" + updInfo);
+        log.info("Update retry count, " + updInfo);
     }
 
     private ServiceExecutePayload parsePayload(TransactionInfo transactionInfo) {
