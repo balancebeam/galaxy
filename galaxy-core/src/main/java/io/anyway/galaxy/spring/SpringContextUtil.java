@@ -143,7 +143,7 @@ public class SpringContextUtil implements ApplicationContextAware,ResourceLoader
         //如果是Aop代理则需要获取targetClass的ClassLoader
         ClassLoader classLoader= target.getClass().getClassLoader();
         if(target instanceof Advised){
-            ((Advised)target).getTargetClass().getClassLoader();
+            classLoader= ((Advised)target).getTargetClass().getClassLoader();
         }
         for(ModuleContext each: moduleContexts.values()){
             if(each.getClassLoader()==classLoader){
