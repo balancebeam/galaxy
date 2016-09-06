@@ -3,6 +3,7 @@ package io.anyway.galaxy.spring;
 import io.anyway.galaxy.context.ModuleContext;
 import io.anyway.galaxy.context.ModuleContextAdapter;
 import io.anyway.galaxy.exception.DistributedTransactionException;
+import org.springframework.aop.framework.Advised;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -139,7 +140,11 @@ public class SpringContextUtil implements ApplicationContextAware,ResourceLoader
         if(target instanceof ModuleContextAdapter){
             return ((ModuleContextAdapter)target).getModuleContext().getModuleId();
         }
+        //如果是Aop代理则需要获取targetClass的ClassLoader
         ClassLoader classLoader= target.getClass().getClassLoader();
+        if(target instanceof Advised){
+            ((Advised)target).getTargetClass().getClassLoader();
+        }
         for(ModuleContext each: moduleContexts.values()){
             if(each.getClassLoader()==classLoader){
                 return each.getModuleId();
