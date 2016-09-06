@@ -188,7 +188,6 @@ public class TXAspectProcessor implements Ordered,ResourceLoaderAware,Applicatio
         }finally{
             //清空上下文内容
             TXContextHolder.setTXContext(null);
-            TXContextHolder.setAction(null);
         }
     }
 
@@ -198,8 +197,6 @@ public class TXAspectProcessor implements Ordered,ResourceLoaderAware,Applicatio
 
     @Around("pointcutTXTry()")
     public Object doTXTry(ProceedingJoinPoint pjp) throws Throwable {
-        //先验证事务
-        assertTransactional();
         TXContext ctx= TXContextHolder.getTXContext();
         if(ctx ==null && pjp.getArgs().length> 0){
             //规定第一个参数为TXContext里面传递txId等信息
@@ -208,7 +205,14 @@ public class TXAspectProcessor implements Ordered,ResourceLoaderAware,Applicatio
                 ctx= (TXContext) firstValue;
             }
         }
-        Assert.notNull(ctx);
+        if(ctx== null){
+            if(logger.isInfoEnabled()){
+                logger.info("TXContext is empty ,try="+pjp.getSignature());
+            }
+            return pjp.proceed();
+        }
+        //验证事务是否为空
+        assertTransactional();
 
         //获取方法上的注解内容
         final Method tryMethod = ((MethodSignature) pjp.getSignature()).getMethod();
@@ -257,8 +261,7 @@ public class TXAspectProcessor implements Ordered,ResourceLoaderAware,Applicatio
 
     @Around("pointcutTXConfirm()")
     public Object doTXConfirm(ProceedingJoinPoint pjp) throws Throwable {
-        //先验证事务
-        assertTransactional();
+
         TXContext ctx= TXContextHolder.getTXContext();
         if(ctx ==null && pjp.getArgs().length> 0){
             //规定第一个参数为TXContext里面传递txId等信息
@@ -267,7 +270,14 @@ public class TXAspectProcessor implements Ordered,ResourceLoaderAware,Applicatio
                 ctx= (TXContext) firstValue;
             }
         }
-        Assert.notNull(ctx);
+        if(ctx== null){
+            if(logger.isInfoEnabled()){
+                logger.info("TXContext is empty ,confirm="+pjp.getSignature());
+            }
+            return pjp.proceed();
+        }
+        //验证事务是否为空
+        assertTransactional();
 
         Object result= pjp.proceed();
         //更改TX表的状态为CONFIRMED
@@ -288,8 +298,7 @@ public class TXAspectProcessor implements Ordered,ResourceLoaderAware,Applicatio
 
     @Around("pointcutTXCancel()")
     public Object doTXCancel(ProceedingJoinPoint pjp) throws Throwable {
-        //先验证事务
-        assertTransactional();
+
         TXContext ctx= TXContextHolder.getTXContext();
         if(ctx ==null && pjp.getArgs().length> 0){
             //规定第一个参数为TXContext里面传递txId等信息
@@ -298,7 +307,14 @@ public class TXAspectProcessor implements Ordered,ResourceLoaderAware,Applicatio
                 ctx= (TXContext) firstValue;
             }
         }
-        Assert.notNull(ctx);
+        if(ctx== null){
+            if(logger.isInfoEnabled()){
+                logger.info("TXContext is empty ,cancel="+pjp.getSignature());
+            }
+            return pjp.proceed();
+        }
+        //验证事务是否为空
+        assertTransactional();
 
         Object result= pjp.proceed();
         //更改TX表的状态为CANCELLED
