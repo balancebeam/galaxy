@@ -51,7 +51,6 @@ public class TransactionRecoveryServiceImpl implements TransactionRecoveryServic
     }
 
     public int execute(List<TransactionInfo> transactionInfos) {
-        log.info("Recovery job start, data count=" + transactionInfos.size());
         int successCount = 0;
 
         long parentId = -1L;
@@ -72,9 +71,9 @@ public class TransactionRecoveryServiceImpl implements TransactionRecoveryServic
                                 new TXContextSupport(info.getParentId(), info.getTxId(), info.getBusinessId(), info.getBusinessType())
                                 , TransactionStatusEnum.CANCELLING);
                         successCount++;
-                        log.debug("Send cancel message success, " + info);
+                        log.debug("Transaction recovery job send cancel message success, " + info);
                     } catch (Throwable e) {
-                        log.warn("Send cancel message error, " + info, e);
+                        log.warn("Transaction recovery job send cancel message error, " + info, e);
                     }
                 } else if (TransactionStatusEnum.TRIED.getCode() == info.getTxStatus() && TransactionTypeEnum.TCC.getCode() == info.getTxType()){
                     try {
@@ -82,12 +81,12 @@ public class TransactionRecoveryServiceImpl implements TransactionRecoveryServic
                                 new TXContextSupport(info.getParentId(), info.getTxId(), info.getBusinessId(), info.getBusinessType())
                                 , TransactionStatusEnum.CONFIRMING);
                         successCount++;
-                        log.debug("Send confirm message success, " + info);
+                        log.debug("Transaction recovery job send confirm message success, " + info);
                     } catch (Throwable e) {
-                        log.warn("Send confirm message error, " + info, e);
+                        log.warn("Transaction recovery job send confirm message error, " + info, e);
                     }
                 } else {
-                    log.debug("Needn't process, ignored this record, " + info);
+                    log.debug("Transaction recovery job needn't process this record, " + info);
                 }
             } else {
                 // TODO 对于因子事务单元超时引起的事务状态不一致情况，由管控平台统一检查处理?
@@ -113,9 +112,9 @@ public class TransactionRecoveryServiceImpl implements TransactionRecoveryServic
                     try {
                         transactionMessageService.handleMessage(transInfo2Msg(info));
                         successCount++;
-                        log.debug("Process cancelling message success, " + info);
+                        log.debug("Transaction recovery job process cancelling message success, " + info);
                     } catch (Throwable e) {
-                        log.warn("Process cancelling error, " + info, e);
+                        log.warn("Transaction recovery job process cancelling error, " + info, e);
                     }
                 }
 
@@ -123,14 +122,14 @@ public class TransactionRecoveryServiceImpl implements TransactionRecoveryServic
                     try {
                         transactionMessageService.handleMessage(transInfo2Msg(info));
                         successCount++;
-                        log.debug("Process confirming message success, " + info);
+                        log.debug("Transaction recovery job confirming message success, " + info);
                     } catch (Throwable e) {
-                        log.warn("Process confirm error, " + info, e);
+                        log.warn("Transaction recovery job process confirm error, " + info, e);
                     }
                 }
             }
         }
-        log.info("Recovery job end, success count=" + successCount);
+        log.info("Transaction recovery job executed, data count=" + transactionInfos.size() + ", success count=" + successCount);
         return successCount;
     }
 
