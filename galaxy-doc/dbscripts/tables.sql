@@ -15,9 +15,10 @@ CREATE TABLE transaction_info
   gmt_modified timestamp without time zone,
   CONSTRAINT tran_info_pkey PRIMARY KEY (parent_id, tx_id)
 );
-create index idx_tran_info_mid on transaction_info(module_id);
-create index idx_tran_info_ts on transaction_info(tx_status);
-create index idx_tran_info_nrt on transaction_info(next_retry_time);
+
+create index idx_tran_info_tstt on transaction_info(tx_status, tx_type);
 create index idx_tran_info_gm on transaction_info(gmt_modified);
+-- create index idx_tran_info_nrt on transaction_info(next_retry_time);
+-- create index idx_tran_info_mid on transaction_info(module_id);
 
 commit;

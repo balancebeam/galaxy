@@ -181,7 +181,7 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 			builderOuter.append(SELECT_DQL + " FROM (");
 
 			StringBuilder builder = new StringBuilder();
-			builder.append(SELECT_DQL + " FROM TRANSACTION_INFO WHERE GMT_CREATED > ? ");
+			builder.append(SELECT_DQL + " FROM TRANSACTION_INFO WHERE GMT_MODIFIED > ? ");
 					/*.append(getLimitSql(conn, 1000))*/
 
 			boolean hasTriedStatus = false;
@@ -212,10 +212,10 @@ public class JdbcTransactionRepository extends CacheableTransactionRepository {
 
 			builder.append(" AND MODULE_ID = ? ");
 
-			builderOuter.append(builder).append(" AND NEXT_RETRY_TIME <= ? AND NEXT_RETRY_TIME IS NOT NULL").append(sBuilder);
+			builderOuter.append(builder).append(" AND NEXT_RETRY_TIME <= ? ").append(sBuilder);
 			builderOuter.append(" UNION ALL ").append(builder).append("AND NEXT_RETRY_TIME IS NULL").append(sBuilder);
 			if (hasTriedStatus) {
-				builderOuter.append(" UNION ALL ").append(builder).append(" AND NEXT_RETRY_TIME <= ? AND NEXT_RETRY_TIME IS NOT NULL")
+				builderOuter.append(" UNION ALL ").append(builder).append("AND NEXT_RETRY_TIME <= ?")
 						.append(" AND TX_STATUS = " + TransactionStatusEnum.TRIED.getCode() + " AND TX_TYPE = " + TransactionTypeEnum.TCC.getCode());
 				builderOuter.append(" UNION ALL ").append(builder).append("AND NEXT_RETRY_TIME IS NULL AND GMT_MODIFIED <= ?")
 						.append(" AND TX_STATUS = " + TransactionStatusEnum.TRIED.getCode() + " AND TX_TYPE = " + TransactionTypeEnum.TCC.getCode());
