@@ -1,20 +1,14 @@
 package io.anyway.galaxy.recovery;
 
-import common.DalTestCase;
 import common.DefaultTestCase;
 import io.anyway.galaxy.common.TransactionStatusEnum;
 import io.anyway.galaxy.domain.TransactionInfo;
-import io.anyway.galaxy.message.TransactionMessageService;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
-import static org.junit.Assert.*;
 
 /**
  * Created by xiong.j on 2016/8/18.

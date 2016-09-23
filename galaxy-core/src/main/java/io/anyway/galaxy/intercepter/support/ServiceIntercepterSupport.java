@@ -3,7 +3,6 @@ package io.anyway.galaxy.intercepter.support;
 import com.alibaba.fastjson.JSON;
 import io.anyway.galaxy.common.Constants;
 import io.anyway.galaxy.common.TransactionStatusEnum;
-import io.anyway.galaxy.common.TransactionTypeEnum;
 import io.anyway.galaxy.context.TXContext;
 import io.anyway.galaxy.context.support.ServiceExecutePayload;
 import io.anyway.galaxy.context.support.TXContextSupport;
@@ -17,10 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.TransactionException;
-import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 
 /**
@@ -97,7 +93,7 @@ public class ServiceIntercepterSupport implements ServiceIntercepter {
     }
 
     private void createTransactionInfo(TransactionInfo transactionInfo) throws Throwable{
-        int i = 2;
+        int i = 3;
         while(i > 0) {
             try {
                 transactionRepository.create(transactionInfo);
@@ -106,12 +102,11 @@ public class ServiceIntercepterSupport implements ServiceIntercepter {
                 if (e.getSQLState().equals(Constants.KEY_23505)) {
                     log.warn("Create child transactionInfo record failed and retry:", e);
                     transactionInfo.setTxId(TransactionIdGenerator.next());
-                    transactionRepository.create(transactionInfo);
+                    i--;
                 } else {
                     throw e;
                 }
             }
-            i--;
         }
     }
 

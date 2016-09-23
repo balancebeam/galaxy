@@ -97,7 +97,7 @@ public class ActionIntercepterSupport implements ActionIntercepter{
     }
 
     private void createTransactionInfo(TransactionInfo transactionInfo) throws Throwable{
-        int i = 2;
+        int i = 3;
         while(i > 0) {
             try {
                 transactionRepository.create(transactionInfo);
@@ -106,12 +106,11 @@ public class ActionIntercepterSupport implements ActionIntercepter{
                 if (e.getSQLState().equals(Constants.KEY_23505)) {
                     log.warn("Create root transactionInfo record failed and retry:", e);
                     transactionInfo.setTxId(TransactionIdGenerator.next());
-                    transactionRepository.create(transactionInfo);
+                    i--;
                 } else {
                     throw e;
                 }
             }
-            i--;
         }
     }
 }
